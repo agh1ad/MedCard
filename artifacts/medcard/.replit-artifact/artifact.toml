@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "MedCard"
+version = "1.0.0"
+id = "artifacts/medcard"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19585
+
+[services.development]
+run = "pnpm --filter @workspace/medcard run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/medcard", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/medcard/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19585"
+BASE_PATH = "/"
