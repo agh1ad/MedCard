@@ -3,13 +3,18 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: MedCard API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: cards
+    description: Medical study card operations
+  - name: tags
+    description: Tag operations
+
 paths:
   /healthz:
     get:
@@ -24,6 +29,158 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /cards:
+    get:
+      operationId: listCards
+      tags: [cards]
+      summary: List all cards
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search by topic or content
+        - name: tag
+          in: query
+          schema:
+            type: string
+          description: Filter by tag
+      responses:
+        "200":
+          description: List of cards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Card"
+    post:
+      operationId: createCard
+      tags: [cards]
+      summary: Create a new card
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+
+  /cards/generate:
+    post:
+      operationId: generateCard
+      tags: [cards]
+      summary: Generate a card from raw medical text using AI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateCardInput"
+      responses:
+        "200":
+          description: Generated card structure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeneratedCard"
+
+  /cards/stats:
+    get:
+      operationId: getCardStats
+      tags: [cards]
+      summary: Get library statistics
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardStats"
+
+  /cards/{id}:
+    get:
+      operationId: getCard
+      tags: [cards]
+      summary: Get a card by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Card
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateCard
+      tags: [cards]
+      summary: Update a card
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardUpdate"
+      responses:
+        "200":
+          description: Updated card
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteCard
+      tags: [cards]
+      summary: Delete a card
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /tags:
+    get:
+      operationId: listTags
+      tags: [tags]
+      summary: List all distinct tags
+      responses:
+        "200":
+          description: List of tags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +191,159 @@ components:
       required:
         - status
 
+    FlowStep:
+      type: object
+      required: [label]
+      properties:
+        label:
+          type: string
+          description: The text content of this step in the flow hierarchy
+        sublabel:
+          type: ["string", "null"]
+          description: Optional additional detail for this step
+        indent:
+          type: integer
+          description: Indentation level (0 = top level, higher = sub-level)
+          default: 0
+
+    SidebarSections:
+      type: object
+      required: [high_yield, risk_factors, diagnosis, treatment, complications]
+      properties:
+        high_yield:
+          type: array
+          items:
+            type: string
+          description: High-yield notes and key facts
+        risk_factors:
+          type: array
+          items:
+            type: string
+          description: Risk factors and associations
+        diagnosis:
+          type: array
+          items:
+            type: string
+          description: Diagnostic criteria and workup
+        treatment:
+          type: array
+          items:
+            type: string
+          description: Treatment and management
+        complications:
+          type: array
+          items:
+            type: string
+          description: Complications and prognosis
+
+    Card:
+      type: object
+      required: [id, topic, flow, sidebar, tags, rawText, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        topic:
+          type: string
+          description: The topic name for this card
+        flow:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlowStep"
+          description: Top-down hierarchy of pathophysiology steps
+        sidebar:
+          $ref: "#/components/schemas/SidebarSections"
+        tags:
+          type: array
+          items:
+            type: string
+        rawText:
+          type: string
+          description: Original raw input text
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    GeneratedCard:
+      type: object
+      required: [flow, sidebar]
+      properties:
+        flow:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlowStep"
+        sidebar:
+          $ref: "#/components/schemas/SidebarSections"
+
+    CardInput:
+      type: object
+      required: [topic, flow, sidebar, rawText, tags]
+      properties:
+        topic:
+          type: string
+          minLength: 1
+        flow:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlowStep"
+        sidebar:
+          $ref: "#/components/schemas/SidebarSections"
+        rawText:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    CardUpdate:
+      type: object
+      properties:
+        topic:
+          type: string
+          minLength: 1
+        flow:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlowStep"
+        sidebar:
+          $ref: "#/components/schemas/SidebarSections"
+        tags:
+          type: array
+          items:
+            type: string
+
+    GenerateCardInput:
+      type: object
+      required: [rawText]
+      properties:
+        rawText:
+          type: string
+          minLength: 1
+          description: Raw medical information to restructure
+        topic:
+          type: ["string", "null"]
+          description: Optional topic hint
+
+    CardStats:
+      type: object
+      required: [totalCards, totalTags, recentCount]
+      properties:
+        totalCards:
+          type: integer
+        totalTags:
+          type: integer
+        recentCount:
+          type: integer
+          description: Cards created in the last 7 days
+        topTags:
+          type: array
+          items:
+            type: object
+            required: [tag, count]
+            properties:
+              tag:
+                type: string
+              count:
+                type: integer
