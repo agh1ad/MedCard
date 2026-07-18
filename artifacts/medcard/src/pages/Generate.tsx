@@ -1,83 +1,116 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import {
-  useGenerateCard,
   useCreateCard,
+  useGenerateCard,
+  type CardImage,
+  type CardImageSection,
   type GeneratedCard,
-  type FlowNode,
-  type SidebarSections,
 } from "@workspace/api-client-react";
-import { FlowTree } from "@/components/card/FlowTree";
-import { SidebarSections as SidebarSectionsComponent } from "@/components/card/SidebarSections";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
+import { MemoryCardCanvas } from "@/components/card/MemoryCardCanvas";
 import { Badge } from "@/components/ui/badge";
-import {
-  Wand2,
-  Save,
-  X,
-  RotateCcw,
-  Sparkles,
-  Loader2,
-  Tags,
-} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  ImagePlus,
+  Loader2,
+  Save,
+  ShieldCheck,
+  Sparkles,
+  Trash2,
+  WandSparkles,
+  X,
+} from "lucide-react";
+
+const IMAGE_SECTIONS: Array<{ value: CardImageSection; label: string }> = [
+  { value: "main", label: "Main flow" },
+  { value: "high_yield", label: "High yield" },
+  { value: "risk_factors", label: "Risk factors" },
+  { value: "associations", label: "Associations" },
+  { value: "diagnosis", label: "Diagnosis" },
+  { value: "treatment", label: "Treatment" },
+  { value: "complications", label: "Complications" },
+];
+
+function readImage(file: File): Promise<CardImage> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () =>
+      resolve({
+        id: crypto.randomUUID(),
+        name: file.name,
+        dataUrl: String(reader.result),
+        caption: "",
+        section: "main",
+      });
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
 
 export function Generate() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-
   const [rawText, setRawText] = useState("");
   const [topic, setTopic] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
-
+  const [images, setImages] = useState<CardImage[]>([]);
   const [preview, setPreview] = useState<GeneratedCard | null>(null);
 
-  const generateMut = useGenerateCard();
-  const createMut = useCreateCard();
+  const generateMutation = useGenerateCard();
+  const createMutation = useCreateCard();
 
-  const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && tagInput.trim()) {
-      e.preventDefault();
-      if (!tags.includes(tagInput.trim())) {
-        setTags([...tags, tagInput.trim()]);
-      }
-      setTagInput("");
-    }
+  const addTag = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter" || !tagInput.trim()) return;
+    event.preventDefault();
+    const next = tagInput.trim();
+    if (!tags.includes(next)) setTags([...tags, next]);
+    setTagInput("");
   };
 
-  const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter((t) => t !== tagToRemove));
-  };
-
-  const handleGenerate = () => {
-    if (!rawText.trim()) {
+  const handleImages = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    const valid = files.filter(
+      (file) => file.type.startsWith("image/") && file.size <= 3 * 1024 * 1024,
+    );
+    if (valid.length !== files.length) {
       toast({
-        title: "Input required",
-        description: "Please paste some medical text to generate a card.",
+        title: "Some images were skipped",
+        description: "Use image files smaller than 3 MB each.",
+        variant: "destructive",
+      });
+    }
+    setImages([...images, ...(await Promise.all(valid.map(readImage)))]);
+    event.target.value = "";
+  };
+
+  const generate = () => {
+    if (!topic.trim() || !rawText.trim()) {
+      toast({
+        title: "Topic and source text are required",
+        description: "The title stays separate so the AI never invents one.",
         variant: "destructive",
       });
       return;
     }
 
-    generateMut.mutate(
-      { data: { rawText, topic: topic || undefined } },
+    generateMutation.mutate(
+      { data: { rawText, topic: topic.trim() } },
       {
         onSuccess: (data) => {
           setPreview(data);
-          toast({
-            title: "Card Generated",
-            description: "Review and edit before saving.",
-          });
           window.scrollTo({ top: 0, behavior: "smooth" });
         },
-        onError: () => {
+        onError: (error) => {
           toast({
-            title: "Generation failed",
-            description: "There was an error generating the card.",
+            title: "Card organization failed",
+            description: error instanceof Error ? error.message : "Check the AI connection and try again.",
             variant: "destructive",
           });
         },
@@ -85,268 +118,170 @@ export function Generate() {
     );
   };
 
-  const handleSave = () => {
+  const save = () => {
     if (!preview) return;
-    if (!topic.trim()) {
-      toast({
-        title: "Topic required",
-        description: "Please enter a topic name before saving.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    createMut.mutate(
+    createMutation.mutate(
       {
         data: {
-          topic,
+          topic: topic.trim(),
           tags,
           rawText,
           flow: preview.flow,
           sidebar: preview.sidebar,
+          sectionTrees: preview.sectionTrees,
+          sourceBlocks: preview.sourceBlocks,
+          images,
         },
       },
       {
-        onSuccess: (card) => {
-          toast({
-            title: "Saved successfully",
-            description: "Your card has been added to the library.",
-          });
-          setLocation(`/cards/${card.id}`);
-        },
-        onError: () => {
+        onSuccess: (card) => setLocation(`/cards/${card.id}`),
+        onError: (error) =>
           toast({
             title: "Save failed",
-            description: "Could not save the card.",
+            description: error instanceof Error ? error.message : "Could not save this card.",
             variant: "destructive",
-          });
-        },
+          }),
       },
     );
   };
 
-  return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Generate Study Card
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Transform raw notes into a branching pathophysiology tree.
-          </p>
-        </div>
-        {preview && (
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setPreview(null)}
-              disabled={createMut.isPending}
-              data-testid="button-reset"
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Reset
+  if (preview) {
+    return (
+      <div className="mx-auto flex w-full max-w-[1540px] flex-col gap-6 px-4 py-6 lg:px-8">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
+              <CheckCircle2 className="h-4 w-4" /> Every source block accounted for
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight">Review your memory card</h1>
+            <p className="mt-1 text-muted-foreground">Place images, inspect the visual flow, then save.</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setPreview(null)}>
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back to source
             </Button>
-            <Button
-              onClick={handleSave}
-              disabled={createMut.isPending}
-              data-testid="button-save"
-            >
-              {createMut.isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4 mr-2" />
-              )}
-              Save to Library
+            <Button onClick={save} disabled={createMutation.isPending}>
+              {createMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              Save card
             </Button>
           </div>
+        </div>
+
+        <MemoryCardCanvas
+          topic={topic}
+          flow={preview.flow}
+          sectionTrees={preview.sectionTrees}
+          images={images}
+        />
+
+        {images.length > 0 && (
+          <section className="rounded-2xl border bg-card p-5 shadow-sm">
+            <h2 className="mb-4 font-bold">Image placement</h2>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {images.map((image) => (
+                <div key={image.id} className="flex gap-3 rounded-xl border bg-background p-3">
+                  <img src={image.dataUrl} alt="" className="h-20 w-24 rounded-md object-cover" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <select
+                      value={image.section}
+                      onChange={(event) =>
+                        setImages(images.map((item) => item.id === image.id ? { ...item, section: event.target.value as CardImageSection } : item))
+                      }
+                      className="h-8 w-full rounded-md border bg-card px-2 text-xs"
+                    >
+                      {IMAGE_SECTIONS.map((section) => <option key={section.value} value={section.value}>{section.label}</option>)}
+                    </select>
+                    <Input
+                      value={image.caption ?? ""}
+                      onChange={(event) => setImages(images.map((item) => item.id === image.id ? { ...item, caption: event.target.value } : item))}
+                      placeholder="Optional caption"
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => setImages(images.filter((item) => item.id !== image.id))}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </section>
         )}
       </div>
+    );
+  }
 
-      {!preview ? (
-        /* ── Input form ── */
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 flex flex-col gap-6">
-            <div className="bg-card border shadow-sm rounded-2xl p-6 flex flex-col gap-4">
-              <div className="flex items-center gap-2 text-primary font-medium mb-2">
-                <Sparkles className="w-5 h-5" />
-                <h3>Raw Information</h3>
-              </div>
+  return (
+    <div className="mx-auto w-full max-w-7xl px-4 py-8 lg:px-8">
+      <div className="mb-8 max-w-3xl">
+        <Badge variant="outline" className="mb-4 border-primary/30 bg-primary/5 text-primary">
+          <WandSparkles className="mr-1.5 h-3.5 w-3.5" /> Visual note compiler
+        </Badge>
+        <h1 className="text-4xl font-bold tracking-tight md:text-5xl">Turn bulk research into one memorable page.</h1>
+        <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
+          Your wording remains untouched. AI only decides where each source block belongs and how the branches connect.
+        </p>
+      </div>
 
-              <Textarea
-                value={rawText}
-                onChange={(e) => setRawText(e.target.value)}
-                placeholder="Paste from UWorld, First Aid, lecture slides, or Up-To-Date…"
-                className="min-h-[400px] resize-y bg-background font-mono text-sm leading-relaxed p-4"
-                data-testid="textarea-raw-text"
-              />
-
-              <div className="flex justify-end">
-                <Button
-                  onClick={handleGenerate}
-                  disabled={generateMut.isPending || !rawText.trim()}
-                  className="h-12 px-8 text-lg rounded-xl w-full md:w-auto"
-                  size="lg"
-                  data-testid="button-generate"
-                >
-                  {generateMut.isPending ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />{" "}
-                      Analyzing…
-                    </>
-                  ) : (
-                    <>
-                      <Wand2 className="w-5 h-5 mr-2" /> Generate Structured
-                      Card
-                    </>
-                  )}
-                </Button>
-              </div>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <section className="rounded-3xl border bg-card p-5 shadow-sm md:p-7">
+          <div className="mb-5 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">01 / Source</p>
+              <h2 className="mt-1 text-xl font-bold">Paste everything you collected</h2>
             </div>
+            <ShieldCheck className="h-7 w-7 text-emerald-600" />
           </div>
+          <Textarea
+            value={rawText}
+            onChange={(event) => setRawText(event.target.value)}
+            placeholder="Paste notes from your sources. New lines, arrows, and complete sentences help create cleaner branches..."
+            className="min-h-[500px] resize-y rounded-2xl bg-background p-5 font-mono text-sm leading-7"
+            data-testid="textarea-raw-text"
+          />
+          <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+            <span>{rawText.trim() ? rawText.trim().split(/\s+/).length : 0} words</span>
+            <span>Nothing is summarized or medically rewritten</span>
+          </div>
+        </section>
 
-          <div className="flex flex-col gap-6">
-            <div className="bg-card border shadow-sm rounded-2xl p-6 flex flex-col gap-5">
-              <h3 className="font-semibold text-lg border-b pb-3">
-                Metadata (Optional)
-              </h3>
-
-              <div className="space-y-3">
-                <Label htmlFor="topic">Topic / Disease</Label>
-                <Input
-                  id="topic"
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  placeholder="e.g. Heart Failure, Asthma…"
-                  className="bg-background"
-                  data-testid="input-topic"
-                />
-                <p className="text-xs text-muted-foreground">
-                  If left blank, AI will attempt to infer the topic.
-                </p>
+        <aside className="flex flex-col gap-5">
+          <section className="rounded-3xl border bg-card p-5 shadow-sm">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">02 / Identity</p>
+            <div className="mt-4 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="topic">Card title</Label>
+                <Input id="topic" value={topic} onChange={(event) => setTopic(event.target.value)} placeholder="e.g. Hypertrophic pyloric stenosis" />
+                <p className="text-xs text-muted-foreground">Required so AI never invents your title.</p>
               </div>
-
-              <div className="space-y-3 pt-2">
+              <div className="space-y-2">
                 <Label htmlFor="tags">Tags</Label>
-                <div className="relative">
-                  <Tags className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="tags"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={handleAddTag}
-                    placeholder="Press enter to add…"
-                    className="pl-9 bg-background"
-                    data-testid="input-tags"
-                  />
-                </div>
-                {tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    {tags.map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant="secondary"
-                        className="gap-1 pl-2 pr-1 py-1"
-                      >
-                        {tag}
-                        <div
-                          className="bg-muted-foreground/20 rounded-full p-0.5 hover:bg-destructive hover:text-destructive-foreground cursor-pointer transition-colors"
-                          onClick={() => removeTag(tag)}
-                        >
-                          <X className="w-3 h-3" />
-                        </div>
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 text-sm text-primary/80">
-              <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
-                <Wand2 className="w-4 h-4" /> How it works
-              </h4>
-              <p className="mb-2">
-                MedCard's AI arranges your notes into a branching
-                pathophysiology tree — one node per step, with parallel
-                outcomes shown side-by-side just like your handwritten notes.
-              </p>
-              <p>Review and edit the result before saving.</p>
-            </div>
-          </div>
-        </div>
-      ) : (
-        /* ── Preview + edit ── */
-        <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-8 duration-500">
-          {/* Topic + tags row */}
-          <div className="bg-card border shadow-sm rounded-2xl p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-              <div className="space-y-3">
-                <Label>Topic</Label>
-                <Input
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  placeholder="Required topic name…"
-                  className="font-bold text-lg h-12"
-                  data-testid="input-topic-preview"
-                />
-              </div>
-              <div className="space-y-3">
-                <Label>Tags</Label>
-                <div className="flex flex-wrap items-center gap-2 min-h-[48px] bg-background border rounded-md px-3 py-2">
+                <Input id="tags" value={tagInput} onChange={(event) => setTagInput(event.target.value)} onKeyDown={addTag} placeholder="Type and press Enter" />
+                <div className="flex flex-wrap gap-1.5">
                   {tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="gap-1">
-                      {tag}
-                      <X
-                        className="w-3 h-3 cursor-pointer hover:text-destructive"
-                        onClick={() => removeTag(tag)}
-                      />
-                    </Badge>
+                    <Badge key={tag} variant="secondary">{tag}<X className="ml-1 h-3 w-3 cursor-pointer" onClick={() => setTags(tags.filter((item) => item !== tag))} /></Badge>
                   ))}
-                  <Input
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={handleAddTag}
-                    placeholder="Add tag…"
-                    className="border-0 h-6 w-32 focus-visible:ring-0 px-1 py-0 shadow-none bg-transparent"
-                  />
                 </div>
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* Two-column card preview */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-4 flex flex-col gap-4">
-              <h3 className="font-semibold text-lg text-muted-foreground px-1">
-                Clinical Details
-              </h3>
-              <SidebarSectionsComponent
-                sections={preview.sidebar}
-                isEditing={true}
-                onChange={(s: SidebarSections) =>
-                  setPreview({ ...preview, sidebar: s })
-                }
-              />
-            </div>
+          <section className="rounded-3xl border bg-card p-5 shadow-sm">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">03 / Visual anchors</p>
+            <label className="mt-4 flex cursor-pointer flex-col items-center rounded-2xl border border-dashed border-primary/30 bg-primary/[0.035] px-4 py-7 text-center transition-colors hover:bg-primary/[0.07]">
+              <ImagePlus className="mb-2 h-7 w-7 text-primary" />
+              <span className="font-semibold">Add clinical images</span>
+              <span className="mt-1 text-xs text-muted-foreground">PNG, JPEG, WebP up to 3 MB</span>
+              <input type="file" accept="image/*" multiple className="hidden" onChange={handleImages} />
+            </label>
+            {images.length > 0 && <p className="mt-3 text-center text-xs font-medium text-emerald-700">{images.length} image{images.length === 1 ? "" : "s"} ready</p>}
+          </section>
 
-            <div className="lg:col-span-8 flex flex-col gap-4">
-              <h3 className="font-semibold text-lg text-muted-foreground px-1">
-                Pathophysiology Tree
-              </h3>
-              <div className="bg-card border shadow-sm rounded-xl min-h-[500px] overflow-x-auto">
-                <FlowTree
-                  nodes={preview.flow}
-                  isEditing={true}
-                  onChange={(f: FlowNode[]) =>
-                    setPreview({ ...preview, flow: f })
-                  }
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+          <Button size="lg" className="h-14 rounded-2xl text-base" onClick={generate} disabled={generateMutation.isPending || !rawText.trim() || !topic.trim()}>
+            {generateMutation.isPending ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Organizing source blocks...</> : <><Sparkles className="mr-2 h-5 w-5" /> Build memory card</>}
+          </Button>
+          <p className="text-center text-xs leading-relaxed text-muted-foreground">One low-cost AI call. Images stay out of the AI request.</p>
+        </aside>
+      </div>
     </div>
   );
 }

@@ -6,9 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { FlowNode } from './flowNode';
+import type { SectionTrees } from './sectionTrees';
 import type { SidebarSections } from './sidebarSections';
+import type { SourceBlock } from './sourceBlock';
 
 export interface GeneratedCard {
   flow: FlowNode[];
   sidebar: SidebarSections;
+  sectionTrees: SectionTrees;
+  sourceBlocks: SourceBlock[];
 }

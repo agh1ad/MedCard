@@ -1,6 +1,10 @@
 import { Router, type Request, type Response } from "express";
 import { db } from "@workspace/db";
-import { cardsTable, convertFlatFlowToTree, type FlowNode } from "@workspace/db";
+import {
+  cardsTable,
+  convertFlatFlowToTree,
+  emptySectionTrees,
+} from "@workspace/db";
 import {
   ListCardsQueryParams,
   CreateCardBody,
@@ -12,6 +16,7 @@ import {
 } from "@workspace/api-zod";
 import { eq, desc } from "drizzle-orm";
 import OpenAI from "openai";
+import { organizeCard } from "../lib/card-organizer";
 
 const router = Router();
 
@@ -30,7 +35,13 @@ function normalizeCard(card: typeof cardsTable.$inferSelect) {
   const flow = Array.isArray(card.flow)
     ? convertFlatFlowToTree(card.flow as unknown[])
     : [];
-  return { ...card, flow };
+  return {
+    ...card,
+    flow,
+    sourceBlocks: card.sourceBlocks ?? [],
+    sectionTrees: card.sectionTrees ?? emptySectionTrees(),
+    images: card.images ?? [],
+  };
 }
 
 const SYSTEM_PROMPT = `You are a medical study note organizer. Your ONLY job is to restructure raw medical information into a structured JSON format WITHOUT adding, inventing, or editorializing any information. Only reorganize what is explicitly in the text.
@@ -238,60 +249,7 @@ router.post(
     }
 
     try {
-      const userMessage = topic
-        ? `Topic: ${topic}\n\nRaw medical information:\n${rawText}`
-        : `Raw medical information:\n${rawText}`;
-
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
-        max_tokens: 4096,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: userMessage },
-        ],
-        response_format: { type: "json_object" },
-      });
-
-      const content = completion.choices[0]?.message?.content;
-      if (!content) {
-        res.status(500).json({ error: "AI returned empty response" });
-        return;
-      }
-
-      let aiData: Record<string, unknown>;
-      try {
-        aiData = JSON.parse(content) as Record<string, unknown>;
-      } catch {
-        res.status(500).json({ error: "AI returned invalid JSON" });
-        return;
-      }
-
-      const sidebarRaw = aiData["sidebar"] as
-        | Record<string, unknown>
-        | undefined;
-
-      const result = {
-        flow: Array.isArray(aiData["flow"]) ? aiData["flow"] : [],
-        sidebar: {
-          high_yield: Array.isArray(sidebarRaw?.["high_yield"])
-            ? sidebarRaw["high_yield"]
-            : [],
-          risk_factors: Array.isArray(sidebarRaw?.["risk_factors"])
-            ? sidebarRaw["risk_factors"]
-            : [],
-          diagnosis: Array.isArray(sidebarRaw?.["diagnosis"])
-            ? sidebarRaw["diagnosis"]
-            : [],
-          treatment: Array.isArray(sidebarRaw?.["treatment"])
-            ? sidebarRaw["treatment"]
-            : [],
-          complications: Array.isArray(sidebarRaw?.["complications"])
-            ? sidebarRaw["complications"]
-            : [],
-        },
-      };
-
-      res.json(result);
+      res.json(await organizeCard(openai, rawText, topic));
     } catch (err) {
       req.log.error({ err }, "Error calling OpenAI");
       res.status(500).json({ error: "Failed to generate card" });
@@ -310,7 +268,16 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
   }
 
   try {
-    const { topic, flow, sidebar, rawText, tags } = parsed.data;
+    const {
+      topic,
+      flow,
+      sidebar,
+      sectionTrees,
+      sourceBlocks,
+      images,
+      rawText,
+      tags,
+    } = parsed.data;
 
     const [card] = await db
       .insert(cardsTable)
@@ -320,6 +287,10 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
         sidebar: sidebar as typeof cardsTable.$inferInsert["sidebar"],
         rawText,
         tags: tags ?? [],
+        sectionTrees:
+          sectionTrees as typeof cardsTable.$inferInsert["sectionTrees"],
+        sourceBlocks,
+        images,
       })
       .returning();
 
@@ -426,6 +397,16 @@ router.patch("/:id", async (req: Request, res: Response): Promise<void> => {
         ...(parsedBody.data.sidebar !== undefined && {
           sidebar: parsedBody.data
             .sidebar as typeof cardsTable.$inferInsert["sidebar"],
+        }),
+        ...(parsedBody.data.sectionTrees !== undefined && {
+          sectionTrees: parsedBody.data
+            .sectionTrees as typeof cardsTable.$inferInsert["sectionTrees"],
+        }),
+        ...(parsedBody.data.sourceBlocks !== undefined && {
+          sourceBlocks: parsedBody.data.sourceBlocks,
+        }),
+        ...(parsedBody.data.images !== undefined && {
+          images: parsedBody.data.images,
         }),
         ...(parsedBody.data.tags !== undefined && {
           tags: parsedBody.data.tags,

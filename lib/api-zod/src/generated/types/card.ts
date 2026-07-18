@@ -5,8 +5,11 @@
  * MedCard API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { CardImage } from './cardImage';
 import type { FlowNode } from './flowNode';
+import type { SectionTrees } from './sectionTrees';
 import type { SidebarSections } from './sidebarSections';
+import type { SourceBlock } from './sourceBlock';
 
 export interface Card {
   id: number;
@@ -15,6 +18,9 @@ export interface Card {
   /** Root nodes of the pathophysiology branching tree */
   flow: FlowNode[];
   sidebar: SidebarSections;
+  sectionTrees: SectionTrees;
+  sourceBlocks: SourceBlock[];
+  images: CardImage[];
   tags: string[];
   /** Original raw input text */
   rawText: string;

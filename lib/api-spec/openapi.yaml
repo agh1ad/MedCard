@@ -209,6 +209,69 @@ components:
           items:
             $ref: "#/components/schemas/FlowNode"
           description: Child nodes branching from this node (shown side by side)
+        sourceBlockId:
+          type: string
+          description: Immutable source block represented by this node
+        tone:
+          type: string
+          enum: [ink, blue, green, pink, violet, amber]
+          description: Visual-memory color assigned to this node
+
+    SourceBlock:
+      type: object
+      required: [id, text]
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+          description: Verbatim text copied from the user's input
+
+    SectionTrees:
+      type: object
+      required: [high_yield, risk_factors, associations, diagnosis, treatment, complications]
+      properties:
+        high_yield:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlowNode"
+        risk_factors:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlowNode"
+        associations:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlowNode"
+        diagnosis:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlowNode"
+        treatment:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlowNode"
+        complications:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlowNode"
+
+    CardImage:
+      type: object
+      required: [id, name, dataUrl, section]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        dataUrl:
+          type: string
+          description: Browser-readable image data URL
+        caption:
+          type: string
+        section:
+          type: string
+          enum: [main, high_yield, risk_factors, associations, diagnosis, treatment, complications]
 
     SidebarSections:
       type: object
@@ -242,7 +305,7 @@ components:
 
     Card:
       type: object
-      required: [id, topic, flow, sidebar, tags, rawText, createdAt, updatedAt]
+      required: [id, topic, flow, sidebar, sectionTrees, sourceBlocks, images, tags, rawText, createdAt, updatedAt]
       properties:
         id:
           type: integer
@@ -256,6 +319,16 @@ components:
           description: Root nodes of the pathophysiology branching tree
         sidebar:
           $ref: "#/components/schemas/SidebarSections"
+        sectionTrees:
+          $ref: "#/components/schemas/SectionTrees"
+        sourceBlocks:
+          type: array
+          items:
+            $ref: "#/components/schemas/SourceBlock"
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/CardImage"
         tags:
           type: array
           items:
@@ -272,7 +345,7 @@ components:
 
     GeneratedCard:
       type: object
-      required: [flow, sidebar]
+      required: [flow, sidebar, sectionTrees, sourceBlocks]
       properties:
         flow:
           type: array
@@ -280,10 +353,16 @@ components:
             $ref: "#/components/schemas/FlowNode"
         sidebar:
           $ref: "#/components/schemas/SidebarSections"
+        sectionTrees:
+          $ref: "#/components/schemas/SectionTrees"
+        sourceBlocks:
+          type: array
+          items:
+            $ref: "#/components/schemas/SourceBlock"
 
     CardInput:
       type: object
-      required: [topic, flow, sidebar, rawText, tags]
+      required: [topic, flow, sidebar, sectionTrees, sourceBlocks, images, rawText, tags]
       properties:
         topic:
           type: string
@@ -294,6 +373,16 @@ components:
             $ref: "#/components/schemas/FlowNode"
         sidebar:
           $ref: "#/components/schemas/SidebarSections"
+        sectionTrees:
+          $ref: "#/components/schemas/SectionTrees"
+        sourceBlocks:
+          type: array
+          items:
+            $ref: "#/components/schemas/SourceBlock"
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/CardImage"
         rawText:
           type: string
         tags:
@@ -313,6 +402,16 @@ components:
             $ref: "#/components/schemas/FlowNode"
         sidebar:
           $ref: "#/components/schemas/SidebarSections"
+        sectionTrees:
+          $ref: "#/components/schemas/SectionTrees"
+        sourceBlocks:
+          type: array
+          items:
+            $ref: "#/components/schemas/SourceBlock"
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/CardImage"
         tags:
           type: array
           items:

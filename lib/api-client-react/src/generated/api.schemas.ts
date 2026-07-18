@@ -9,6 +9,21 @@ export interface HealthStatus {
   status: string;
 }
 
+/**
+ * Visual-memory color assigned to this node
+ */
+export type FlowNodeTone = typeof FlowNodeTone[keyof typeof FlowNodeTone];
+
+
+export const FlowNodeTone = {
+  ink: 'ink',
+  blue: 'blue',
+  green: 'green',
+  pink: 'pink',
+  violet: 'violet',
+  amber: 'amber',
+} as const;
+
 export interface FlowNode {
   /** Unique identifier for this node within the tree */
   id: string;
@@ -21,6 +36,47 @@ export interface FlowNode {
   sublabel?: string | null;
   /** Child nodes branching from this node (shown side by side) */
   children?: FlowNode[];
+  /** Immutable source block represented by this node */
+  sourceBlockId?: string;
+  /** Visual-memory color assigned to this node */
+  tone?: FlowNodeTone;
+}
+
+export interface SourceBlock {
+  id: string;
+  /** Verbatim text copied from the user's input */
+  text: string;
+}
+
+export interface SectionTrees {
+  high_yield: FlowNode[];
+  risk_factors: FlowNode[];
+  associations: FlowNode[];
+  diagnosis: FlowNode[];
+  treatment: FlowNode[];
+  complications: FlowNode[];
+}
+
+export type CardImageSection = typeof CardImageSection[keyof typeof CardImageSection];
+
+
+export const CardImageSection = {
+  main: 'main',
+  high_yield: 'high_yield',
+  risk_factors: 'risk_factors',
+  associations: 'associations',
+  diagnosis: 'diagnosis',
+  treatment: 'treatment',
+  complications: 'complications',
+} as const;
+
+export interface CardImage {
+  id: string;
+  name: string;
+  /** Browser-readable image data URL */
+  dataUrl: string;
+  caption?: string;
+  section: CardImageSection;
 }
 
 export interface SidebarSections {
@@ -43,6 +99,9 @@ export interface Card {
   /** Root nodes of the pathophysiology branching tree */
   flow: FlowNode[];
   sidebar: SidebarSections;
+  sectionTrees: SectionTrees;
+  sourceBlocks: SourceBlock[];
+  images: CardImage[];
   tags: string[];
   /** Original raw input text */
   rawText: string;
@@ -53,6 +112,8 @@ export interface Card {
 export interface GeneratedCard {
   flow: FlowNode[];
   sidebar: SidebarSections;
+  sectionTrees: SectionTrees;
+  sourceBlocks: SourceBlock[];
 }
 
 export interface CardInput {
@@ -60,6 +121,9 @@ export interface CardInput {
   topic: string;
   flow: FlowNode[];
   sidebar: SidebarSections;
+  sectionTrees: SectionTrees;
+  sourceBlocks: SourceBlock[];
+  images: CardImage[];
   rawText: string;
   tags: string[];
 }
@@ -69,6 +133,9 @@ export interface CardUpdate {
   topic?: string;
   flow?: FlowNode[];
   sidebar?: SidebarSections;
+  sectionTrees?: SectionTrees;
+  sourceBlocks?: SourceBlock[];
+  images?: CardImage[];
   tags?: string[];
 }
 

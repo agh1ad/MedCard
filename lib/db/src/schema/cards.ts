@@ -12,10 +12,16 @@ const FlowNodeSchemaBase = z.object({
 
 export type FlowNode = z.infer<typeof FlowNodeSchemaBase> & {
   children?: FlowNode[];
+  sourceBlockId?: string;
+  tone?: "ink" | "blue" | "green" | "pink" | "violet" | "amber";
 };
 
 export const FlowNodeSchema: z.ZodType<FlowNode> = FlowNodeSchemaBase.extend({
   children: z.lazy(() => z.array(FlowNodeSchema)).optional(),
+  sourceBlockId: z.string().optional(),
+  tone: z
+    .enum(["ink", "blue", "green", "pink", "violet", "amber"])
+    .optional(),
 });
 
 export const SidebarSectionsSchema = z.object({
@@ -28,6 +34,53 @@ export const SidebarSectionsSchema = z.object({
 
 export type SidebarSections = z.infer<typeof SidebarSectionsSchema>;
 
+export const SourceBlockSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+});
+
+export type SourceBlock = z.infer<typeof SourceBlockSchema>;
+
+export const SectionTreesSchema = z.object({
+  high_yield: z.array(FlowNodeSchema),
+  risk_factors: z.array(FlowNodeSchema),
+  associations: z.array(FlowNodeSchema),
+  diagnosis: z.array(FlowNodeSchema),
+  treatment: z.array(FlowNodeSchema),
+  complications: z.array(FlowNodeSchema),
+});
+
+export type SectionTrees = z.infer<typeof SectionTreesSchema>;
+
+export const CardImageSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  dataUrl: z.string(),
+  caption: z.string().optional(),
+  section: z
+    .enum([
+      "main",
+      "high_yield",
+      "risk_factors",
+      "associations",
+      "diagnosis",
+      "treatment",
+      "complications",
+    ])
+    .default("main"),
+});
+
+export type CardImage = z.infer<typeof CardImageSchema>;
+
+export const emptySectionTrees = (): SectionTrees => ({
+  high_yield: [],
+  risk_factors: [],
+  associations: [],
+  diagnosis: [],
+  treatment: [],
+  complications: [],
+});
+
 export const cardsTable = pgTable("cards", {
   id: serial("id").primaryKey(),
   topic: text("topic").notNull(),
@@ -35,6 +88,12 @@ export const cardsTable = pgTable("cards", {
   sidebar: jsonb("sidebar").notNull().$type<SidebarSections>(),
   rawText: text("raw_text").notNull(),
   tags: text("tags").array().notNull().default([]),
+  sourceBlocks: jsonb("source_blocks").notNull().$type<SourceBlock[]>().default([]),
+  sectionTrees: jsonb("section_trees")
+    .notNull()
+    .$type<SectionTrees>()
+    .default(emptySectionTrees()),
+  images: jsonb("images").notNull().$type<CardImage[]>().default([]),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

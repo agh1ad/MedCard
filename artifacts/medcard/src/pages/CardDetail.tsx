@@ -1,376 +1,258 @@
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useRoute } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import {
+  getGetCardQueryKey,
+  useDeleteCard,
   useGetCard,
   useUpdateCard,
-  useDeleteCard,
+  type CardImage,
+  type CardImageSection,
   type FlowNode,
-  type SidebarSections,
+  type SectionTrees,
 } from "@workspace/api-client-react";
-import { useRoute, useLocation } from "wouter";
-import { useState, useRef, useEffect } from "react";
-import { SidebarSections as SidebarSectionsComponent } from "@/components/card/SidebarSections";
 import { FlowTree, flattenFlowToText } from "@/components/card/FlowTree";
+import { MemoryCardCanvas } from "@/components/card/MemoryCardCanvas";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Edit2,
-  Save,
-  X,
-  Printer,
-  Copy,
-  Trash2,
-  ChevronLeft,
   AlertCircle,
+  ArrowLeft,
+  Copy,
+  Edit3,
   Loader2,
-  Tags,
+  Printer,
+  Save,
+  ShieldCheck,
+  Trash2,
+  X,
 } from "lucide-react";
-import { Link } from "wouter";
-import { format } from "date-fns";
-import { getGetCardQueryKey } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+
+const EMPTY_TREES: SectionTrees = {
+  high_yield: [],
+  risk_factors: [],
+  associations: [],
+  diagnosis: [],
+  treatment: [],
+  complications: [],
+};
+
+const SECTION_LABELS: Record<keyof SectionTrees, string> = {
+  high_yield: "High yield",
+  risk_factors: "Risk factors",
+  associations: "Associations",
+  diagnosis: "Diagnosis",
+  treatment: "Treatment",
+  complications: "Complications",
+};
+
+const IMAGE_SECTIONS: Array<{ value: CardImageSection; label: string }> = [
+  { value: "main", label: "Main flow" },
+  ...Object.entries(SECTION_LABELS).map(([value, label]) => ({
+    value: value as CardImageSection,
+    label,
+  })),
+];
 
 export function CardDetail() {
   const [, params] = useRoute("/cards/:id");
   const id = Number(params?.id);
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
-
+  const { toast } = useToast();
   const { data: card, isLoading, isError } = useGetCard(id, {
-    query: { enabled: !!id, queryKey: getGetCardQueryKey(id) },
+    query: { enabled: Number.isFinite(id) && id > 0, queryKey: getGetCardQueryKey(id) },
   });
+  const updateMutation = useUpdateCard();
+  const deleteMutation = useDeleteCard();
+  const initializedId = useRef<number | null>(null);
 
-  const updateMut = useUpdateCard();
-  const deleteMut = useDeleteCard();
-
-  const [isEditing, setIsEditing] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [topic, setTopic] = useState("");
   const [flow, setFlow] = useState<FlowNode[]>([]);
-  const [sidebar, setSidebar] = useState<SidebarSections>({
-    high_yield: [],
-    risk_factors: [],
-    diagnosis: [],
-    treatment: [],
-    complications: [],
-  });
+  const [sectionTrees, setSectionTrees] = useState<SectionTrees>(EMPTY_TREES);
+  const [images, setImages] = useState<CardImage[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
 
-  const initializedForId = useRef<number | null>(null);
-
   useEffect(() => {
-    if (card && initializedForId.current !== id) {
-      initializedForId.current = id;
-      setTopic(card.topic);
-      setFlow(card.flow ?? []);
-      setSidebar(card.sidebar);
-      setTags(card.tags ?? []);
-    }
+    if (!card || initializedId.current === id) return;
+    initializedId.current = id;
+    setTopic(card.topic);
+    setFlow(card.flow ?? []);
+    setSectionTrees(card.sectionTrees ?? EMPTY_TREES);
+    setImages(card.images ?? []);
+    setTags(card.tags ?? []);
   }, [card, id]);
 
-  const handleSave = () => {
+  const reset = () => {
+    if (!card) return;
+    setTopic(card.topic);
+    setFlow(card.flow ?? []);
+    setSectionTrees(card.sectionTrees ?? EMPTY_TREES);
+    setImages(card.images ?? []);
+    setTags(card.tags ?? []);
+    setEditing(false);
+  };
+
+  const save = () => {
     if (!topic.trim()) {
-      toast({ title: "Topic required", variant: "destructive" });
+      toast({ title: "A card title is required", variant: "destructive" });
       return;
     }
-
-    updateMut.mutate(
-      { id, data: { topic, flow, sidebar, tags } },
+    updateMutation.mutate(
+      { id, data: { topic: topic.trim(), flow, sectionTrees, images, tags } },
       {
-        onSuccess: (updatedData) => {
-          queryClient.setQueryData(getGetCardQueryKey(id), updatedData);
-          setIsEditing(false);
-          toast({ title: "Changes saved" });
+        onSuccess: (updated) => {
+          queryClient.setQueryData(getGetCardQueryKey(id), updated);
+          setEditing(false);
+          toast({ title: "Memory card updated" });
         },
-        onError: () => {
-          toast({ title: "Failed to save", variant: "destructive" });
-        },
+        onError: (error) =>
+          toast({
+            title: "Update failed",
+            description: error instanceof Error ? error.message : undefined,
+            variant: "destructive",
+          }),
       },
     );
   };
 
-  const handleCancel = () => {
-    if (card) {
-      setTopic(card.topic);
-      setFlow(card.flow ?? []);
-      setSidebar(card.sidebar);
-      setTags(card.tags ?? []);
-    }
-    setIsEditing(false);
+  const remove = () => {
+    if (!confirm("Delete this memory card permanently?")) return;
+    deleteMutation.mutate(
+      { id },
+      { onSuccess: () => setLocation("/") },
+    );
   };
 
-  const handleDelete = () => {
-    if (
-      confirm(
-        "Are you sure you want to delete this card? This action cannot be undone.",
-      )
-    ) {
-      deleteMut.mutate(
-        { id },
-        {
-          onSuccess: () => {
-            toast({ title: "Card deleted" });
-            setLocation("/");
-          },
-        },
-      );
-    }
+  const copyText = async () => {
+    const sectionText = (Object.keys(sectionTrees) as (keyof SectionTrees)[])
+      .filter((key) => sectionTrees[key].length)
+      .map((key) => `\n## ${SECTION_LABELS[key]}\n${flattenFlowToText(sectionTrees[key])}`)
+      .join("\n");
+    await navigator.clipboard.writeText(
+      `# ${topic}\n\n## Main flow\n${flattenFlowToText(flow)}${sectionText}`,
+    );
+    toast({ title: "Card copied as text" });
   };
 
-  const handlePrint = () => window.print();
-
-  const handleCopy = async () => {
-    if (!card) return;
-
-    let text = `# ${card.topic}\n\n`;
-    text += `## Pathophysiology Flow\n`;
-    text += flattenFlowToText(card.flow ?? []);
-    text += `\n\n## Clinical Details\n`;
-
-    const sectionLabels: Record<keyof SidebarSections, string> = {
-      high_yield: "High-Yield Notes",
-      risk_factors: "Risk Factors & Associations",
-      diagnosis: "Diagnosis & Workup",
-      treatment: "Treatment & Management",
-      complications: "Complications & Prognosis",
-    };
-
-    (Object.keys(sectionLabels) as (keyof SidebarSections)[]).forEach((key) => {
-      const items = card.sidebar[key];
-      if (items && items.length > 0) {
-        text += `\n### ${sectionLabels[key]}\n`;
-        items.forEach((item: string) => {
-          text += `- ${item}\n`;
-        });
-      }
-    });
-
-    try {
-      await navigator.clipboard.writeText(text);
-      toast({ title: "Copied to clipboard" });
-    } catch {
-      toast({ title: "Failed to copy", variant: "destructive" });
-    }
-  };
-
-  const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && tagInput.trim()) {
-      e.preventDefault();
-      if (!tags.includes(tagInput.trim())) {
-        setTags([...tags, tagInput.trim()]);
-      }
-      setTagInput("");
-    }
+  const addTag = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter" || !tagInput.trim()) return;
+    event.preventDefault();
+    const value = tagInput.trim();
+    if (!tags.includes(value)) setTags([...tags, value]);
+    setTagInput("");
   };
 
   if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-12 flex justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <div className="flex flex-1 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
   if (isError || !card) {
     return (
-      <div className="container mx-auto px-4 py-12 flex flex-col items-center">
-        <AlertCircle className="w-12 h-12 text-destructive mb-4" />
-        <h2 className="text-2xl font-bold">Card not found</h2>
-        <p className="text-muted-foreground mt-2 mb-6">
-          The card you're looking for doesn't exist or has been deleted.
-        </p>
-        <Link href="/">
-          <Button>Back to Library</Button>
-        </Link>
+      <div className="flex flex-1 flex-col items-center justify-center px-4 text-center">
+        <AlertCircle className="mb-4 h-12 w-12 text-destructive" />
+        <h1 className="text-2xl font-bold">Card not found</h1>
+        <Link href="/"><Button className="mt-6">Return to library</Button></Link>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-[1400px] flex flex-col">
-      {/* Top action bar */}
-      <div className="flex flex-wrap items-center justify-between mb-8 gap-4 print:hidden">
-        <div className="flex items-center gap-2">
-          <Link href="/">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="hover:bg-muted"
-              data-testid="button-back"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </Button>
-          </Link>
-          <div className="text-sm font-medium text-muted-foreground hidden sm:block">
-            Last updated: {format(new Date(card.updatedAt), "MMM d, yyyy")}
+    <div className="mx-auto flex w-full max-w-[1540px] flex-col gap-6 px-4 py-6 lg:px-8">
+      <div className="flex flex-wrap items-center justify-between gap-4 print:hidden">
+        <div className="flex items-center gap-3">
+          <Link href="/"><Button variant="ghost" size="icon"><ArrowLeft className="h-5 w-5" /></Button></Link>
+          <div>
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">
+              <ShieldCheck className="h-3.5 w-3.5" /> Verbatim source ledger
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">{card.sourceBlocks.length || "Legacy"} information blocks</p>
           </div>
         </div>
-
-        <div className="flex items-center gap-2">
-          {!isEditing ? (
+        <div className="flex flex-wrap gap-2">
+          {editing ? (
             <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handlePrint}
-                data-testid="button-print"
-              >
-                <Printer className="w-4 h-4 mr-2" /> Print
+              <Button variant="ghost" onClick={reset}>Cancel</Button>
+              <Button onClick={save} disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save changes
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCopy}
-                data-testid="button-copy"
-              >
-                <Copy className="w-4 h-4 mr-2" /> Copy text
-              </Button>
-              <div className="w-px h-6 bg-border mx-1" />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditing(true)}
-                data-testid="button-edit"
-              >
-                <Edit2 className="w-4 h-4 mr-2" /> Edit
-              </Button>
+              <Button variant="destructive" onClick={remove} disabled={deleteMutation.isPending}><Trash2 className="mr-2 h-4 w-4" /> Delete</Button>
             </>
           ) : (
             <>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCancel}
-                disabled={updateMut.isPending}
-                data-testid="button-cancel"
-              >
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSave}
-                disabled={updateMut.isPending}
-                data-testid="button-save"
-              >
-                {updateMut.isPending ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4 mr-2" />
-                )}
-                Save Changes
-              </Button>
-              <div className="w-px h-6 bg-border mx-1" />
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleDelete}
-                disabled={deleteMut.isPending}
-                data-testid="button-delete"
-              >
-                <Trash2 className="w-4 h-4 mr-2" /> Delete
-              </Button>
+              <Button variant="outline" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Print A4</Button>
+              <Button variant="outline" onClick={copyText}><Copy className="mr-2 h-4 w-4" /> Copy</Button>
+              <Button onClick={() => setEditing(true)}><Edit3 className="mr-2 h-4 w-4" /> Edit structure</Button>
             </>
           )}
         </div>
       </div>
 
-      {/* Print area */}
-      <div
-        id="print-area"
-        className="flex flex-col gap-6 print:gap-4 print:m-0 print:p-0"
-      >
-        {/* Card header */}
-        <div className="bg-card border shadow-sm rounded-2xl p-6 print:border-b-2 print:border-black print:rounded-none print:shadow-none print:bg-white">
-          {isEditing ? (
-            <div className="flex flex-col gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Topic</label>
-                <Input
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  className="font-bold text-2xl h-12"
-                  data-testid="input-topic"
-                />
+      {editing ? (
+        <div className="space-y-6">
+          <section className="grid gap-5 rounded-2xl border bg-card p-5 shadow-sm md:grid-cols-2">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold">Card title</label>
+              <Input value={topic} onChange={(event) => setTopic(event.target.value)} className="text-lg font-bold" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold">Tags</label>
+              <div className="flex min-h-10 flex-wrap items-center gap-2 rounded-md border px-3 py-2">
+                {tags.map((tag) => <Badge key={tag} variant="secondary">{tag}<X className="ml-1 h-3 w-3 cursor-pointer" onClick={() => setTags(tags.filter((item) => item !== tag))} /></Badge>)}
+                <Input value={tagInput} onChange={(event) => setTagInput(event.target.value)} onKeyDown={addTag} placeholder="Add tag" className="h-6 w-28 border-0 p-0 shadow-none focus-visible:ring-0" />
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <Tags className="w-4 h-4" /> Tags
-                </label>
-                <div className="flex flex-wrap items-center gap-2 min-h-[48px] bg-background border rounded-md px-3 py-2">
-                  {tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="gap-1">
-                      {tag}
-                      <X
-                        className="w-3 h-3 cursor-pointer hover:text-destructive"
-                        onClick={() => setTags(tags.filter((t) => t !== tag))}
-                      />
-                    </Badge>
-                  ))}
-                  <Input
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={handleAddTag}
-                    placeholder="Add tag…"
-                    className="border-0 h-6 w-32 focus-visible:ring-0 px-1 py-0 shadow-none bg-transparent"
+            </div>
+          </section>
+
+          <section className="rounded-2xl border bg-card p-5 shadow-sm">
+            <h2 className="mb-4 text-lg font-bold">Central pathophysiology tree</h2>
+            <div className="min-h-[420px] overflow-x-auto rounded-xl border bg-background">
+              <FlowTree nodes={flow} isEditing onChange={setFlow} />
+            </div>
+          </section>
+
+          <div className="grid gap-5 lg:grid-cols-2">
+            {(Object.keys(sectionTrees) as (keyof SectionTrees)[]).map((key) => (
+              <section key={key} className="rounded-2xl border bg-card p-5 shadow-sm">
+                <h2 className="mb-3 font-bold">{SECTION_LABELS[key]}</h2>
+                <div className="min-h-[220px] overflow-x-auto rounded-xl border bg-background">
+                  <FlowTree
+                    nodes={sectionTrees[key]}
+                    isEditing
+                    onChange={(nodes) => setSectionTrees({ ...sectionTrees, [key]: nodes })}
                   />
                 </div>
+              </section>
+            ))}
+          </div>
+
+          {images.length > 0 && (
+            <section className="rounded-2xl border bg-card p-5 shadow-sm">
+              <h2 className="mb-4 font-bold">Image placement</h2>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {images.map((image) => (
+                  <div key={image.id} className="flex gap-3 rounded-xl border p-3">
+                    <img src={image.dataUrl} alt="" className="h-20 w-24 rounded object-cover" />
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <select value={image.section} onChange={(event) => setImages(images.map((item) => item.id === image.id ? { ...item, section: event.target.value as CardImageSection } : item))} className="h-8 w-full rounded border bg-background px-2 text-xs">
+                        {IMAGE_SECTIONS.map((section) => <option key={section.value} value={section.value}>{section.label}</option>)}
+                      </select>
+                      <Input value={image.caption ?? ""} onChange={(event) => setImages(images.map((item) => item.id === image.id ? { ...item, caption: event.target.value } : item))} placeholder="Caption" className="h-8 text-xs" />
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => setImages(images.filter((item) => item.id !== image.id))}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  </div>
+                ))}
               </div>
-            </div>
-          ) : (
-            <div>
-              <h1
-                className="text-4xl font-bold text-foreground print:text-black tracking-tight"
-                data-testid="text-card-topic"
-              >
-                {topic}
-              </h1>
-              {tags && tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-4 print:mt-2">
-                  {tags.map((tag) => (
-                    <Badge
-                      key={tag}
-                      variant="secondary"
-                      className="print:border print:border-black print:bg-transparent"
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
+            </section>
           )}
         </div>
-
-        {/* Two-column body */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 print:block print:w-full">
-          {/* Left: sidebar */}
-          <div className="lg:col-span-4 xl:col-span-3 flex flex-col gap-4 print:mb-8 print:w-full">
-            <h3 className="font-bold text-sm tracking-widest uppercase text-muted-foreground print:text-black mb-2 px-1">
-              Clinical Details
-            </h3>
-            <SidebarSectionsComponent
-              sections={sidebar}
-              isEditing={isEditing}
-              onChange={setSidebar}
-            />
-          </div>
-
-          {/* Right: branching flow tree */}
-          <div className="lg:col-span-8 xl:col-span-9 flex flex-col gap-4 print:w-full">
-            <h3 className="font-bold text-sm tracking-widest uppercase text-muted-foreground print:text-black mb-2 px-1">
-              Pathophysiology Tree
-            </h3>
-            <div className="bg-card border shadow-sm rounded-xl min-h-[600px] overflow-x-auto print:border-none print:shadow-none print:p-0 print:min-h-0">
-              <FlowTree
-                nodes={flow}
-                isEditing={isEditing}
-                onChange={setFlow}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      ) : (
+        <MemoryCardCanvas topic={topic} flow={flow} sectionTrees={sectionTrees} images={images} />
+      )}
     </div>
   );
 }

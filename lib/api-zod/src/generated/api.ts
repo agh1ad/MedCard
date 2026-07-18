@@ -32,7 +32,9 @@ export const ListCardsResponseItem = zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
   "label": zod.string().describe('The text content of this node'),
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
-  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)')
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })).describe('Root nodes of the pathophysiology branching tree'),
   "sidebar": zod.object({
   "high_yield": zod.array(zod.string()).describe('High-yield notes and key facts'),
@@ -41,6 +43,67 @@ export const ListCardsResponseItem = zod.object({
   "treatment": zod.array(zod.string()).describe('Treatment and management'),
   "complications": zod.array(zod.string()).describe('Complications and prognosis')
 }),
+  "sectionTrees": zod.object({
+  "high_yield": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "risk_factors": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "associations": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "diagnosis": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "treatment": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "complications": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+}))
+}),
+  "sourceBlocks": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string().describe('Verbatim text copied from the user\'s input')
+})),
+  "images": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "dataUrl": zod.string().describe('Browser-readable image data URL'),
+  "caption": zod.string().optional(),
+  "section": zod.enum(['main', 'high_yield', 'risk_factors', 'associations', 'diagnosis', 'treatment', 'complications'])
+})),
   "tags": zod.array(zod.string()),
   "rawText": zod.string().describe('Original raw input text'),
   "createdAt": zod.coerce.date(),
@@ -61,7 +124,9 @@ export const CreateCardBody = zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
   "label": zod.string().describe('The text content of this node'),
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
-  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)')
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "sidebar": zod.object({
   "high_yield": zod.array(zod.string()).describe('High-yield notes and key facts'),
@@ -70,6 +135,67 @@ export const CreateCardBody = zod.object({
   "treatment": zod.array(zod.string()).describe('Treatment and management'),
   "complications": zod.array(zod.string()).describe('Complications and prognosis')
 }),
+  "sectionTrees": zod.object({
+  "high_yield": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "risk_factors": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "associations": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "diagnosis": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "treatment": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "complications": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+}))
+}),
+  "sourceBlocks": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string().describe('Verbatim text copied from the user\'s input')
+})),
+  "images": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "dataUrl": zod.string().describe('Browser-readable image data URL'),
+  "caption": zod.string().optional(),
+  "section": zod.enum(['main', 'high_yield', 'risk_factors', 'associations', 'diagnosis', 'treatment', 'complications'])
+})),
   "rawText": zod.string(),
   "tags": zod.array(zod.string())
 })
@@ -81,7 +207,9 @@ export const CreateCardResponse = zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
   "label": zod.string().describe('The text content of this node'),
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
-  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)')
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })).describe('Root nodes of the pathophysiology branching tree'),
   "sidebar": zod.object({
   "high_yield": zod.array(zod.string()).describe('High-yield notes and key facts'),
@@ -90,6 +218,67 @@ export const CreateCardResponse = zod.object({
   "treatment": zod.array(zod.string()).describe('Treatment and management'),
   "complications": zod.array(zod.string()).describe('Complications and prognosis')
 }),
+  "sectionTrees": zod.object({
+  "high_yield": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "risk_factors": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "associations": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "diagnosis": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "treatment": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "complications": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+}))
+}),
+  "sourceBlocks": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string().describe('Verbatim text copied from the user\'s input')
+})),
+  "images": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "dataUrl": zod.string().describe('Browser-readable image data URL'),
+  "caption": zod.string().optional(),
+  "section": zod.enum(['main', 'high_yield', 'risk_factors', 'associations', 'diagnosis', 'treatment', 'complications'])
+})),
   "tags": zod.array(zod.string()),
   "rawText": zod.string().describe('Original raw input text'),
   "createdAt": zod.coerce.date(),
@@ -113,7 +302,9 @@ export const GenerateCardResponse = zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
   "label": zod.string().describe('The text content of this node'),
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
-  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)')
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "sidebar": zod.object({
   "high_yield": zod.array(zod.string()).describe('High-yield notes and key facts'),
@@ -121,7 +312,61 @@ export const GenerateCardResponse = zod.object({
   "diagnosis": zod.array(zod.string()).describe('Diagnostic criteria and workup findings'),
   "treatment": zod.array(zod.string()).describe('Treatment and management'),
   "complications": zod.array(zod.string()).describe('Complications and prognosis')
-})
+}),
+  "sectionTrees": zod.object({
+  "high_yield": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "risk_factors": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "associations": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "diagnosis": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "treatment": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "complications": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+}))
+}),
+  "sourceBlocks": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string().describe('Verbatim text copied from the user\'s input')
+}))
 })
 
 
@@ -153,7 +398,9 @@ export const GetCardResponse = zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
   "label": zod.string().describe('The text content of this node'),
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
-  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)')
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })).describe('Root nodes of the pathophysiology branching tree'),
   "sidebar": zod.object({
   "high_yield": zod.array(zod.string()).describe('High-yield notes and key facts'),
@@ -162,6 +409,67 @@ export const GetCardResponse = zod.object({
   "treatment": zod.array(zod.string()).describe('Treatment and management'),
   "complications": zod.array(zod.string()).describe('Complications and prognosis')
 }),
+  "sectionTrees": zod.object({
+  "high_yield": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "risk_factors": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "associations": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "diagnosis": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "treatment": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "complications": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+}))
+}),
+  "sourceBlocks": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string().describe('Verbatim text copied from the user\'s input')
+})),
+  "images": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "dataUrl": zod.string().describe('Browser-readable image data URL'),
+  "caption": zod.string().optional(),
+  "section": zod.enum(['main', 'high_yield', 'risk_factors', 'associations', 'diagnosis', 'treatment', 'complications'])
+})),
   "tags": zod.array(zod.string()),
   "rawText": zod.string().describe('Original raw input text'),
   "createdAt": zod.coerce.date(),
@@ -185,7 +493,9 @@ export const UpdateCardBody = zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
   "label": zod.string().describe('The text content of this node'),
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
-  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)')
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })).optional(),
   "sidebar": zod.object({
   "high_yield": zod.array(zod.string()).describe('High-yield notes and key facts'),
@@ -194,6 +504,67 @@ export const UpdateCardBody = zod.object({
   "treatment": zod.array(zod.string()).describe('Treatment and management'),
   "complications": zod.array(zod.string()).describe('Complications and prognosis')
 }).optional(),
+  "sectionTrees": zod.object({
+  "high_yield": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "risk_factors": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "associations": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "diagnosis": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "treatment": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "complications": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+}))
+}).optional(),
+  "sourceBlocks": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string().describe('Verbatim text copied from the user\'s input')
+})).optional(),
+  "images": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "dataUrl": zod.string().describe('Browser-readable image data URL'),
+  "caption": zod.string().optional(),
+  "section": zod.enum(['main', 'high_yield', 'risk_factors', 'associations', 'diagnosis', 'treatment', 'complications'])
+})).optional(),
   "tags": zod.array(zod.string()).optional()
 })
 
@@ -204,7 +575,9 @@ export const UpdateCardResponse = zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
   "label": zod.string().describe('The text content of this node'),
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
-  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)')
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })).describe('Root nodes of the pathophysiology branching tree'),
   "sidebar": zod.object({
   "high_yield": zod.array(zod.string()).describe('High-yield notes and key facts'),
@@ -213,6 +586,67 @@ export const UpdateCardResponse = zod.object({
   "treatment": zod.array(zod.string()).describe('Treatment and management'),
   "complications": zod.array(zod.string()).describe('Complications and prognosis')
 }),
+  "sectionTrees": zod.object({
+  "high_yield": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "risk_factors": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "associations": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "diagnosis": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "treatment": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+})),
+  "complications": zod.array(zod.object({
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
+  "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+}))
+}),
+  "sourceBlocks": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string().describe('Verbatim text copied from the user\'s input')
+})),
+  "images": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "dataUrl": zod.string().describe('Browser-readable image data URL'),
+  "caption": zod.string().optional(),
+  "section": zod.enum(['main', 'high_yield', 'risk_factors', 'associations', 'diagnosis', 'treatment', 'complications'])
+})),
   "tags": zod.array(zod.string()),
   "rawText": zod.string().describe('Original raw input text'),
   "createdAt": zod.coerce.date(),
