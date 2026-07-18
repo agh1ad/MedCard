@@ -299,6 +299,21 @@
 }
 
 .memory-node small { display: block; margin-top: 2px; color: #625d53; font-size: 0.82em; font-style: italic; font-weight: 500; }
+.memory-node.origin-ai_added { border-bottom-style: dashed; }
+.memory-node.origin-ai_added::after {
+  content: 'AI+';
+  position: absolute;
+  top: -0.45em;
+  right: -0.7em;
+  padding: 0 0.28em;
+  color: #8a5d08;
+  background: #fff4bf;
+  border: 1px solid rgba(166, 109, 10, 0.28);
+  border-radius: 999px;
+  font-size: 0.48em;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
 .memory-node.tone-ink { color: #2c2a26; }
 .memory-node.tone-blue { color: #176ec8; }
 .memory-node.tone-green { color: #0d7b5c; }

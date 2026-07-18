@@ -1,6 +1,6 @@
 # MedCard
 
-MedCard turns user-researched medical information into a single landscape A4 visual-memory card without rewriting the medical content.
+MedCard turns user-researched medical information into a single landscape A4 visual-memory card. AI clarifies the source, builds the causal hierarchy, and may add visibly marked high-yield context while keeping every original block traceable.
 
 ## Run & Operate
 
@@ -11,7 +11,7 @@ MedCard turns user-researched medical information into a single landscape A4 vis
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - Required env: `DATABASE_URL` — Postgres connection string
 - Required env: `OPENAI_API_KEY` — restricted OpenAI project API key
-- Optional env: `OPENAI_MODEL` — defaults to the low-cost `gpt-5-nano`
+- Optional env: `OPENAI_MODEL` — defaults to the quality-first `gpt-5.6-sol`
 - Optional env: `OPENAI_SERVICE_TIER` — defaults to lower-cost Flex processing
 
 ## Stack
@@ -27,18 +27,19 @@ MedCard turns user-researched medical information into a single landscape A4 vis
 
 - `artifacts/medcard/src/components/card/MemoryCardCanvas.tsx` — landscape A4 visual-memory renderer
 - `artifacts/medcard/src/pages/Generate.tsx` — source, image upload, generation, and review workflow
-- `artifacts/api-server/src/lib/card-organizer.ts` — immutable source ledger and low-cost AI organization
+- `artifacts/api-server/src/lib/card-organizer.ts` — AI editing, tree construction, provenance validation, and quality audit
 - `lib/db/src/schema/cards.ts` — card, source-block, section-tree, and image persistence
 - `lib/api-spec/openapi.yaml` — API source of truth
 
 ## Architecture decisions
 
-- Medical prose is split into immutable source blocks before AI is called.
-- AI returns only block IDs, section assignments, parent relationships, order, and visual color; it has no output field for rewritten medical text.
-- The server rejects AI output if any source block is missing, duplicated, or invented.
+- Medical prose is split into an immutable source ledger before AI is called.
+- AI may clarify wording, split or combine ideas, and add conservative high-yield context. Every node is labeled as source, enhanced, or AI-added.
+- The server rejects output that omits source blocks, invents source references, creates invalid parents, or contains hierarchy cycles.
 - Images are kept out of the AI request to reduce cost and preserve privacy; users place them on the card after generation.
-- Generation uses one Flex-tier request with minimal reasoning, low verbosity, one choice, and a capped output budget.
-- Saved cards retain the source ledger so fidelity remains auditable.
+- Generation uses one Flex-tier request with medium reasoning, low verbosity, one choice, strict structured output, and a capped output budget.
+- The model drafts, audits, and revises within that single call. The UI shows its coverage, hierarchy, readability, and medical-consistency scores.
+- Saved cards retain the source ledger so fidelity remains auditable. AI-added nodes are visibly marked and should be reviewed before clinical use.
 
 ## Product
 

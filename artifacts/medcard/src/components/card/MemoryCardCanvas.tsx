@@ -73,7 +73,10 @@ function MemoryNode({ node, compact = false }: { node: FlowNode; compact?: boole
 
   return (
     <div className={`memory-tree-branch ${compact ? "is-compact" : ""}`}>
-      <div className={`memory-node tone-${node.tone ?? "ink"}`}>
+      <div
+        className={`memory-node tone-${node.tone ?? "ink"} origin-${node.origin ?? "source"}`}
+        title={node.origin === "ai_added" ? "Added by AI for context" : undefined}
+      >
         <span>{node.label}</span>
         {node.sublabel && <small>{node.sublabel}</small>}
       </div>

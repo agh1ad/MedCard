@@ -30,12 +30,26 @@ const SIDE_SECTIONS = [
 type SectionKey = (typeof SECTION_KEYS)[number];
 type Tone = (typeof TONES)[number];
 
-interface Placement {
-  blockId: string;
+interface AiNode {
+  nodeId: string;
+  label: string;
+  sublabel: string | null;
+  sourceBlockIds: string[];
+  origin: "source" | "enhanced" | "ai_added";
   section: SectionKey;
-  parentBlockId: string | null;
+  parentNodeId: string | null;
   order: number;
   tone: Tone;
+}
+
+export interface QualityReview {
+  score: number;
+  coverage: number;
+  hierarchy: number;
+  readability: number;
+  medicalConsistency: number;
+  aiAddedFactsCount: number;
+  summary: string;
 }
 
 export interface OrganizedCard {
@@ -43,49 +57,89 @@ export interface OrganizedCard {
   sidebar: SidebarSections;
   sectionTrees: SectionTrees;
   sourceBlocks: SourceBlock[];
+  quality: QualityReview;
 }
 
 const STRUCTURE_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["placements"],
+  required: ["nodes", "quality"],
   properties: {
-    placements: {
+    nodes: {
       type: "array",
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["blockId", "section", "parentBlockId", "order", "tone"],
+        required: [
+          "nodeId",
+          "label",
+          "sublabel",
+          "sourceBlockIds",
+          "origin",
+          "section",
+          "parentNodeId",
+          "order",
+          "tone",
+        ],
         properties: {
-          blockId: { type: "string" },
+          nodeId: { type: "string" },
+          label: { type: "string" },
+          sublabel: { type: ["string", "null"] },
+          sourceBlockIds: { type: "array", items: { type: "string" } },
+          origin: {
+            type: "string",
+            enum: ["source", "enhanced", "ai_added"],
+          },
           section: { type: "string", enum: SECTION_KEYS },
-          parentBlockId: { type: ["string", "null"] },
+          parentNodeId: { type: ["string", "null"] },
           order: { type: "integer" },
           tone: { type: "string", enum: TONES },
         },
       },
     },
+    quality: {
+      type: "object",
+      additionalProperties: false,
+      required: [
+        "score",
+        "coverage",
+        "hierarchy",
+        "readability",
+        "medicalConsistency",
+        "aiAddedFactsCount",
+        "summary",
+      ],
+      properties: {
+        score: { type: "integer", minimum: 0, maximum: 10 },
+        coverage: { type: "integer", minimum: 0, maximum: 10 },
+        hierarchy: { type: "integer", minimum: 0, maximum: 10 },
+        readability: { type: "integer", minimum: 0, maximum: 10 },
+        medicalConsistency: { type: "integer", minimum: 0, maximum: 10 },
+        aiAddedFactsCount: { type: "integer", minimum: 0 },
+        summary: { type: "string" },
+      },
+    },
   },
 } as const;
 
-const ORGANIZER_PROMPT = `Role: Organize immutable medical-note blocks using the author's handwritten tree grammar.
+const ORGANIZER_PROMPT = `You are MedCard's medical-education editor, visual knowledge architect, and final quality reviewer.
 
-Goal: Assign every block once, then arrange each section as a top-down hierarchy: trunk -> process -> consequence -> manifestations.
+Create one accurate, memorable landscape study card in the author's handwritten grammar: central causal trunk -> branching processes -> consequences -> clinical manifestations, with diagnosis, treatment, risk factors, associations, high-yield facts, and complications as independent mini-trees.
 
-Rules:
-- Return every supplied blockId exactly once. Never create, duplicate, paraphrase, merge, or omit a block.
-- A parent must be the closest explicit cause, category, process, decision, or step in the same section. Use null only for a genuine root or independent fact.
-- Main contains the causal disease mechanism and the clinical manifestations produced by each mechanism.
-- A shared cause that produces several mechanisms or outcomes must bud into sibling branches. Continue every sibling independently to its own consequences and manifestations; never flatten parallel branches into one chain.
-- Preserve explicit headings and categories as intermediate parents. Group findings by their stated mechanism, organ system, test branch, treatment branch, or complication branch when the source provides that relationship.
-- Categories at the same scope are siblings, never ancestors of one another: for example Skin/GI/Pulmonary, stable/unstable, or positive/negative branches. Repeated identical headings must remain adjacent peers, never a parent-child chain.
-- Never turn adjacency or a plain list into a causal chain. Chain blocks only when arrows, causal/sequential wording, or explicit step order supports it. Consecutive findings beneath one heading are sibling buds until the next same-level heading.
-- Diagnosis and treatment are independent mini-trees: decision/test -> result/condition -> next step. Risk factors, associations, high-yield facts, and complications use the same nested rule when relationships exist.
-- Preserve source order when it expresses sequence. Otherwise place mechanisms before outcomes and general findings before specific examples.
-- Do not invent a medical relationship. When the source does not support a parent, keep the block independent.
-- order controls sibling/root reading order. tone is visual only; use one tone along a chain and contrasting tones for neighboring branches.
+SOURCE PRESERVATION
+- Preserve every supplied source block's meaning. Every blockId must appear in sourceBlockIds on at least one node; never silently omit or contradict it.
+- You may correct grammar, standardize terminology, clarify wording, combine repetition, and split dense ideas into clearer nodes. Use origin "source" only when wording is essentially unchanged and "enhanced" when edited.
+- You may add concise, broadly established medical facts needed to complete a causal bridge, explain a manifestation, or add essential high-yield context. AI-created nodes use origin "ai_added" and an empty sourceBlockIds array. Never guess, add fringe claims, or invent patient-specific advice.
 
-Success: all IDs appear once, parents exist in the same section, no cycles exist, and every true divergence remains visibly branched.`;
+HANDWRITTEN TREE GRAMMAR
+- Main contains pathophysiology and the manifestations produced by each mechanism. Use the closest cause/category/process as parent.
+- True divergence creates sibling buds. Continue each sibling independently to its own outcomes. Same-level categories such as Skin/GI/Pulmonary or stable/unstable are siblings, never ancestors of one another.
+- Never turn adjacency or a plain list into a chain. Chain only when causality, arrows, or explicit sequence supports it. Findings beneath one heading are sibling buds.
+- Diagnosis and treatment are decision trees: test/condition -> result -> next step. Other side sections may also branch.
+- Keep labels concise enough for one A4 page. Put useful qualifiers in sublabel. Use consistent tone along a chain and contrasting tones between neighboring branches.
+
+QUALITY GATE
+Before returning JSON, internally draft, inspect, and revise the card. Score 10 only if: all source blocks are traceable; hierarchy is causal and correctly branched; wording is clear and memorable; added medical content is conservative and consistent; no node is duplicated; all parents are valid; and the result can fit one page. Return only the final revised structure and honest audit.`;
 
 function cleanLine(line: string): string {
   return line.replace(/^\s+|\s+$/g, "");
@@ -113,107 +167,162 @@ export function splitSourceBlocks(rawText: string): SourceBlock[] {
   return fragments.map((text, index) => ({ id: `b${index + 1}`, text }));
 }
 
-function isPlacement(value: unknown): value is Placement {
+function isAiNode(value: unknown): value is AiNode {
   if (!value || typeof value !== "object") return false;
   const item = value as Record<string, unknown>;
   return (
-    typeof item.blockId === "string" &&
+    typeof item.nodeId === "string" &&
+    typeof item.label === "string" &&
+    (item.sublabel === null || typeof item.sublabel === "string") &&
+    Array.isArray(item.sourceBlockIds) &&
+    item.sourceBlockIds.every((id) => typeof id === "string") &&
+    ["source", "enhanced", "ai_added"].includes(item.origin as string) &&
     SECTION_KEYS.includes(item.section as SectionKey) &&
-    (item.parentBlockId === null || typeof item.parentBlockId === "string") &&
+    (item.parentNodeId === null || typeof item.parentNodeId === "string") &&
     Number.isInteger(item.order) &&
     TONES.includes(item.tone as Tone)
   );
 }
 
-function validatePlacements(
+function isScore(value: unknown): value is number {
+  return Number.isInteger(value) && Number(value) >= 0 && Number(value) <= 10;
+}
+
+function validateResult(
   blocks: SourceBlock[],
   value: unknown,
-): Placement[] {
+): { nodes: AiNode[]; quality: QualityReview } {
   if (!value || typeof value !== "object") {
-    throw new Error("AI returned an invalid organization result");
+    throw new Error("AI returned an invalid card result");
   }
 
-  const raw = (value as Record<string, unknown>).placements;
-  if (!Array.isArray(raw) || !raw.every(isPlacement)) {
-    throw new Error("AI returned invalid placements");
+  const result = value as Record<string, unknown>;
+  const rawNodes = result.nodes;
+  const rawQuality = result.quality;
+  if (
+    !Array.isArray(rawNodes) ||
+    !rawNodes.length ||
+    !rawNodes.every(isAiNode)
+  ) {
+    throw new Error("AI returned invalid card nodes");
+  }
+  if (!rawQuality || typeof rawQuality !== "object") {
+    throw new Error("AI omitted its quality review");
   }
 
-  const expected = new Set(blocks.map((block) => block.id));
-  const seen = new Set<string>();
-  for (const placement of raw) {
-    if (!expected.has(placement.blockId) || seen.has(placement.blockId)) {
-      throw new Error("AI changed or duplicated the source block ledger");
+  const quality = rawQuality as Record<string, unknown>;
+  if (
+    !isScore(quality.score) ||
+    !isScore(quality.coverage) ||
+    !isScore(quality.hierarchy) ||
+    !isScore(quality.readability) ||
+    !isScore(quality.medicalConsistency) ||
+    !Number.isInteger(quality.aiAddedFactsCount) ||
+    Number(quality.aiAddedFactsCount) < 0 ||
+    typeof quality.summary !== "string"
+  ) {
+    throw new Error("AI returned an invalid quality review");
+  }
+
+  const expectedBlockIds = new Set(blocks.map((block) => block.id));
+  const coveredBlockIds = new Set<string>();
+  const nodeById = new Map<string, AiNode>();
+  for (const node of rawNodes) {
+    if (!node.nodeId || !node.label.trim() || nodeById.has(node.nodeId)) {
+      throw new Error("AI returned duplicate or empty card nodes");
     }
-    seen.add(placement.blockId);
+    if (node.origin === "ai_added" && node.sourceBlockIds.length) {
+      throw new Error("AI mislabeled added content as source-backed");
+    }
+    if (node.origin !== "ai_added" && !node.sourceBlockIds.length) {
+      throw new Error("AI omitted provenance for edited source content");
+    }
+    for (const blockId of node.sourceBlockIds) {
+      if (!expectedBlockIds.has(blockId)) {
+        throw new Error("AI referenced an unknown source block");
+      }
+      coveredBlockIds.add(blockId);
+    }
+    nodeById.set(node.nodeId, node);
   }
 
-  if (seen.size !== expected.size) {
+  if (coveredBlockIds.size !== expectedBlockIds.size) {
     throw new Error("AI omitted source information");
   }
 
-  return raw;
+  for (const node of rawNodes) {
+    if (!node.parentNodeId) continue;
+    const parent = nodeById.get(node.parentNodeId);
+    if (
+      !parent ||
+      parent.section !== node.section ||
+      parent.nodeId === node.nodeId
+    ) {
+      throw new Error("AI returned an invalid cross-section parent");
+    }
+    if (createsCycle(node, nodeById)) {
+      throw new Error("AI returned a cyclic card hierarchy");
+    }
+  }
+
+  const aiAddedFactsCount = rawNodes.filter(
+    (node) => node.origin === "ai_added",
+  ).length;
+
+  return {
+    nodes: rawNodes,
+    quality: {
+      score: Number(quality.score),
+      coverage: 10,
+      hierarchy: Number(quality.hierarchy),
+      readability: Number(quality.readability),
+      medicalConsistency: Number(quality.medicalConsistency),
+      aiAddedFactsCount,
+      summary: String(quality.summary),
+    },
+  };
 }
 
-function createsCycle(
-  placement: Placement,
-  byId: Map<string, Placement>,
-): boolean {
-  const visited = new Set([placement.blockId]);
-  let parentId = placement.parentBlockId;
+function createsCycle(node: AiNode, byId: Map<string, AiNode>): boolean {
+  const visited = new Set([node.nodeId]);
+  let parentId = node.parentNodeId;
 
   while (parentId) {
     if (visited.has(parentId)) return true;
     visited.add(parentId);
-    parentId = byId.get(parentId)?.parentBlockId ?? null;
+    parentId = byId.get(parentId)?.parentNodeId ?? null;
   }
 
   return false;
 }
 
-function buildTrees(
-  blocks: SourceBlock[],
-  placements: Placement[],
-  section: SectionKey,
-): FlowNode[] {
-  const blockById = new Map(blocks.map((block) => [block.id, block]));
-  const sectionPlacements = placements
-    .filter((placement) => placement.section === section)
-    .sort((a, b) => a.order - b.order || a.blockId.localeCompare(b.blockId));
-  const placementById = new Map(
-    sectionPlacements.map((item) => [item.blockId, item]),
-  );
+function buildTrees(nodes: AiNode[], section: SectionKey): FlowNode[] {
+  const sectionNodes = nodes
+    .filter((node) => node.section === section)
+    .sort((a, b) => a.order - b.order || a.nodeId.localeCompare(b.nodeId));
   const nodeById = new Map<string, FlowNode>();
 
-  for (const placement of sectionPlacements) {
-    const block = blockById.get(placement.blockId);
-    if (!block) continue;
-    nodeById.set(placement.blockId, {
-      id: placement.blockId,
-      sourceBlockId: placement.blockId,
-      label: block.text,
-      sublabel: null,
-      tone: placement.tone,
+  for (const node of sectionNodes) {
+    nodeById.set(node.nodeId, {
+      id: node.nodeId,
+      sourceBlockId: node.sourceBlockIds[0],
+      sourceBlockIds: node.sourceBlockIds,
+      origin: node.origin,
+      label: node.label.trim(),
+      sublabel: node.sublabel?.trim() || null,
+      tone: node.tone,
       children: [],
     });
   }
 
   const roots: FlowNode[] = [];
-  for (const placement of sectionPlacements) {
-    const node = nodeById.get(placement.blockId);
-    const parentPlacement = placement.parentBlockId
-      ? placementById.get(placement.parentBlockId)
-      : undefined;
-    const validParent =
-      parentPlacement &&
-      parentPlacement.section === placement.section &&
-      parentPlacement.blockId !== placement.blockId &&
-      !createsCycle(placement, placementById);
-
-    if (!node) continue;
-    if (validParent) {
-      nodeById.get(parentPlacement.blockId)?.children?.push(node);
+  for (const sourceNode of sectionNodes) {
+    const flowNode = nodeById.get(sourceNode.nodeId);
+    if (!flowNode) continue;
+    if (sourceNode.parentNodeId) {
+      nodeById.get(sourceNode.parentNodeId)?.children?.push(flowNode);
     } else {
-      roots.push(node);
+      roots.push(flowNode);
     }
   }
 
@@ -229,19 +338,21 @@ function flattenLabels(nodes: FlowNode[]): string[] {
 
 function composeCard(
   blocks: SourceBlock[],
-  placements: Placement[],
+  nodes: AiNode[],
+  quality: QualityReview,
 ): OrganizedCard {
-  const flow = buildTrees(blocks, placements, "main");
+  const flow = buildTrees(nodes, "main");
   const sectionTrees = emptySectionTrees();
 
   for (const section of SIDE_SECTIONS) {
-    sectionTrees[section] = buildTrees(blocks, placements, section);
+    sectionTrees[section] = buildTrees(nodes, section);
   }
 
   return {
     flow,
     sectionTrees,
     sourceBlocks: blocks,
+    quality,
     sidebar: {
       high_yield: flattenLabels(sectionTrees.high_yield),
       risk_factors: [
@@ -263,18 +374,18 @@ export async function organizeCard(
   const blocks = splitSourceBlocks(rawText);
   if (!blocks.length) throw new Error("No source information was provided");
 
-  const model = process.env.OPENAI_MODEL ?? "gpt-5-nano";
+  const model = process.env.OPENAI_MODEL ?? "gpt-5.6-sol";
   const serviceTier =
     process.env.OPENAI_SERVICE_TIER === "default" ? "default" : "flex";
   const completion = await openai.chat.completions.create({
     model,
     service_tier: serviceTier,
-    reasoning_effort: "minimal",
+    reasoning_effort: "medium",
     verbosity: "low",
     n: 1,
     max_completion_tokens: Math.min(
-      12_000,
-      Math.max(1_200, blocks.length * 80),
+      20_000,
+      Math.max(2_000, blocks.length * 140),
     ),
     messages: [
       { role: "system", content: ORGANIZER_PROMPT },
@@ -308,6 +419,6 @@ export async function organizeCard(
     });
   }
 
-  const placements = validatePlacements(blocks, JSON.parse(content));
-  return composeCard(blocks, placements);
+  const result = validateResult(blocks, JSON.parse(content));
+  return composeCard(blocks, result.nodes, result.quality);
 }

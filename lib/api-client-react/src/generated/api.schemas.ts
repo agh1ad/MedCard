@@ -10,6 +10,18 @@ export interface HealthStatus {
 }
 
 /**
+ * Whether the wording is original, AI-enhanced, or newly added by AI
+ */
+export type FlowNodeOrigin = typeof FlowNodeOrigin[keyof typeof FlowNodeOrigin];
+
+
+export const FlowNodeOrigin = {
+  source: 'source',
+  enhanced: 'enhanced',
+  ai_added: 'ai_added',
+} as const;
+
+/**
  * Visual-memory color assigned to this node
  */
 export type FlowNodeTone = typeof FlowNodeTone[keyof typeof FlowNodeTone];
@@ -38,6 +50,10 @@ export interface FlowNode {
   children?: FlowNode[];
   /** Immutable source block represented by this node */
   sourceBlockId?: string;
+  /** Original source blocks preserved by this node */
+  sourceBlockIds?: string[];
+  /** Whether the wording is original, AI-enhanced, or newly added by AI */
+  origin?: FlowNodeOrigin;
   /** Visual-memory color assigned to this node */
   tone?: FlowNodeTone;
 }
@@ -109,11 +125,43 @@ export interface Card {
   updatedAt: string;
 }
 
+export interface QualityReview {
+  /**
+     * @minimum 0
+     * @maximum 10
+     */
+  score: number;
+  /**
+     * @minimum 0
+     * @maximum 10
+     */
+  coverage: number;
+  /**
+     * @minimum 0
+     * @maximum 10
+     */
+  hierarchy: number;
+  /**
+     * @minimum 0
+     * @maximum 10
+     */
+  readability: number;
+  /**
+     * @minimum 0
+     * @maximum 10
+     */
+  medicalConsistency: number;
+  /** @minimum 0 */
+  aiAddedFactsCount: number;
+  summary: string;
+}
+
 export interface GeneratedCard {
   flow: FlowNode[];
   sidebar: SidebarSections;
   sectionTrees: SectionTrees;
   sourceBlocks: SourceBlock[];
+  quality: QualityReview;
 }
 
 export interface CardInput {

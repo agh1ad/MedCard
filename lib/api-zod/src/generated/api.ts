@@ -34,6 +34,8 @@ export const ListCardsResponseItem = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })).describe('Root nodes of the pathophysiology branching tree'),
   "sidebar": zod.object({
@@ -50,6 +52,8 @@ export const ListCardsResponseItem = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "risk_factors": zod.array(zod.object({
@@ -58,6 +62,8 @@ export const ListCardsResponseItem = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "associations": zod.array(zod.object({
@@ -66,6 +72,8 @@ export const ListCardsResponseItem = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "diagnosis": zod.array(zod.object({
@@ -74,6 +82,8 @@ export const ListCardsResponseItem = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "treatment": zod.array(zod.object({
@@ -82,6 +92,8 @@ export const ListCardsResponseItem = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "complications": zod.array(zod.object({
@@ -90,6 +102,8 @@ export const ListCardsResponseItem = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 }))
 }),
@@ -126,6 +140,8 @@ export const CreateCardBody = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "sidebar": zod.object({
@@ -142,6 +158,8 @@ export const CreateCardBody = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "risk_factors": zod.array(zod.object({
@@ -150,6 +168,8 @@ export const CreateCardBody = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "associations": zod.array(zod.object({
@@ -158,6 +178,8 @@ export const CreateCardBody = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "diagnosis": zod.array(zod.object({
@@ -166,6 +188,8 @@ export const CreateCardBody = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "treatment": zod.array(zod.object({
@@ -174,6 +198,8 @@ export const CreateCardBody = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "complications": zod.array(zod.object({
@@ -182,6 +208,8 @@ export const CreateCardBody = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 }))
 }),
@@ -209,6 +237,8 @@ export const CreateCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })).describe('Root nodes of the pathophysiology branching tree'),
   "sidebar": zod.object({
@@ -225,6 +255,8 @@ export const CreateCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "risk_factors": zod.array(zod.object({
@@ -233,6 +265,8 @@ export const CreateCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "associations": zod.array(zod.object({
@@ -241,6 +275,8 @@ export const CreateCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "diagnosis": zod.array(zod.object({
@@ -249,6 +285,8 @@ export const CreateCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "treatment": zod.array(zod.object({
@@ -257,6 +295,8 @@ export const CreateCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "complications": zod.array(zod.object({
@@ -265,6 +305,8 @@ export const CreateCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 }))
 }),
@@ -297,6 +339,25 @@ export const GenerateCardBody = zod.object({
   "topic": zod.string().nullish().describe('Optional topic hint')
 })
 
+export const generateCardResponseQualityScoreMin = 0;
+export const generateCardResponseQualityScoreMax = 10;
+
+export const generateCardResponseQualityCoverageMin = 0;
+export const generateCardResponseQualityCoverageMax = 10;
+
+export const generateCardResponseQualityHierarchyMin = 0;
+export const generateCardResponseQualityHierarchyMax = 10;
+
+export const generateCardResponseQualityReadabilityMin = 0;
+export const generateCardResponseQualityReadabilityMax = 10;
+
+export const generateCardResponseQualityMedicalConsistencyMin = 0;
+export const generateCardResponseQualityMedicalConsistencyMax = 10;
+
+export const generateCardResponseQualityAiAddedFactsCountMin = 0;
+
+
+
 export const GenerateCardResponse = zod.object({
   "flow": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -304,6 +365,8 @@ export const GenerateCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "sidebar": zod.object({
@@ -320,6 +383,8 @@ export const GenerateCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "risk_factors": zod.array(zod.object({
@@ -328,6 +393,8 @@ export const GenerateCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "associations": zod.array(zod.object({
@@ -336,6 +403,8 @@ export const GenerateCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "diagnosis": zod.array(zod.object({
@@ -344,6 +413,8 @@ export const GenerateCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "treatment": zod.array(zod.object({
@@ -352,6 +423,8 @@ export const GenerateCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "complications": zod.array(zod.object({
@@ -360,13 +433,24 @@ export const GenerateCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 }))
 }),
   "sourceBlocks": zod.array(zod.object({
   "id": zod.string(),
   "text": zod.string().describe('Verbatim text copied from the user\'s input')
-}))
+})),
+  "quality": zod.object({
+  "score": zod.number().min(generateCardResponseQualityScoreMin).max(generateCardResponseQualityScoreMax),
+  "coverage": zod.number().min(generateCardResponseQualityCoverageMin).max(generateCardResponseQualityCoverageMax),
+  "hierarchy": zod.number().min(generateCardResponseQualityHierarchyMin).max(generateCardResponseQualityHierarchyMax),
+  "readability": zod.number().min(generateCardResponseQualityReadabilityMin).max(generateCardResponseQualityReadabilityMax),
+  "medicalConsistency": zod.number().min(generateCardResponseQualityMedicalConsistencyMin).max(generateCardResponseQualityMedicalConsistencyMax),
+  "aiAddedFactsCount": zod.number().min(generateCardResponseQualityAiAddedFactsCountMin),
+  "summary": zod.string()
+})
 })
 
 
@@ -400,6 +484,8 @@ export const GetCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })).describe('Root nodes of the pathophysiology branching tree'),
   "sidebar": zod.object({
@@ -416,6 +502,8 @@ export const GetCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "risk_factors": zod.array(zod.object({
@@ -424,6 +512,8 @@ export const GetCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "associations": zod.array(zod.object({
@@ -432,6 +522,8 @@ export const GetCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "diagnosis": zod.array(zod.object({
@@ -440,6 +532,8 @@ export const GetCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "treatment": zod.array(zod.object({
@@ -448,6 +542,8 @@ export const GetCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "complications": zod.array(zod.object({
@@ -456,6 +552,8 @@ export const GetCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 }))
 }),
@@ -495,6 +593,8 @@ export const UpdateCardBody = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })).optional(),
   "sidebar": zod.object({
@@ -511,6 +611,8 @@ export const UpdateCardBody = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "risk_factors": zod.array(zod.object({
@@ -519,6 +621,8 @@ export const UpdateCardBody = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "associations": zod.array(zod.object({
@@ -527,6 +631,8 @@ export const UpdateCardBody = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "diagnosis": zod.array(zod.object({
@@ -535,6 +641,8 @@ export const UpdateCardBody = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "treatment": zod.array(zod.object({
@@ -543,6 +651,8 @@ export const UpdateCardBody = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "complications": zod.array(zod.object({
@@ -551,6 +661,8 @@ export const UpdateCardBody = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 }))
 }).optional(),
@@ -577,6 +689,8 @@ export const UpdateCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })).describe('Root nodes of the pathophysiology branching tree'),
   "sidebar": zod.object({
@@ -593,6 +707,8 @@ export const UpdateCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "risk_factors": zod.array(zod.object({
@@ -601,6 +717,8 @@ export const UpdateCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "associations": zod.array(zod.object({
@@ -609,6 +727,8 @@ export const UpdateCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "diagnosis": zod.array(zod.object({
@@ -617,6 +737,8 @@ export const UpdateCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "treatment": zod.array(zod.object({
@@ -625,6 +747,8 @@ export const UpdateCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "complications": zod.array(zod.object({
@@ -633,6 +757,8 @@ export const UpdateCardResponse = zod.object({
   "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
   "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)'),
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
+  "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
+  "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 }))
 }),

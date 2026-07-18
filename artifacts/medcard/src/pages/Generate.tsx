@@ -285,6 +285,50 @@ export function Generate() {
           </div>
         </div>
 
+        <section className="grid gap-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-5 shadow-sm lg:grid-cols-[auto_1fr]">
+          <div className="flex items-center gap-3">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-700 font-serif text-2xl font-bold text-white">
+              {preview.quality.score}/10
+            </div>
+            <div>
+              <div className="flex items-center gap-2 font-bold text-emerald-950">
+                <ShieldCheck className="h-5 w-5" /> AI quality review
+              </div>
+              <p className="mt-1 max-w-xl text-sm text-emerald-900/75">
+                {preview.quality.summary}
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+            {[
+              ["Coverage", preview.quality.coverage],
+              ["Hierarchy", preview.quality.hierarchy],
+              ["Readability", preview.quality.readability],
+              ["Consistency", preview.quality.medicalConsistency],
+              ["AI additions", preview.quality.aiAddedFactsCount],
+            ].map(([label, value]) => (
+              <div
+                className="rounded-xl bg-white/75 px-3 py-2 text-center"
+                key={label}
+              >
+                <div className="text-lg font-black text-emerald-900">
+                  {value}
+                </div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-800/65">
+                  {label}
+                </div>
+              </div>
+            ))}
+          </div>
+          {preview.quality.aiAddedFactsCount > 0 && (
+            <p className="text-xs text-emerald-900/70 lg:col-span-2">
+              Nodes marked <strong>AI+</strong> were added for context and
+              should be reviewed before clinical use. Your original source
+              remains preserved.
+            </p>
+          )}
+        </section>
+
         <MemoryCardCanvas
           topic={topic}
           flow={preview.flow}
@@ -374,8 +418,9 @@ export function Generate() {
           Turn bulk research into one memorable page.
         </h1>
         <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-          Your wording remains untouched. AI only decides where each source
-          block belongs and how the branches connect.
+          AI preserves every source block, improves clarity, completes essential
+          connections, and builds the branching card. Every original idea stays
+          traceable.
         </p>
       </div>
 
@@ -404,7 +449,7 @@ export function Generate() {
               {sourceText ? sourceText.split(/\s+/).length : 0} words including
               reviewed OCR
             </span>
-            <span>Nothing is summarized or medically rewritten</span>
+            <span>AI improvements and additions are clearly marked</span>
           </div>
         </section>
 
@@ -602,8 +647,8 @@ export function Generate() {
             )}
           </Button>
           <p className="text-center text-xs leading-relaxed text-muted-foreground">
-            One low-cost AI call. Only reviewed text enters the organizer; image
-            files stay private.
+            One quality-first AI call. Source text stays auditable, AI additions
+            are marked, and image files stay private.
           </p>
         </aside>
       </div>

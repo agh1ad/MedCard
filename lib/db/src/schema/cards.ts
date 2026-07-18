@@ -13,12 +13,16 @@ const FlowNodeSchemaBase = z.object({
 export type FlowNode = z.infer<typeof FlowNodeSchemaBase> & {
   children?: FlowNode[];
   sourceBlockId?: string;
+  sourceBlockIds?: string[];
+  origin?: "source" | "enhanced" | "ai_added";
   tone?: "ink" | "blue" | "green" | "pink" | "violet" | "amber";
 };
 
 export const FlowNodeSchema: z.ZodType<FlowNode> = FlowNodeSchemaBase.extend({
   children: z.lazy(() => z.array(FlowNodeSchema)).optional(),
   sourceBlockId: z.string().optional(),
+  sourceBlockIds: z.array(z.string()).optional(),
+  origin: z.enum(["source", "enhanced", "ai_added"]).optional(),
   tone: z
     .enum(["ink", "blue", "green", "pink", "violet", "amber"])
     .optional(),

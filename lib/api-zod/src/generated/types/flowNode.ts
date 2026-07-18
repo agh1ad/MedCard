@@ -5,6 +5,7 @@
  * MedCard API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { FlowNodeOrigin } from './flowNodeOrigin';
 import type { FlowNodeTone } from './flowNodeTone';
 
 export interface FlowNode {
@@ -21,6 +22,10 @@ export interface FlowNode {
   children?: FlowNode[];
   /** Immutable source block represented by this node */
   sourceBlockId?: string;
+  /** Original source blocks preserved by this node */
+  sourceBlockIds?: string[];
+  /** Whether the wording is original, AI-enhanced, or newly added by AI */
+  origin?: FlowNodeOrigin;
   /** Visual-memory color assigned to this node */
   tone?: FlowNodeTone;
 }

@@ -212,6 +212,15 @@ components:
         sourceBlockId:
           type: string
           description: Immutable source block represented by this node
+        sourceBlockIds:
+          type: array
+          items:
+            type: string
+          description: Original source blocks preserved by this node
+        origin:
+          type: string
+          enum: [source, enhanced, ai_added]
+          description: Whether the wording is original, AI-enhanced, or newly added by AI
         tone:
           type: string
           enum: [ink, blue, green, pink, violet, amber]
@@ -345,7 +354,7 @@ components:
 
     GeneratedCard:
       type: object
-      required: [flow, sidebar, sectionTrees, sourceBlocks]
+      required: [flow, sidebar, sectionTrees, sourceBlocks, quality]
       properties:
         flow:
           type: array
@@ -359,6 +368,38 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SourceBlock"
+        quality:
+          $ref: "#/components/schemas/QualityReview"
+
+    QualityReview:
+      type: object
+      required: [score, coverage, hierarchy, readability, medicalConsistency, aiAddedFactsCount, summary]
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 10
+        coverage:
+          type: integer
+          minimum: 0
+          maximum: 10
+        hierarchy:
+          type: integer
+          minimum: 0
+          maximum: 10
+        readability:
+          type: integer
+          minimum: 0
+          maximum: 10
+        medicalConsistency:
+          type: integer
+          minimum: 0
+          maximum: 10
+        aiAddedFactsCount:
+          type: integer
+          minimum: 0
+        summary:
+          type: string
 
     CardInput:
       type: object
