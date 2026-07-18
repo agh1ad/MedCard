@@ -24,4 +24,3 @@ timeoutMs = 20000
 [userenv.shared]
 OPENAI_MODEL = "gpt-5-nano"
 BASE_PATH = "/"
-PORT = "5000"
