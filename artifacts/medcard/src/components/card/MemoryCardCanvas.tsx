@@ -43,6 +43,13 @@ function countNodes(nodes: FlowNode[]): number {
   );
 }
 
+function countLeaves(node: FlowNode): number {
+  const children = node.children ?? [];
+  return children.length
+    ? children.reduce((total, child) => total + countLeaves(child), 0)
+    : 1;
+}
+
 const MIN_FONT_SIZE = 8.5;
 const MAX_FONT_SIZE = 24;
 
@@ -75,7 +82,11 @@ function MemoryNode({ node, compact = false }: { node: FlowNode; compact?: boole
           <div className="memory-tree-stem" />
           <div className="memory-tree-children">
             {children.map((child) => (
-              <div className="memory-tree-child" key={child.id}>
+              <div
+                className="memory-tree-child"
+                key={child.id}
+                style={{ flexGrow: compact ? 1 : countLeaves(child) }}
+              >
                 <div className="memory-tree-drop" />
                 <MemoryNode node={child} compact={compact} />
               </div>
@@ -89,6 +100,26 @@ function MemoryNode({ node, compact = false }: { node: FlowNode; compact?: boole
 
 function MemoryTree({ nodes, compact = false }: { nodes: FlowNode[]; compact?: boolean }) {
   if (!nodes.length) return null;
+
+  if (!compact && nodes.length > 1) {
+    return (
+      <div className="memory-tree memory-tree-root-group">
+        <div className="memory-tree-children memory-tree-root-children">
+          {nodes.map((node) => (
+            <div
+              className="memory-tree-child"
+              key={node.id}
+              style={{ flexGrow: countLeaves(node) }}
+            >
+              <div className="memory-tree-drop" />
+              <MemoryNode node={node} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`memory-tree ${compact ? "is-compact" : ""}`}>
       {nodes.map((node) => (

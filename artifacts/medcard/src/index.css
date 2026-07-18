@@ -312,6 +312,9 @@
 .memory-tree-children { position: relative; display: flex; justify-content: center; gap: var(--memory-gap); width: 100%; }
 .memory-tree-children::before { content: ''; position: absolute; top: 0; left: 8%; right: 8%; height: 1px; background: #4b4841; }
 .memory-tree-child { display: flex; flex: 1 1 0; flex-direction: column; align-items: center; min-width: 0; }
+.memory-tree-root-group { padding-top: 0; }
+.memory-tree-root-children::before { left: 4%; right: 4%; }
+.memory-tree-root-children > .memory-tree-child > .memory-tree-drop { height: calc(var(--memory-gap) * 0.8); }
 .is-compact .memory-tree-children { flex-direction: column; gap: 2px; padding-left: 7px; }
 .is-compact .memory-tree-children::before { top: 0; bottom: 4px; left: 1px; right: auto; width: 1px; height: auto; }
 .is-compact .memory-tree-child { position: relative; display: block; width: 100%; }

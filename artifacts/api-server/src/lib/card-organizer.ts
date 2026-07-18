@@ -68,22 +68,22 @@ const STRUCTURE_SCHEMA = {
   },
 } as const;
 
-const ORGANIZER_PROMPT = `Role: Organize immutable medical-note blocks into a visual memory card.
+const ORGANIZER_PROMPT = `Role: Organize immutable medical-note blocks using the author's handwritten tree grammar.
 
-Goal: Assign every block to exactly one section and arrange causal or sequential blocks as trees.
+Goal: Assign every block once, then arrange each section as a top-down hierarchy: trunk -> process -> consequence -> manifestations.
 
-Constraints:
-- Return every supplied blockId exactly once.
-- Never create a blockId.
-- Use parentBlockId only for a direct cause, next step, diagnostic step, treatment step, or tightly related branch in the same section.
-- Use null for roots and independent facts.
-- Put the central pathophysiology sequence and its clinical manifestations in main.
-- Use side sections for high-yield facts, risk factors, associations, diagnosis, treatment, and complications.
-- Preserve parallel outcomes as siblings with the same parent.
-- order controls visual reading order among roots or siblings.
-- tone is only a visual-memory color. Use colors to separate adjacent mechanisms and outcomes.
+Rules:
+- Return every supplied blockId exactly once. Never create, duplicate, paraphrase, merge, or omit a block.
+- A parent must be the closest explicit cause, category, process, decision, or step in the same section. Use null only for a genuine root or independent fact.
+- Main contains the causal disease mechanism and the clinical manifestations produced by each mechanism.
+- A shared cause that produces several mechanisms or outcomes must bud into sibling branches. Continue every sibling independently to its own consequences and manifestations; never flatten parallel branches into one chain.
+- Preserve explicit headings and categories as intermediate parents. Group findings by their stated mechanism, organ system, test branch, treatment branch, or complication branch when the source provides that relationship.
+- Diagnosis and treatment are independent mini-trees: decision/test -> result/condition -> next step. Risk factors, associations, high-yield facts, and complications use the same nested rule when relationships exist.
+- Preserve source order when it expresses sequence. Otherwise place mechanisms before outcomes and general findings before specific examples.
+- Do not invent a medical relationship. When the source does not support a parent, keep the block independent.
+- order controls sibling/root reading order. tone is visual only; use one tone along a chain and contrasting tones for neighboring branches.
 
-Success means every input ID appears once, all parent IDs exist in the same section, and no cycles exist.`;
+Success: all IDs appear once, parents exist in the same section, no cycles exist, and every true divergence remains visibly branched.`;
 
 function cleanLine(line: string): string {
   return line.replace(/^\s+|\s+$/g, "");
