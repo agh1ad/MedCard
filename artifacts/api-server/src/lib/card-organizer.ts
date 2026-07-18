@@ -79,6 +79,7 @@ Rules:
 - A shared cause that produces several mechanisms or outcomes must bud into sibling branches. Continue every sibling independently to its own consequences and manifestations; never flatten parallel branches into one chain.
 - Preserve explicit headings and categories as intermediate parents. Group findings by their stated mechanism, organ system, test branch, treatment branch, or complication branch when the source provides that relationship.
 - Categories at the same scope are siblings, never ancestors of one another: for example Skin/GI/Pulmonary, stable/unstable, or positive/negative branches. Repeated identical headings must remain adjacent peers, never a parent-child chain.
+- Never turn adjacency or a plain list into a causal chain. Chain blocks only when arrows, causal/sequential wording, or explicit step order supports it. Consecutive findings beneath one heading are sibling buds until the next same-level heading.
 - Diagnosis and treatment are independent mini-trees: decision/test -> result/condition -> next step. Risk factors, associations, high-yield facts, and complications use the same nested rule when relationships exist.
 - Preserve source order when it expresses sequence. Otherwise place mechanisms before outcomes and general findings before specific examples.
 - Do not invent a medical relationship. When the source does not support a parent, keep the block independent.
