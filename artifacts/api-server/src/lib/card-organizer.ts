@@ -384,8 +384,8 @@ export async function organizeCard(
     verbosity: "low",
     n: 1,
     max_completion_tokens: Math.min(
-      20_000,
-      Math.max(2_000, blocks.length * 140),
+      24_000,
+      Math.max(6_000, blocks.length * 240),
     ),
     messages: [
       { role: "system", content: ORGANIZER_PROMPT },
@@ -404,20 +404,21 @@ export async function organizeCard(
     },
   });
 
-  const content = completion.choices[0]?.message?.content;
-  if (!content) throw new Error("AI returned an empty organization result");
-
   const usage = completion.usage;
   if (usage) {
     console.info("MedCard AI usage", {
       model,
       serviceTier: completion.service_tier ?? serviceTier,
+      finishReason: completion.choices[0]?.finish_reason,
       promptTokens: usage.prompt_tokens,
       cachedPromptTokens: usage.prompt_tokens_details?.cached_tokens ?? 0,
       completionTokens: usage.completion_tokens,
       totalTokens: usage.total_tokens,
     });
   }
+
+  const content = completion.choices[0]?.message?.content;
+  if (!content) throw new Error("AI returned an empty organization result");
 
   const result = validateResult(blocks, JSON.parse(content));
   return composeCard(blocks, result.nodes, result.quality);
