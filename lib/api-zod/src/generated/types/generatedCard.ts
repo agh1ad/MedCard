@@ -5,10 +5,10 @@
  * MedCard API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { FlowStep } from './flowStep';
+import type { FlowNode } from './flowNode';
 import type { SidebarSections } from './sidebarSections';
 
 export interface GeneratedCard {
-  flow: FlowStep[];
+  flow: FlowNode[];
   sidebar: SidebarSections;
 }

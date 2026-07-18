@@ -5,15 +5,15 @@
  * MedCard API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { FlowStep } from './flowStep';
+import type { FlowNode } from './flowNode';
 import type { SidebarSections } from './sidebarSections';
 
 export interface Card {
   id: number;
   /** The topic name for this card */
   topic: string;
-  /** Top-down hierarchy of pathophysiology steps */
-  flow: FlowStep[];
+  /** Root nodes of the pathophysiology branching tree */
+  flow: FlowNode[];
   sidebar: SidebarSections;
   tags: string[];
   /** Original raw input text */

@@ -11,7 +11,7 @@ export interface SidebarSections {
   high_yield: string[];
   /** Risk factors and associations */
   risk_factors: string[];
-  /** Diagnostic criteria and workup */
+  /** Diagnostic criteria and workup findings */
   diagnosis: string[];
   /** Treatment and management */
   treatment: string[];

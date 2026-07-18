@@ -9,16 +9,18 @@ export interface HealthStatus {
   status: string;
 }
 
-export interface FlowStep {
-  /** The text content of this step in the flow hierarchy */
+export interface FlowNode {
+  /** Unique identifier for this node within the tree */
+  id: string;
+  /** The text content of this node */
   label: string;
   /**
-     * Optional additional detail for this step
+     * Optional secondary detail shown below the label
      * @nullable
      */
   sublabel?: string | null;
-  /** Indentation level (0 = top level, higher = sub-level) */
-  indent?: number;
+  /** Child nodes branching from this node (shown side by side) */
+  children?: FlowNode[];
 }
 
 export interface SidebarSections {
@@ -26,7 +28,7 @@ export interface SidebarSections {
   high_yield: string[];
   /** Risk factors and associations */
   risk_factors: string[];
-  /** Diagnostic criteria and workup */
+  /** Diagnostic criteria and workup findings */
   diagnosis: string[];
   /** Treatment and management */
   treatment: string[];
@@ -38,8 +40,8 @@ export interface Card {
   id: number;
   /** The topic name for this card */
   topic: string;
-  /** Top-down hierarchy of pathophysiology steps */
-  flow: FlowStep[];
+  /** Root nodes of the pathophysiology branching tree */
+  flow: FlowNode[];
   sidebar: SidebarSections;
   tags: string[];
   /** Original raw input text */
@@ -49,14 +51,14 @@ export interface Card {
 }
 
 export interface GeneratedCard {
-  flow: FlowStep[];
+  flow: FlowNode[];
   sidebar: SidebarSections;
 }
 
 export interface CardInput {
   /** @minLength 1 */
   topic: string;
-  flow: FlowStep[];
+  flow: FlowNode[];
   sidebar: SidebarSections;
   rawText: string;
   tags: string[];
@@ -65,7 +67,7 @@ export interface CardInput {
 export interface CardUpdate {
   /** @minLength 1 */
   topic?: string;
-  flow?: FlowStep[];
+  flow?: FlowNode[];
   sidebar?: SidebarSections;
   tags?: string[];
 }

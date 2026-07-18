@@ -11,7 +11,7 @@ export * from './cardInput';
 export * from './cardStats';
 export * from './cardStatsTopTagsItem';
 export * from './cardUpdate';
-export * from './flowStep';
+export * from './flowNode';
 export * from './generateCardInput';
 export * from './generatedCard';
 export * from './healthStatus';

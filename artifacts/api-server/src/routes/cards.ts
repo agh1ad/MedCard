@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { db } from "@workspace/db";
-import { cardsTable } from "@workspace/db";
+import { cardsTable, convertFlatFlowToTree, type FlowNode } from "@workspace/db";
 import {
   ListCardsQueryParams,
   CreateCardBody,
@@ -25,14 +25,21 @@ function getOpenAI(): OpenAI {
   return new OpenAI({ apiKey });
 }
 
-const SYSTEM_PROMPT = `You are a medical study note organizer. Your ONLY job is to restructure raw medical information into a structured format WITHOUT adding, inventing, or editorializing any information. You only reorganize what is explicitly provided in the input text.
+// Apply compat conversion to a card coming from the DB
+function normalizeCard(card: typeof cardsTable.$inferSelect) {
+  const flow = Array.isArray(card.flow)
+    ? convertFlatFlowToTree(card.flow as unknown[])
+    : [];
+  return { ...card, flow };
+}
 
-Output a JSON object with exactly this structure:
+const SYSTEM_PROMPT = `You are a medical study note organizer. Your ONLY job is to restructure raw medical information into a structured JSON format WITHOUT adding, inventing, or editorializing any information. Only reorganize what is explicitly in the text.
+
+## Output format
+
+Output a JSON object with EXACTLY this structure:
 {
-  "flow": [
-    { "label": "step text", "sublabel": null, "indent": 0 },
-    ...
-  ],
+  "flow": [ <FlowNode>, ... ],
   "sidebar": {
     "high_yield": ["...", ...],
     "risk_factors": ["...", ...],
@@ -42,24 +49,138 @@ Output a JSON object with exactly this structure:
   }
 }
 
-Rules for "flow":
-- Represents the top-down pathophysiology or key mechanism chain (cause → effect → effect → clinical manifestations)
-- Each step is a node in the chain. Use indent=0 for the main chain steps, indent=1 for sub-steps or branches off a main step
-- Keep labels concise (one line ideally)
-- Use sublabel for important detail about a step if present in the text
+## FlowNode definition (RECURSIVE TREE)
 
-Rules for "sidebar":
-- "high_yield": Key facts, important numbers, must-know points
-- "risk_factors": Risk factors, predisposing conditions, associations, epidemiology
-- "diagnosis": Diagnostic criteria, investigations, imaging, lab findings, clinical signs
-- "treatment": Management, medications, doses if mentioned, procedures
-- "complications": Complications, sequelae, prognosis
+Each FlowNode is:
+{
+  "id": "<unique string, e.g. '1', '2a', '3b'>",
+  "label": "<concise text for this node>",
+  "sublabel": "<optional extra detail, or null>",
+  "children": [ <FlowNode>, ... ]
+}
 
-CRITICAL:
-- Do NOT add any information not explicitly in the provided text
-- If a section has no relevant information in the text, leave it as an empty array []
-- Do NOT write "No information provided" or similar — just leave empty
-- Only output the JSON object, no explanation, no markdown fencing`;
+The "flow" array contains ROOT nodes only (usually just one — the first cause or main disease entity).
+
+BRANCHING: When a node leads to MULTIPLE parallel outcomes or mechanisms, list all of them as children of that node. They will be displayed side-by-side horizontally. Do NOT flatten branches into a linear chain — preserve the true branching.
+
+## Example (Hypertrophic Pyloric Stenosis)
+
+Input text: "HPS — hypertrophy of pyloric circular smooth muscle → narrowed pyloric canal → gastric outlet obstruction → impaired gastric emptying → projectile non-bilious vomiting after feeding. Consequences: (1) hunger after vomiting, (2) dehydration, (3) HCl loss → alkalosis → Na/H exchange in kidney → hypokalemia → hypochloremic hypokalemic metabolic alkalosis, (4) on exam: visible peristalsis + palpable olive mass in epigastric region. Timing: 2–6 weeks after birth, first-born males. Diagnosis: ultrasound (target sign), GI contrast (string sign). Treatment: Ramstedt pyloromyotomy."
+
+Correct output:
+{
+  "flow": [
+    {
+      "id": "1",
+      "label": "Hypertrophy of pyloric circular smooth muscle",
+      "sublabel": null,
+      "children": [
+        {
+          "id": "2",
+          "label": "Narrowed pyloric canal",
+          "sublabel": null,
+          "children": [
+            {
+              "id": "3",
+              "label": "Gastric outlet obstruction",
+              "sublabel": null,
+              "children": [
+                {
+                  "id": "4",
+                  "label": "Impaired gastric emptying",
+                  "sublabel": null,
+                  "children": [
+                    {
+                      "id": "5",
+                      "label": "Projectile non-bilious vomiting after feeding",
+                      "sublabel": null,
+                      "children": [
+                        {
+                          "id": "5a",
+                          "label": "Hunger after vomiting",
+                          "sublabel": "\"Hungry vomiter\"",
+                          "children": []
+                        },
+                        {
+                          "id": "5b",
+                          "label": "Dehydration",
+                          "sublabel": null,
+                          "children": []
+                        },
+                        {
+                          "id": "5c",
+                          "label": "HCl loss",
+                          "sublabel": null,
+                          "children": [
+                            {
+                              "id": "5c1",
+                              "label": "Alkalosis",
+                              "sublabel": null,
+                              "children": [
+                                {
+                                  "id": "5c1a",
+                                  "label": "Na\u207a/H\u207a exchange in kidney \u2192 \u2193K\u207a",
+                                  "sublabel": null,
+                                  "children": [
+                                    {
+                                      "id": "5c1a1",
+                                      "label": "Hypochloremic hypokalemic metabolic alkalosis",
+                                      "sublabel": null,
+                                      "children": []
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "id": "5d",
+                          "label": "On exam",
+                          "sublabel": null,
+                          "children": [
+                            {
+                              "id": "5d1",
+                              "label": "Visible peristalsis in upper abdomen",
+                              "sublabel": null,
+                              "children": []
+                            },
+                            {
+                              "id": "5d2",
+                              "label": "Palpable \u201colive\u201d mass in epigastric region",
+                              "sublabel": null,
+                              "children": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "sidebar": {
+    "high_yield": ["First-born males most affected", "Timing: 2–6 weeks after birth", "Ramstedt pyloromyotomy is curative"],
+    "risk_factors": ["First-born male", "Exposure to macrolides (e.g. erythromycin) — stimulates peristalsis"],
+    "diagnosis": ["Ultrasound: target sign (gold standard)", "GI contrast: string sign"],
+    "treatment": ["Ramstedt pyloromyotomy"],
+    "complications": ["Hypochloremic hypokalemic metabolic alkalosis from HCl loss"]
+  }
+}
+
+## Rules
+
+1. ONLY use information from the provided text. Do NOT add facts not present.
+2. Build a true branching tree. If one step leads to multiple things, list them all as children (side-by-side). Do NOT force parallel branches into a linear chain.
+3. If a section (high_yield, risk_factors, etc.) has no info in the text, leave it as [].
+4. Keep node labels concise (one short phrase per node). Use sublabel for secondary detail.
+5. IDs must be unique strings within the tree (e.g. "1", "2", "2a", "2b", "2b1").
+6. Output ONLY the JSON object. No markdown, no explanation.`;
 
 // GET /api/cards
 router.get("/", async (req: Request, res: Response): Promise<void> => {
@@ -68,10 +189,9 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
     const search = parsed.success ? parsed.data.search : undefined;
     const tag = parsed.success ? parsed.data.tag : undefined;
 
-    let allCards = await db
-      .select()
-      .from(cardsTable)
-      .orderBy(desc(cardsTable.createdAt));
+    let allCards = (
+      await db.select().from(cardsTable).orderBy(desc(cardsTable.createdAt))
+    ).map(normalizeCard);
 
     if (search) {
       const lower = search.toLowerCase();
@@ -146,7 +266,9 @@ router.post(
         return;
       }
 
-      const sidebarRaw = aiData["sidebar"] as Record<string, unknown> | undefined;
+      const sidebarRaw = aiData["sidebar"] as
+        | Record<string, unknown>
+        | undefined;
 
       const result = {
         flow: Array.isArray(aiData["flow"]) ? aiData["flow"] : [],
@@ -201,7 +323,7 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
       })
       .returning();
 
-    res.status(201).json(card);
+    res.status(201).json(normalizeCard(card));
   } catch (err) {
     req.log.error({ err }, "Error creating card");
     res.status(500).json({ error: "Failed to create card" });
@@ -264,7 +386,7 @@ router.get("/:id", async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    res.json(card);
+    res.json(normalizeCard(card));
   } catch (err) {
     req.log.error({ err }, "Error fetching card");
     res.status(500).json({ error: "Failed to fetch card" });
@@ -295,14 +417,19 @@ router.patch("/:id", async (req: Request, res: Response): Promise<void> => {
       .update(cardsTable)
       .set({
         updatedAt: new Date(),
-        ...(parsedBody.data.topic !== undefined && { topic: parsedBody.data.topic }),
+        ...(parsedBody.data.topic !== undefined && {
+          topic: parsedBody.data.topic,
+        }),
         ...(parsedBody.data.flow !== undefined && {
           flow: parsedBody.data.flow as typeof cardsTable.$inferInsert["flow"],
         }),
         ...(parsedBody.data.sidebar !== undefined && {
-          sidebar: parsedBody.data.sidebar as typeof cardsTable.$inferInsert["sidebar"],
+          sidebar: parsedBody.data
+            .sidebar as typeof cardsTable.$inferInsert["sidebar"],
         }),
-        ...(parsedBody.data.tags !== undefined && { tags: parsedBody.data.tags }),
+        ...(parsedBody.data.tags !== undefined && {
+          tags: parsedBody.data.tags,
+        }),
       })
       .where(eq(cardsTable.id, parsedParams.data.id))
       .returning();
@@ -312,7 +439,7 @@ router.patch("/:id", async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    res.json(updated);
+    res.json(normalizeCard(updated));
   } catch (err) {
     req.log.error({ err }, "Error updating card");
     res.status(500).json({ error: "Failed to update card" });

@@ -25,20 +25,19 @@ export const ListCardsQueryParams = zod.object({
   "tag": zod.coerce.string().optional().describe('Filter by tag')
 })
 
-export const listCardsResponseFlowItemIndentDefault = 0;
-
 export const ListCardsResponseItem = zod.object({
   "id": zod.number(),
   "topic": zod.string().describe('The topic name for this card'),
   "flow": zod.array(zod.object({
-  "label": zod.string().describe('The text content of this step in the flow hierarchy'),
-  "sublabel": zod.string().nullish().describe('Optional additional detail for this step'),
-  "indent": zod.number().default(listCardsResponseFlowItemIndentDefault).describe('Indentation level (0 = top level, higher = sub-level)')
-})).describe('Top-down hierarchy of pathophysiology steps'),
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)')
+})).describe('Root nodes of the pathophysiology branching tree'),
   "sidebar": zod.object({
   "high_yield": zod.array(zod.string()).describe('High-yield notes and key facts'),
   "risk_factors": zod.array(zod.string()).describe('Risk factors and associations'),
-  "diagnosis": zod.array(zod.string()).describe('Diagnostic criteria and workup'),
+  "diagnosis": zod.array(zod.string()).describe('Diagnostic criteria and workup findings'),
   "treatment": zod.array(zod.string()).describe('Treatment and management'),
   "complications": zod.array(zod.string()).describe('Complications and prognosis')
 }),
@@ -54,19 +53,20 @@ export const ListCardsResponse = zod.array(ListCardsResponseItem)
  * @summary Create a new card
  */
 
-export const createCardBodyFlowItemIndentDefault = 0;
+
 
 export const CreateCardBody = zod.object({
   "topic": zod.string().min(1),
   "flow": zod.array(zod.object({
-  "label": zod.string().describe('The text content of this step in the flow hierarchy'),
-  "sublabel": zod.string().nullish().describe('Optional additional detail for this step'),
-  "indent": zod.number().default(createCardBodyFlowItemIndentDefault).describe('Indentation level (0 = top level, higher = sub-level)')
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)')
 })),
   "sidebar": zod.object({
   "high_yield": zod.array(zod.string()).describe('High-yield notes and key facts'),
   "risk_factors": zod.array(zod.string()).describe('Risk factors and associations'),
-  "diagnosis": zod.array(zod.string()).describe('Diagnostic criteria and workup'),
+  "diagnosis": zod.array(zod.string()).describe('Diagnostic criteria and workup findings'),
   "treatment": zod.array(zod.string()).describe('Treatment and management'),
   "complications": zod.array(zod.string()).describe('Complications and prognosis')
 }),
@@ -74,20 +74,19 @@ export const CreateCardBody = zod.object({
   "tags": zod.array(zod.string())
 })
 
-export const createCardResponseFlowItemIndentDefault = 0;
-
 export const CreateCardResponse = zod.object({
   "id": zod.number(),
   "topic": zod.string().describe('The topic name for this card'),
   "flow": zod.array(zod.object({
-  "label": zod.string().describe('The text content of this step in the flow hierarchy'),
-  "sublabel": zod.string().nullish().describe('Optional additional detail for this step'),
-  "indent": zod.number().default(createCardResponseFlowItemIndentDefault).describe('Indentation level (0 = top level, higher = sub-level)')
-})).describe('Top-down hierarchy of pathophysiology steps'),
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)')
+})).describe('Root nodes of the pathophysiology branching tree'),
   "sidebar": zod.object({
   "high_yield": zod.array(zod.string()).describe('High-yield notes and key facts'),
   "risk_factors": zod.array(zod.string()).describe('Risk factors and associations'),
-  "diagnosis": zod.array(zod.string()).describe('Diagnostic criteria and workup'),
+  "diagnosis": zod.array(zod.string()).describe('Diagnostic criteria and workup findings'),
   "treatment": zod.array(zod.string()).describe('Treatment and management'),
   "complications": zod.array(zod.string()).describe('Complications and prognosis')
 }),
@@ -109,18 +108,17 @@ export const GenerateCardBody = zod.object({
   "topic": zod.string().nullish().describe('Optional topic hint')
 })
 
-export const generateCardResponseFlowItemIndentDefault = 0;
-
 export const GenerateCardResponse = zod.object({
   "flow": zod.array(zod.object({
-  "label": zod.string().describe('The text content of this step in the flow hierarchy'),
-  "sublabel": zod.string().nullish().describe('Optional additional detail for this step'),
-  "indent": zod.number().default(generateCardResponseFlowItemIndentDefault).describe('Indentation level (0 = top level, higher = sub-level)')
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)')
 })),
   "sidebar": zod.object({
   "high_yield": zod.array(zod.string()).describe('High-yield notes and key facts'),
   "risk_factors": zod.array(zod.string()).describe('Risk factors and associations'),
-  "diagnosis": zod.array(zod.string()).describe('Diagnostic criteria and workup'),
+  "diagnosis": zod.array(zod.string()).describe('Diagnostic criteria and workup findings'),
   "treatment": zod.array(zod.string()).describe('Treatment and management'),
   "complications": zod.array(zod.string()).describe('Complications and prognosis')
 })
@@ -148,20 +146,19 @@ export const GetCardParams = zod.object({
   "id": zod.coerce.number()
 })
 
-export const getCardResponseFlowItemIndentDefault = 0;
-
 export const GetCardResponse = zod.object({
   "id": zod.number(),
   "topic": zod.string().describe('The topic name for this card'),
   "flow": zod.array(zod.object({
-  "label": zod.string().describe('The text content of this step in the flow hierarchy'),
-  "sublabel": zod.string().nullish().describe('Optional additional detail for this step'),
-  "indent": zod.number().default(getCardResponseFlowItemIndentDefault).describe('Indentation level (0 = top level, higher = sub-level)')
-})).describe('Top-down hierarchy of pathophysiology steps'),
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)')
+})).describe('Root nodes of the pathophysiology branching tree'),
   "sidebar": zod.object({
   "high_yield": zod.array(zod.string()).describe('High-yield notes and key facts'),
   "risk_factors": zod.array(zod.string()).describe('Risk factors and associations'),
-  "diagnosis": zod.array(zod.string()).describe('Diagnostic criteria and workup'),
+  "diagnosis": zod.array(zod.string()).describe('Diagnostic criteria and workup findings'),
   "treatment": zod.array(zod.string()).describe('Treatment and management'),
   "complications": zod.array(zod.string()).describe('Complications and prognosis')
 }),
@@ -180,39 +177,39 @@ export const UpdateCardParams = zod.object({
 })
 
 
-export const updateCardBodyFlowItemIndentDefault = 0;
+
 
 export const UpdateCardBody = zod.object({
   "topic": zod.string().min(1).optional(),
   "flow": zod.array(zod.object({
-  "label": zod.string().describe('The text content of this step in the flow hierarchy'),
-  "sublabel": zod.string().nullish().describe('Optional additional detail for this step'),
-  "indent": zod.number().default(updateCardBodyFlowItemIndentDefault).describe('Indentation level (0 = top level, higher = sub-level)')
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)')
 })).optional(),
   "sidebar": zod.object({
   "high_yield": zod.array(zod.string()).describe('High-yield notes and key facts'),
   "risk_factors": zod.array(zod.string()).describe('Risk factors and associations'),
-  "diagnosis": zod.array(zod.string()).describe('Diagnostic criteria and workup'),
+  "diagnosis": zod.array(zod.string()).describe('Diagnostic criteria and workup findings'),
   "treatment": zod.array(zod.string()).describe('Treatment and management'),
   "complications": zod.array(zod.string()).describe('Complications and prognosis')
 }).optional(),
   "tags": zod.array(zod.string()).optional()
 })
 
-export const updateCardResponseFlowItemIndentDefault = 0;
-
 export const UpdateCardResponse = zod.object({
   "id": zod.number(),
   "topic": zod.string().describe('The topic name for this card'),
   "flow": zod.array(zod.object({
-  "label": zod.string().describe('The text content of this step in the flow hierarchy'),
-  "sublabel": zod.string().nullish().describe('Optional additional detail for this step'),
-  "indent": zod.number().default(updateCardResponseFlowItemIndentDefault).describe('Indentation level (0 = top level, higher = sub-level)')
-})).describe('Top-down hierarchy of pathophysiology steps'),
+  "id": zod.string().describe('Unique identifier for this node within the tree'),
+  "label": zod.string().describe('The text content of this node'),
+  "sublabel": zod.string().nullish().describe('Optional secondary detail shown below the label'),
+  "children": zod.array(zod.unknown()).optional().describe('Child nodes branching from this node (shown side by side)')
+})).describe('Root nodes of the pathophysiology branching tree'),
   "sidebar": zod.object({
   "high_yield": zod.array(zod.string()).describe('High-yield notes and key facts'),
   "risk_factors": zod.array(zod.string()).describe('Risk factors and associations'),
-  "diagnosis": zod.array(zod.string()).describe('Diagnostic criteria and workup'),
+  "diagnosis": zod.array(zod.string()).describe('Diagnostic criteria and workup findings'),
   "treatment": zod.array(zod.string()).describe('Treatment and management'),
   "complications": zod.array(zod.string()).describe('Complications and prognosis')
 }),

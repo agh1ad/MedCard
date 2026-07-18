@@ -191,20 +191,24 @@ components:
       required:
         - status
 
-    FlowStep:
+    FlowNode:
       type: object
-      required: [label]
+      required: [id, label]
       properties:
+        id:
+          type: string
+          description: Unique identifier for this node within the tree
         label:
           type: string
-          description: The text content of this step in the flow hierarchy
+          description: The text content of this node
         sublabel:
           type: ["string", "null"]
-          description: Optional additional detail for this step
-        indent:
-          type: integer
-          description: Indentation level (0 = top level, higher = sub-level)
-          default: 0
+          description: Optional secondary detail shown below the label
+        children:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlowNode"
+          description: Child nodes branching from this node (shown side by side)
 
     SidebarSections:
       type: object
@@ -224,7 +228,7 @@ components:
           type: array
           items:
             type: string
-          description: Diagnostic criteria and workup
+          description: Diagnostic criteria and workup findings
         treatment:
           type: array
           items:
@@ -248,8 +252,8 @@ components:
         flow:
           type: array
           items:
-            $ref: "#/components/schemas/FlowStep"
-          description: Top-down hierarchy of pathophysiology steps
+            $ref: "#/components/schemas/FlowNode"
+          description: Root nodes of the pathophysiology branching tree
         sidebar:
           $ref: "#/components/schemas/SidebarSections"
         tags:
@@ -273,7 +277,7 @@ components:
         flow:
           type: array
           items:
-            $ref: "#/components/schemas/FlowStep"
+            $ref: "#/components/schemas/FlowNode"
         sidebar:
           $ref: "#/components/schemas/SidebarSections"
 
@@ -287,7 +291,7 @@ components:
         flow:
           type: array
           items:
-            $ref: "#/components/schemas/FlowStep"
+            $ref: "#/components/schemas/FlowNode"
         sidebar:
           $ref: "#/components/schemas/SidebarSections"
         rawText:
@@ -306,7 +310,7 @@ components:
         flow:
           type: array
           items:
-            $ref: "#/components/schemas/FlowStep"
+            $ref: "#/components/schemas/FlowNode"
         sidebar:
           $ref: "#/components/schemas/SidebarSections"
         tags:
