@@ -12,6 +12,7 @@ MedCard turns user-researched medical information into a single landscape A4 vis
 - Required env: `DATABASE_URL` — Postgres connection string
 - Required env: `OPENAI_API_KEY` — restricted OpenAI project API key
 - Optional env: `OPENAI_MODEL` — defaults to the low-cost `gpt-5-nano`
+- Optional env: `OPENAI_SERVICE_TIER` — defaults to lower-cost Flex processing
 
 ## Stack
 
@@ -36,6 +37,7 @@ MedCard turns user-researched medical information into a single landscape A4 vis
 - AI returns only block IDs, section assignments, parent relationships, order, and visual color; it has no output field for rewritten medical text.
 - The server rejects AI output if any source block is missing, duplicated, or invented.
 - Images are kept out of the AI request to reduce cost and preserve privacy; users place them on the card after generation.
+- Generation uses one Flex-tier request with minimal reasoning, low verbosity, one choice, and a capped output budget.
 - Saved cards retain the source ledger so fidelity remains auditable.
 
 ## Product

@@ -27,7 +27,34 @@ function getOpenAI(): OpenAI {
       "OPENAI_API_KEY is not configured. Please add it to your Replit Secrets.",
     );
   }
-  return new OpenAI({ apiKey });
+  return new OpenAI({ apiKey, maxRetries: 0 });
+}
+
+function sendGenerationError(res: Response, err: unknown): void {
+  if (err instanceof OpenAI.APIError) {
+    if (err.code === "insufficient_quota") {
+      res.status(402).json({
+        error:
+          "OpenAI API credit is unavailable. Check that billing is active for the project that owns this API key.",
+      });
+      return;
+    }
+
+    if (err.status === 429) {
+      res.status(429).json({
+        error:
+          "OpenAI is temporarily rate-limited. Flex processing can be retried in a moment without switching to a more expensive model.",
+      });
+      return;
+    }
+
+    res.status(502).json({ error: `OpenAI request failed: ${err.message}` });
+    return;
+  }
+
+  const message =
+    err instanceof Error ? err.message : "Unknown generation error";
+  res.status(500).json({ error: message });
 }
 
 // Apply compat conversion to a card coming from the DB
@@ -225,37 +252,34 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
 });
 
 // POST /api/cards/generate
-router.post(
-  "/generate",
-  async (req: Request, res: Response): Promise<void> => {
-    const parsed = GenerateCardBody.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({
-        error: "Invalid request body",
-        details: parsed.error.issues,
-      });
-      return;
-    }
+router.post("/generate", async (req: Request, res: Response): Promise<void> => {
+  const parsed = GenerateCardBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({
+      error: "Invalid request body",
+      details: parsed.error.issues,
+    });
+    return;
+  }
 
-    const { rawText, topic } = parsed.data;
+  const { rawText, topic } = parsed.data;
 
-    let openai: OpenAI;
-    try {
-      openai = getOpenAI();
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      res.status(503).json({ error: message });
-      return;
-    }
+  let openai: OpenAI;
+  try {
+    openai = getOpenAI();
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    res.status(503).json({ error: message });
+    return;
+  }
 
-    try {
-      res.json(await organizeCard(openai, rawText, topic));
-    } catch (err) {
-      req.log.error({ err }, "Error calling OpenAI");
-      res.status(500).json({ error: "Failed to generate card" });
-    }
-  },
-);
+  try {
+    res.json(await organizeCard(openai, rawText, topic));
+  } catch (err) {
+    req.log.error({ err }, "Error calling OpenAI");
+    sendGenerationError(res, err);
+  }
+});
 
 // POST /api/cards
 router.post("/", async (req: Request, res: Response): Promise<void> => {
@@ -283,12 +307,12 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
       .insert(cardsTable)
       .values({
         topic,
-        flow: flow as typeof cardsTable.$inferInsert["flow"],
-        sidebar: sidebar as typeof cardsTable.$inferInsert["sidebar"],
+        flow: flow as (typeof cardsTable.$inferInsert)["flow"],
+        sidebar: sidebar as (typeof cardsTable.$inferInsert)["sidebar"],
         rawText,
         tags: tags ?? [],
         sectionTrees:
-          sectionTrees as typeof cardsTable.$inferInsert["sectionTrees"],
+          sectionTrees as (typeof cardsTable.$inferInsert)["sectionTrees"],
         sourceBlocks,
         images,
       })
@@ -392,15 +416,16 @@ router.patch("/:id", async (req: Request, res: Response): Promise<void> => {
           topic: parsedBody.data.topic,
         }),
         ...(parsedBody.data.flow !== undefined && {
-          flow: parsedBody.data.flow as typeof cardsTable.$inferInsert["flow"],
+          flow: parsedBody.data
+            .flow as (typeof cardsTable.$inferInsert)["flow"],
         }),
         ...(parsedBody.data.sidebar !== undefined && {
           sidebar: parsedBody.data
-            .sidebar as typeof cardsTable.$inferInsert["sidebar"],
+            .sidebar as (typeof cardsTable.$inferInsert)["sidebar"],
         }),
         ...(parsedBody.data.sectionTrees !== undefined && {
           sectionTrees: parsedBody.data
-            .sectionTrees as typeof cardsTable.$inferInsert["sectionTrees"],
+            .sectionTrees as (typeof cardsTable.$inferInsert)["sectionTrees"],
         }),
         ...(parsedBody.data.sourceBlocks !== undefined && {
           sourceBlocks: parsedBody.data.sourceBlocks,

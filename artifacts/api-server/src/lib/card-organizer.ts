@@ -123,7 +123,10 @@ function isPlacement(value: unknown): value is Placement {
   );
 }
 
-function validatePlacements(blocks: SourceBlock[], value: unknown): Placement[] {
+function validatePlacements(
+  blocks: SourceBlock[],
+  value: unknown,
+): Placement[] {
   if (!value || typeof value !== "object") {
     throw new Error("AI returned an invalid organization result");
   }
@@ -174,7 +177,9 @@ function buildTrees(
   const sectionPlacements = placements
     .filter((placement) => placement.section === section)
     .sort((a, b) => a.order - b.order || a.blockId.localeCompare(b.blockId));
-  const placementById = new Map(sectionPlacements.map((item) => [item.blockId, item]));
+  const placementById = new Map(
+    sectionPlacements.map((item) => [item.blockId, item]),
+  );
   const nodeById = new Map<string, FlowNode>();
 
   for (const placement of sectionPlacements) {
@@ -214,10 +219,16 @@ function buildTrees(
 }
 
 function flattenLabels(nodes: FlowNode[]): string[] {
-  return nodes.flatMap((node) => [node.label, ...flattenLabels(node.children ?? [])]);
+  return nodes.flatMap((node) => [
+    node.label,
+    ...flattenLabels(node.children ?? []),
+  ]);
 }
 
-function composeCard(blocks: SourceBlock[], placements: Placement[]): OrganizedCard {
+function composeCard(
+  blocks: SourceBlock[],
+  placements: Placement[],
+): OrganizedCard {
   const flow = buildTrees(blocks, placements, "main");
   const sectionTrees = emptySectionTrees();
 
@@ -250,10 +261,19 @@ export async function organizeCard(
   const blocks = splitSourceBlocks(rawText);
   if (!blocks.length) throw new Error("No source information was provided");
 
+  const model = process.env.OPENAI_MODEL ?? "gpt-5-nano";
+  const serviceTier =
+    process.env.OPENAI_SERVICE_TIER === "default" ? "default" : "flex";
   const completion = await openai.chat.completions.create({
-    model: process.env.OPENAI_MODEL ?? "gpt-5-nano",
+    model,
+    service_tier: serviceTier,
     reasoning_effort: "minimal",
-    max_completion_tokens: Math.min(12_000, Math.max(1_200, blocks.length * 80)),
+    verbosity: "low",
+    n: 1,
+    max_completion_tokens: Math.min(
+      12_000,
+      Math.max(1_200, blocks.length * 80),
+    ),
     messages: [
       { role: "system", content: ORGANIZER_PROMPT },
       {
@@ -273,6 +293,18 @@ export async function organizeCard(
 
   const content = completion.choices[0]?.message?.content;
   if (!content) throw new Error("AI returned an empty organization result");
+
+  const usage = completion.usage;
+  if (usage) {
+    console.info("MedCard AI usage", {
+      model,
+      serviceTier: completion.service_tier ?? serviceTier,
+      promptTokens: usage.prompt_tokens,
+      cachedPromptTokens: usage.prompt_tokens_details?.cached_tokens ?? 0,
+      completionTokens: usage.completion_tokens,
+      totalTokens: usage.total_tokens,
+    });
+  }
 
   const placements = validatePlacements(blocks, JSON.parse(content));
   return composeCard(blocks, placements);
