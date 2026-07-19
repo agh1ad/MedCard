@@ -149,11 +149,8 @@
 .memory-card {
   --paper-ink: #25231f;
   --paper-rule: rgba(92, 132, 153, 0.16);
-  --memory-font: 12px;
-  --memory-h-gap: 6px;
-  --memory-v-gap: 12px;
-  --memory-node-width: 190px;
-  --memory-section-pad: 7px;
+  --memory-main-font: 12px;
+  --memory-sidebar-font: 12px;
   position: relative;
   display: grid;
   grid-template-columns: 31% 69%;
@@ -212,6 +209,11 @@
 }
 
 .memory-sidebar {
+  --memory-font: var(--memory-sidebar-font);
+  --memory-h-gap: max(3px, calc(var(--memory-font) * 0.5));
+  --memory-v-gap: max(5px, var(--memory-font));
+  --memory-node-width: max(140px, calc(var(--memory-font) * 14.6));
+  --memory-section-pad: max(4px, calc(var(--memory-font) * 0.58));
   grid-column: 1;
   grid-row: 2;
   display: flex;
@@ -257,6 +259,10 @@
 .memory-section.accent-red header { color: #c62828; }
 
 .memory-main {
+  --memory-font: var(--memory-main-font);
+  --memory-h-gap: max(3px, calc(var(--memory-font) * 0.5));
+  --memory-v-gap: max(5px, var(--memory-font));
+  --memory-node-width: max(140px, calc(var(--memory-font) * 14.6));
   grid-column: 2;
   grid-row: 2;
   display: flex;

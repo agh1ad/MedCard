@@ -62,13 +62,12 @@ function countLeaves(node: FlowNode): number {
 const MIN_FONT_SIZE = 11.5;
 const MAX_FONT_SIZE = 28;
 
-function setCardScale(card: HTMLElement, fontSize: number) {
-  const scale = fontSize / 12;
-  card.style.setProperty("--memory-font", `${fontSize}px`);
-  card.style.setProperty("--memory-h-gap", `${Math.max(3, 6 * scale)}px`);
-  card.style.setProperty("--memory-v-gap", `${Math.max(5, 12 * scale)}px`);
-  card.style.setProperty("--memory-node-width", `${Math.max(140, 175 * scale)}px`);
-  card.style.setProperty("--memory-section-pad", `${Math.max(4, 7 * scale)}px`);
+function setRegionScale(
+  card: HTMLElement,
+  region: "main" | "sidebar",
+  fontSize: number,
+) {
+  card.style.setProperty(`--memory-${region}-font`, `${fontSize}px`);
 }
 
 function contentFits(element: HTMLElement) {
@@ -262,21 +261,23 @@ export function MemoryCardCanvas({
     const fitCard = () => {
       cancelAnimationFrame(animationFrame);
       animationFrame = requestAnimationFrame(() => {
-        let low = MIN_FONT_SIZE;
-        let high = MAX_FONT_SIZE;
-
-        // Find the largest type size that keeps both card columns fully visible.
-        for (let pass = 0; pass < 10; pass += 1) {
-          const candidate = (low + high) / 2;
-          setCardScale(card, candidate);
-          if (contentFits(sidebar) && contentFits(main)) {
-            low = candidate;
-          } else {
-            high = candidate;
+        const fitRegion = (
+          region: "main" | "sidebar",
+          element: HTMLElement,
+        ) => {
+          let low = MIN_FONT_SIZE;
+          let high = MAX_FONT_SIZE;
+          for (let pass = 0; pass < 10; pass += 1) {
+            const candidate = (low + high) / 2;
+            setRegionScale(card, region, candidate);
+            if (contentFits(element)) low = candidate;
+            else high = candidate;
           }
-        }
+          setRegionScale(card, region, low);
+        };
 
-        setCardScale(card, low);
+        fitRegion("sidebar", sidebar);
+        fitRegion("main", main);
         card.dataset.fitted = "true";
       });
     };
