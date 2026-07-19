@@ -147,6 +147,8 @@ export interface Card {
   rawText: string;
   createdAt: string;
   updatedAt: string;
+  /** @nullable */
+  notebookId?: number | null;
 }
 
 export interface QualityReview {
@@ -198,6 +200,8 @@ export interface CardInput {
   images: CardImage[];
   rawText: string;
   tags: string[];
+  /** @nullable */
+  notebookId?: number | null;
 }
 
 export interface CardUpdate {
@@ -209,6 +213,8 @@ export interface CardUpdate {
   sourceBlocks?: SourceBlock[];
   images?: CardImage[];
   tags?: string[];
+  /** @nullable */
+  notebookId?: number | null;
 }
 
 export interface GenerateCardInput {
@@ -246,4 +252,8 @@ search?: string;
  * Filter by tag
  */
 tag?: string;
+/**
+ * Filter by notebook
+ */
+notebookId?: number;
 };

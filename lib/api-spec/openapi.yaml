@@ -14,6 +14,8 @@ tags:
     description: Medical study card operations
   - name: tags
     description: Tag operations
+  - name: library
+    description: Folder and notebook organization
 
 paths:
   /healthz:
@@ -46,6 +48,11 @@ paths:
           schema:
             type: string
           description: Filter by tag
+        - name: notebookId
+          in: query
+          schema:
+            type: integer
+          description: Filter by notebook
       responses:
         "200":
           description: List of cards
@@ -181,8 +188,201 @@ paths:
                 items:
                   type: string
 
+  /library:
+    get:
+      operationId: getLibrary
+      tags: [library]
+      summary: List folders and notebooks
+      responses:
+        "200":
+          description: Library hierarchy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Library"
+
+  /folders:
+    post:
+      operationId: createFolder
+      tags: [library]
+      summary: Create a folder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FolderInput"
+      responses:
+        "201":
+          description: Created folder
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Folder"
+
+  /folders/{id}:
+    patch:
+      operationId: updateFolder
+      tags: [library]
+      summary: Update a folder
+      parameters:
+        - $ref: "#/components/parameters/EntityId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FolderInput"
+      responses:
+        "200":
+          description: Updated folder
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Folder"
+    delete:
+      operationId: deleteFolder
+      tags: [library]
+      summary: Delete a folder without deleting its cards
+      parameters:
+        - $ref: "#/components/parameters/EntityId"
+      responses:
+        "204":
+          description: Deleted
+
+  /notebooks:
+    post:
+      operationId: createNotebook
+      tags: [library]
+      summary: Create a notebook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotebookInput"
+      responses:
+        "201":
+          description: Created notebook
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notebook"
+
+  /notebooks/{id}:
+    patch:
+      operationId: updateNotebook
+      tags: [library]
+      summary: Update a notebook
+      parameters:
+        - $ref: "#/components/parameters/EntityId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotebookInput"
+      responses:
+        "200":
+          description: Updated notebook
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notebook"
+    delete:
+      operationId: deleteNotebook
+      tags: [library]
+      summary: Delete a notebook and return its cards to Documents
+      parameters:
+        - $ref: "#/components/parameters/EntityId"
+      responses:
+        "204":
+          description: Deleted
+
 components:
+  parameters:
+    EntityId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
   schemas:
+    Folder:
+      type: object
+      required: [id, name, color, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        color:
+          type: string
+        parentId:
+          type: [integer, "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    FolderInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        color:
+          type: string
+        parentId:
+          type: [integer, "null"]
+
+    Notebook:
+      type: object
+      required: [id, name, color, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        color:
+          type: string
+        folderId:
+          type: [integer, "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    NotebookInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        color:
+          type: string
+        folderId:
+          type: [integer, "null"]
+
+    Library:
+      type: object
+      required: [folders, notebooks]
+      properties:
+        folders:
+          type: array
+          items:
+            $ref: "#/components/schemas/Folder"
+        notebooks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notebook"
+
     HealthStatus:
       type: object
       properties:
@@ -369,6 +569,8 @@ components:
         updatedAt:
           type: string
           format: date-time
+        notebookId:
+          type: [integer, "null"]
 
     GeneratedCard:
       type: object
@@ -448,6 +650,8 @@ components:
           type: array
           items:
             type: string
+        notebookId:
+          type: [integer, "null"]
 
     CardUpdate:
       type: object
@@ -475,6 +679,8 @@ components:
           type: array
           items:
             type: string
+        notebookId:
+          type: [integer, "null"]
 
     GenerateCardInput:
       type: object

@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, jsonb, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -123,6 +123,7 @@ export const cardsTable = pgTable("cards", {
     .$type<SectionTrees>()
     .default(emptySectionTrees()),
   images: jsonb("images").notNull().$type<CardImage[]>().default([]),
+  notebookId: integer("notebook_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -135,6 +136,27 @@ export const insertCardSchema = createInsertSchema(cardsTable).omit({
 
 export type InsertCard = z.infer<typeof insertCardSchema>;
 export type Card = typeof cardsTable.$inferSelect;
+
+export const foldersTable = pgTable("folders", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  color: text("color").notNull().default("#2878e3"),
+  parentId: integer("parent_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const notebooksTable = pgTable("notebooks", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  color: text("color").notNull().default("#2878e3"),
+  folderId: integer("folder_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type Folder = typeof foldersTable.$inferSelect;
+export type Notebook = typeof notebooksTable.$inferSelect;
 
 // ── Compat: convert old flat indent-based flow to new recursive tree ──────────
 // Old format: { label, sublabel, indent } — stored before the tree migration

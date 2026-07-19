@@ -21,4 +21,6 @@ export interface CardInput {
   images: CardImage[];
   rawText: string;
   tags: string[];
+  /** @nullable */
+  notebookId?: number | null;
 }

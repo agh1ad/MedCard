@@ -20,4 +20,6 @@ export interface CardUpdate {
   sourceBlocks?: SourceBlock[];
   images?: CardImage[];
   tags?: string[];
+  /** @nullable */
+  notebookId?: number | null;
 }

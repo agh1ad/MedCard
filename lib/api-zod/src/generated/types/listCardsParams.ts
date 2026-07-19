@@ -15,4 +15,8 @@ search?: string;
  * Filter by tag
  */
 tag?: string;
+/**
+ * Filter by notebook
+ */
+notebookId?: number;
 };

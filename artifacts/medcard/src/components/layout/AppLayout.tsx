@@ -21,7 +21,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     setMobileOpen(false);
   }, [location]);
 
-  const isLibrary = location === "/";
+  const isLibrary = location === "/" || location.startsWith("/folders/") || location.startsWith("/notebooks/");
   const isGenerate = location === "/generate";
   const isCard = location.startsWith("/cards/");
   const pageTitle = isLibrary

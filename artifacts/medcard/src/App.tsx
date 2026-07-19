@@ -15,6 +15,8 @@ function Router() {
     <AppLayout>
       <Switch>
         <Route path="/" component={Library} />
+        <Route path="/folders/:id" component={Library} />
+        <Route path="/notebooks/:id" component={Library} />
         <Route path="/generate" component={Generate} />
         <Route path="/cards/:id" component={CardDetail} />
         <Route component={NotFound} />

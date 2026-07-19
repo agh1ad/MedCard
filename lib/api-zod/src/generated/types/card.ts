@@ -26,4 +26,6 @@ export interface Card {
   rawText: string;
   createdAt: Date;
   updatedAt: Date;
+  /** @nullable */
+  notebookId?: number | null;
 }

@@ -22,7 +22,8 @@ export const HealthCheckResponse = zod.object({
  */
 export const ListCardsQueryParams = zod.object({
   "search": zod.coerce.string().optional().describe('Search by topic or content'),
-  "tag": zod.coerce.string().optional().describe('Filter by tag')
+  "tag": zod.coerce.string().optional().describe('Filter by tag'),
+  "notebookId": zod.coerce.number().optional().describe('Filter by notebook')
 })
 
 export const ListCardsResponseItem = zod.object({
@@ -149,7 +150,8 @@ export const ListCardsResponseItem = zod.object({
   "tags": zod.array(zod.string()),
   "rawText": zod.string().describe('Original raw input text'),
   "createdAt": zod.coerce.date(),
-  "updatedAt": zod.coerce.date()
+  "updatedAt": zod.coerce.date(),
+  "notebookId": zod.number().nullish()
 })
 export const ListCardsResponse = zod.array(ListCardsResponseItem)
 
@@ -281,7 +283,8 @@ export const CreateCardBody = zod.object({
   "section": zod.enum(['main', 'high_yield', 'risk_factors', 'associations', 'diagnosis', 'treatment', 'complications'])
 })),
   "rawText": zod.string(),
-  "tags": zod.array(zod.string())
+  "tags": zod.array(zod.string()),
+  "notebookId": zod.number().nullish()
 })
 
 export const CreateCardResponse = zod.object({
@@ -408,7 +411,8 @@ export const CreateCardResponse = zod.object({
   "tags": zod.array(zod.string()),
   "rawText": zod.string().describe('Original raw input text'),
   "createdAt": zod.coerce.date(),
-  "updatedAt": zod.coerce.date()
+  "updatedAt": zod.coerce.date(),
+  "notebookId": zod.number().nullish()
 })
 
 
@@ -711,7 +715,8 @@ export const GetCardResponse = zod.object({
   "tags": zod.array(zod.string()),
   "rawText": zod.string().describe('Original raw input text'),
   "createdAt": zod.coerce.date(),
-  "updatedAt": zod.coerce.date()
+  "updatedAt": zod.coerce.date(),
+  "notebookId": zod.number().nullish()
 })
 
 
@@ -845,7 +850,8 @@ export const UpdateCardBody = zod.object({
   "caption": zod.string().optional(),
   "section": zod.enum(['main', 'high_yield', 'risk_factors', 'associations', 'diagnosis', 'treatment', 'complications'])
 })).optional(),
-  "tags": zod.array(zod.string()).optional()
+  "tags": zod.array(zod.string()).optional(),
+  "notebookId": zod.number().nullish()
 })
 
 export const UpdateCardResponse = zod.object({
@@ -972,7 +978,8 @@ export const UpdateCardResponse = zod.object({
   "tags": zod.array(zod.string()),
   "rawText": zod.string().describe('Original raw input text'),
   "createdAt": zod.coerce.date(),
-  "updatedAt": zod.coerce.date()
+  "updatedAt": zod.coerce.date(),
+  "notebookId": zod.number().nullish()
 })
 
 
@@ -991,5 +998,144 @@ export const DeleteCardResponse = zod.void()
  */
 export const ListTagsResponseItem = zod.string()
 export const ListTagsResponse = zod.array(ListTagsResponseItem)
+
+
+/**
+ * @summary List folders and notebooks
+ */
+export const GetLibraryResponse = zod.object({
+  "folders": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "color": zod.string(),
+  "parentId": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})),
+  "notebooks": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "color": zod.string(),
+  "folderId": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Create a folder
+ */
+
+
+
+export const CreateFolderBody = zod.object({
+  "name": zod.string().min(1),
+  "color": zod.string().optional(),
+  "parentId": zod.number().nullish()
+})
+
+export const CreateFolderResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "color": zod.string(),
+  "parentId": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update a folder
+ */
+export const UpdateFolderParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const UpdateFolderBody = zod.object({
+  "name": zod.string().min(1),
+  "color": zod.string().optional(),
+  "parentId": zod.number().nullish()
+})
+
+export const UpdateFolderResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "color": zod.string(),
+  "parentId": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete a folder without deleting its cards
+ */
+export const DeleteFolderParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteFolderResponse = zod.void()
+
+
+/**
+ * @summary Create a notebook
+ */
+
+
+
+export const CreateNotebookBody = zod.object({
+  "name": zod.string().min(1),
+  "color": zod.string().optional(),
+  "folderId": zod.number().nullish()
+})
+
+export const CreateNotebookResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "color": zod.string(),
+  "folderId": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update a notebook
+ */
+export const UpdateNotebookParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const UpdateNotebookBody = zod.object({
+  "name": zod.string().min(1),
+  "color": zod.string().optional(),
+  "folderId": zod.number().nullish()
+})
+
+export const UpdateNotebookResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "color": zod.string(),
+  "folderId": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete a notebook and return its cards to Documents
+ */
+export const DeleteNotebookParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteNotebookResponse = zod.void()
 
 

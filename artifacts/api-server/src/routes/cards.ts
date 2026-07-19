@@ -226,6 +226,7 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
     const parsed = ListCardsQueryParams.safeParse(req.query);
     const search = parsed.success ? parsed.data.search : undefined;
     const tag = parsed.success ? parsed.data.tag : undefined;
+    const notebookId = parsed.success ? parsed.data.notebookId : undefined;
 
     let allCards = (
       await db.select().from(cardsTable).orderBy(desc(cardsTable.createdAt))
@@ -242,6 +243,10 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
 
     if (tag) {
       allCards = allCards.filter((c) => c.tags?.includes(tag));
+    }
+
+    if (notebookId !== undefined) {
+      allCards = allCards.filter((c) => c.notebookId === notebookId);
     }
 
     res.json(allCards);
@@ -301,6 +306,7 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
       images,
       rawText,
       tags,
+      notebookId,
     } = parsed.data;
 
     const [card] = await db
@@ -315,6 +321,7 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
           sectionTrees as (typeof cardsTable.$inferInsert)["sectionTrees"],
         sourceBlocks,
         images,
+        notebookId: notebookId ?? null,
       })
       .returning();
 
@@ -435,6 +442,9 @@ router.patch("/:id", async (req: Request, res: Response): Promise<void> => {
         }),
         ...(parsedBody.data.tags !== undefined && {
           tags: parsedBody.data.tags,
+        }),
+        ...(parsedBody.data.notebookId !== undefined && {
+          notebookId: parsedBody.data.notebookId,
         }),
       })
       .where(eq(cardsTable.id, parsedParams.data.id))

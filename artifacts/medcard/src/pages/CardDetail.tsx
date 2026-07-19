@@ -23,7 +23,7 @@ import {
   Copy,
   Edit3,
   Loader2,
-  Printer,
+  FileDown,
   Save,
   ShieldCheck,
   Trash2,
@@ -184,7 +184,7 @@ export function CardDetail() {
             </>
           ) : (
             <>
-              <Button variant="outline" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Print A4</Button>
+              <Button variant="outline" onClick={() => window.print()}><FileDown className="mr-2 h-4 w-4" /> Export PDF</Button>
               <Button variant="outline" onClick={copyText}><Copy className="mr-2 h-4 w-4" /> Copy</Button>
               <Button onClick={() => setEditing(true)}><Edit3 className="mr-2 h-4 w-4" /> Edit structure</Button>
             </>
