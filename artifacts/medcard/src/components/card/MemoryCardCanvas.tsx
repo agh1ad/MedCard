@@ -692,7 +692,7 @@ export function MemoryCardCanvas({
   }, [topic, flow, sectionTrees, images]);
 
   return (
-    <div className={`memory-card-shell ${className}`}>
+    <div id="print-area" className={`memory-card-shell ${className}`}>
       <article id="memory-card-print" className="memory-card" ref={cardRef}>
         <div className="memory-card-title">
           <span className="memory-card-kicker">MEDCARD / VISUAL NOTE</span>
