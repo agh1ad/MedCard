@@ -165,7 +165,7 @@ HANDWRITTEN TREE GRAMMAR
 - Model main as a directed medical flow graph using parentNodeIds. Give the AI freedom to select any structure that best expresses the supplied medical logic: sequence, divergence, parallel paths, convergence, repeated split/merge stages, feedback loops, vicious cycles, homeostatic loops, or combinations of these.
 - parentNodeIds[0] is the primary top-to-bottom layout parent and must maintain an acyclic readable backbone. Additional parentNodeIds are semantic connections and may converge from other branches, jump between stages, loop backward, or self-connect when a self-reinforcing process is medically justified. Use [] for a root.
 - Every connection must express cause, progression, dependency, reinforcement, inhibition, recurrence, or a clearly stated condition. Never connect items merely because they are adjacent, and never add complexity for decoration. Sequence and logical memorability are the primary goals.
-- Represent a shared downstream result once with multiple parentNodeIds. Never duplicate the same manifestation or outcome just to preserve a tree shape. Side sections may also use additional parentNodeIds for meaningful cross-links, convergence, or feedback; these render as compact linked-from references within the AMBOSS-style outline.
+- Represent a shared downstream result once with multiple parentNodeIds. Never duplicate the same manifestation or outcome just to preserve a tree shape. Parent connections must stay within the same section; move a fact to the best section rather than linking across sections. Side sections may use additional same-section parentNodeIds for meaningful cross-links, convergence, or feedback.
 - A heading such as "Pathophysiology" or "Symptoms" establishes hierarchy. Continue the pathophysiology as a descending causal trunk. Place each separately listed symptom/sign in its own manifestation node beneath a shared "Clinical manifestations" hub.
 - True divergence creates sibling buds. Continue each sibling independently to its own outcomes. Same-level categories such as Skin/GI/Pulmonary or stable/unstable are siblings, never ancestors of one another.
 - Choose direct children and organizational hubs according to genuine clinical categories and visual readability. Place every supplied manifestation in its own node; organizational grouping must not merge findings or invent arbitrary categories.
@@ -314,6 +314,29 @@ function validateResult(
     throw new Error("AI omitted source information");
   }
 
+  // Keep model creativity from turning a recoverable cross-section link into a 500.
+  for (const node of rawNodes) {
+    const sameSectionParents = [
+      ...new Set(
+        node.parentNodeIds.filter((parentId) => {
+          const parent = nodeById.get(parentId);
+          return parent?.section === node.section;
+        }),
+      ),
+    ];
+    const primaryParent = sameSectionParents.find(
+      (parentId) => parentId !== node.nodeId,
+    );
+    if (!primaryParent) {
+      node.parentNodeIds = [];
+      continue;
+    }
+    node.parentNodeIds = [
+      primaryParent,
+      ...sameSectionParents.filter((parentId) => parentId !== primaryParent),
+    ];
+  }
+
   for (const node of rawNodes) {
     if (new Set(node.parentNodeIds).size !== node.parentNodeIds.length) {
       throw new Error("AI returned duplicate flow connections");
@@ -333,7 +356,7 @@ function validateResult(
       }
     }
     if (createsPrimaryCycle(node, nodeById)) {
-      throw new Error("AI returned a cyclic primary layout hierarchy");
+      node.parentNodeIds = [];
     }
   }
 
