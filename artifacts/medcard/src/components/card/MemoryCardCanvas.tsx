@@ -65,8 +65,9 @@ const MAX_FONT_SIZE = 28;
 function setCardScale(card: HTMLElement, fontSize: number) {
   const scale = fontSize / 12;
   card.style.setProperty("--memory-font", `${fontSize}px`);
-  card.style.setProperty("--memory-gap", `${Math.max(4, 12 * scale)}px`);
-  card.style.setProperty("--memory-node-width", `${Math.max(150, 190 * scale)}px`);
+  card.style.setProperty("--memory-h-gap", `${Math.max(3, 6 * scale)}px`);
+  card.style.setProperty("--memory-v-gap", `${Math.max(5, 12 * scale)}px`);
+  card.style.setProperty("--memory-node-width", `${Math.max(140, 175 * scale)}px`);
   card.style.setProperty("--memory-section-pad", `${Math.max(4, 7 * scale)}px`);
 }
 
