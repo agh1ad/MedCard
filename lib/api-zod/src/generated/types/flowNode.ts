@@ -21,7 +21,7 @@ export interface FlowNode {
   sublabel?: string | null;
   /** Child nodes branching from this node (shown side by side) */
   children?: FlowNode[];
-  /** Additional incoming connections used when multiple pathways converge on this node */
+  /** Additional incoming directed connections, including convergence and feedback loops */
   additionalParentIds?: string[];
   /** Immutable source block represented by this node */
   sourceBlockId?: string;
