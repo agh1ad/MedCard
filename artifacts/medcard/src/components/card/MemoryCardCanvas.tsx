@@ -54,7 +54,7 @@ const TABLE_HEADERS: Partial<
 };
 
 interface MemoryTableGroup {
-  root: FlowNode;
+  root?: FlowNode;
   rows: FlowNode[];
 }
 
@@ -64,7 +64,7 @@ function splitTableGroups(
 ): { tables: MemoryTableGroup[]; trees: FlowNode[] } {
   if (!TABLE_HEADERS[section]) return { tables: [], trees: nodes };
 
-  return nodes.reduce<{ tables: MemoryTableGroup[]; trees: FlowNode[] }>(
+  const grouped = nodes.reduce<{ tables: MemoryTableGroup[]; trees: FlowNode[] }>(
     (result, root) => {
       const children = root.children ?? [];
       const isPairedComparison =
@@ -80,6 +80,16 @@ function splitTableGroups(
     },
     { tables: [], trees: [] },
   );
+
+  const directRows = grouped.trees.filter(
+    (node) => Boolean(node.sublabel?.trim()) && !(node.children?.length ?? 0),
+  );
+  if (directRows.length === grouped.trees.length && directRows.length > 0) {
+    grouped.tables.push({ rows: directRows });
+    grouped.trees = [];
+  }
+
+  return grouped;
 }
 
 function countNodes(nodes: FlowNode[]): number {
@@ -247,21 +257,23 @@ function MemoryTable({
   headers: readonly [string, string];
   roleOverride?: SemanticRole;
 }) {
+  const { root } = group;
   return (
-    <div className={`memory-table-group origin-${group.root.origin ?? "source"}`}>
-      <h3>
-        <HighlightedText
-          text={group.root.label}
-          terms={group.root.highlightTerms}
-        />
-      </h3>
-      {group.root.sublabel && (
-        <p>
-          <HighlightedText
-            text={group.root.sublabel}
-            terms={group.root.highlightTerms}
-          />
-        </p>
+    <div className={`memory-table-group origin-${root?.origin ?? "source"}`}>
+      {root && (
+        <>
+          <h3>
+            <HighlightedText text={root.label} terms={root.highlightTerms} />
+          </h3>
+          {root.sublabel && (
+            <p>
+              <HighlightedText
+                text={root.sublabel}
+                terms={root.highlightTerms}
+              />
+            </p>
+          )}
+        </>
       )}
       <table className="memory-table">
         <thead>
@@ -433,7 +445,7 @@ export function MemoryCardCanvas({
                         <MemoryTable
                           group={group}
                           headers={tableHeaders}
-                          key={group.root.id}
+                          key={group.root?.id ?? `${key}-direct-table`}
                           roleOverride={SECTION_ROLES[key]}
                         />
                       ))}
