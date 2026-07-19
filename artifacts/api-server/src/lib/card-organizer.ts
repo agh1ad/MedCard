@@ -275,13 +275,9 @@ function validateResult(
       throw new Error("AI omitted provenance for edited source content");
     }
     const visibleText = `${node.label} ${node.sublabel ?? ""}`.toLocaleLowerCase();
-    if (
-      node.highlightTerms.some(
-        (term) => !term.trim() || !visibleText.includes(term.toLocaleLowerCase()),
-      )
-    ) {
-      throw new Error("AI returned a concept highlight outside the node text");
-    }
+    node.highlightTerms = node.highlightTerms.filter(
+      (term) => term.trim() && visibleText.includes(term.toLocaleLowerCase()),
+    );
     for (const blockId of node.sourceBlockIds) {
       if (!expectedBlockIds.has(blockId)) {
         throw new Error("AI referenced an unknown source block");
