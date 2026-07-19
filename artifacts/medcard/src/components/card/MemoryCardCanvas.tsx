@@ -423,9 +423,11 @@ function MemoryFlowGraph({ nodes }: { nodes: FlowNode[] }) {
 function MemoryBulletList({
   nodes,
   roleOverride,
+  nodeLabels,
 }: {
   nodes: FlowNode[];
   roleOverride?: SemanticRole;
+  nodeLabels: Map<string, string>;
 }) {
   if (!nodes.length) return null;
 
@@ -438,6 +440,9 @@ function MemoryBulletList({
           .map((part) => part.trim())
           .filter(Boolean);
         const hasDetailList = detailParts.length > 1;
+        const linkedFrom = (node.additionalParentIds ?? [])
+          .map((id) => nodeLabels.get(id))
+          .filter((label): label is string => Boolean(label));
         return (
           <li
             className={`role-${semanticRole} origin-${node.origin ?? "source"}`}
@@ -471,8 +476,14 @@ function MemoryBulletList({
                 ))}
               </ul>
             )}
+            {linkedFrom.length > 0 && (
+              <span className="memory-bullet-links">
+                Linked from: {linkedFrom.join(" + ")}
+              </span>
+            )}
             <MemoryBulletList
               nodes={node.children ?? []}
+              nodeLabels={nodeLabels}
               roleOverride={roleOverride}
             />
           </li>
@@ -480,6 +491,14 @@ function MemoryBulletList({
       })}
     </ul>
   );
+}
+
+function collectNodeLabels(nodes: FlowNode[], labels = new Map<string, string>()) {
+  for (const node of nodes) {
+    labels.set(node.id, node.label);
+    collectNodeLabels(node.children ?? [], labels);
+  }
+  return labels;
 }
 
 function SectionImages({ images }: { images: CardImage[] }) {
@@ -580,6 +599,7 @@ export function MemoryCardCanvas({
             const nodes = sectionTrees[key] ?? [];
             const sectionImages = imagesFor(key);
             const nodeCount = countNodes(nodes);
+            const nodeLabels = collectNodeLabels(nodes);
             return (
               <section
                 className={`memory-section accent-${accent} ${nodeCount > 3 ? "is-wide" : ""} ${nodeCount > 6 ? "is-dense" : ""}`}
@@ -591,6 +611,7 @@ export function MemoryCardCanvas({
                 </header>
                 <MemoryBulletList
                   nodes={nodes}
+                  nodeLabels={nodeLabels}
                   roleOverride={SECTION_ROLES[key]}
                 />
                 <SectionImages images={sectionImages} />

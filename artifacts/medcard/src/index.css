@@ -316,6 +316,15 @@
 .memory-bullet-detail-list > li {
   margin-bottom: max(3px, calc(var(--memory-font) * 0.22));
 }
+.memory-bullet-links {
+  display: block;
+  margin-top: 2px;
+  color: #177d72;
+  font-size: 0.78em;
+  font-style: italic;
+  font-weight: 650;
+}
+.memory-bullet-links::before { content: '↳ '; }
 
 .memory-main {
   --memory-font: var(--memory-main-font);

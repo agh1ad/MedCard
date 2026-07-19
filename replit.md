@@ -38,6 +38,7 @@ MedCard turns user-researched medical information into a single landscape A4 vis
 - Generation enforces compact visual-node and AI-addition budgets so cards remain memorable instead of becoming textbook outlines.
 - Explicit main-tree arrow stages and separately listed manifestations are never merged: each receives its own cell in the descending hierarchy.
 - AI freely selects the medically logical flow pattern, including splits, convergence, parallel paths, and feedback cycles. A readable acyclic backbone controls layout while additional directed connections express loops and cross-links.
+- AI also controls side-note information architecture: section placement, order, grouping, nesting, comparisons, decisions, explanations, and compact cross-links are selected from the source logic rather than a fixed template.
 - Semantic colors are fixed: core facts pink, manifestations purple, diagnosis dark green, treatment bright green, complications red, mechanisms and supporting facts blue, and named medical concepts dark green.
 - The A4 renderer balances side sections into independent columns and scales type between 11.5 and 28 px without stretched empty panels.
 - Side information uses an AMBOSS-inspired clinical-summary style: restrained heading bands, teal/accent bullets, black text, pale high-yield callouts, and dark-green recognized concepts. The central pathophysiology remains a budding tree.

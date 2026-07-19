@@ -149,29 +149,29 @@ SOURCE PRESERVATION
 
 VISUAL DENSITY
 - Respect maxNodes as a hard ceiling. Merge related side-section wording when needed, but never merge distinct supplied main-path stages or manifestations; sourceBlockIds preserves all traceability.
-- A side-note node may contain one short causal phrase. In main, every supplied arrow stage and every separately listed finding must have its own visual node. Side-tree depth must not exceed 4. Avoid nodes that merely say "confirms", "risk profile", "typical presentation", or repeat a side-section heading.
-- Prefer 2-5 memorable sibling buds beneath a mechanism/category. Keep labels under 7 words and sublabels under 10 words whenever medically possible.
+- In main, every supplied arrow stage and every separately listed finding must have its own visual node. In side sections, freely choose the hierarchy, depth, grouping, comparisons, decision sequences, and concise explanations that produce the clearest clinical reference. Avoid nodes that merely repeat a section heading.
+- Choose the number of sibling buds or sub-bullets from the actual medical relationships rather than a fixed template. Keep wording concise enough to fit while preserving useful qualifiers.
 - A short source should produce a sparse visual structure that scales up to fill the card, not a textbook expansion or unused tiny text.
 
 HANDWRITTEN TREE GRAMMAR
-- Main starts from one disease trunk. Its first level contains at most three major mechanism/category buds, never a row of unrelated manifestations.
+- Main normally starts from one disease trunk, but the AI may choose multiple roots when the source truly describes independent processes that later connect.
 - Main contains pathophysiology and the manifestations produced by each mechanism. Use the closest cause/category/process as parent.
 - Treat an explicit source sequence A -> B -> C as mandatory descending parentage: A is the parent of B and B is the parent of C. Give every supplied stage its own bordered-cell node in the same order; never combine, skip, reorder, or place two stages in one label.
 - Model main as a directed medical flow graph using parentNodeIds. Give the AI freedom to select any structure that best expresses the supplied medical logic: sequence, divergence, parallel paths, convergence, repeated split/merge stages, feedback loops, vicious cycles, homeostatic loops, or combinations of these.
 - parentNodeIds[0] is the primary top-to-bottom layout parent and must maintain an acyclic readable backbone. Additional parentNodeIds are semantic connections and may converge from other branches, jump between stages, loop backward, or self-connect when a self-reinforcing process is medically justified. Use [] for a root.
 - Every connection must express cause, progression, dependency, reinforcement, inhibition, recurrence, or a clearly stated condition. Never connect items merely because they are adjacent, and never add complexity for decoration. Sequence and logical memorability are the primary goals.
-- Represent a shared downstream result once with multiple parentNodeIds. Never duplicate the same manifestation or outcome just to preserve a tree shape. Side sections remain simple bullet hierarchies and must have at most one parentNodeId.
+- Represent a shared downstream result once with multiple parentNodeIds. Never duplicate the same manifestation or outcome just to preserve a tree shape. Side sections may also use additional parentNodeIds for meaningful cross-links, convergence, or feedback; these render as compact linked-from references within the AMBOSS-style outline.
 - A heading such as "Pathophysiology" or "Symptoms" establishes hierarchy. Continue the pathophysiology as a descending causal trunk. Place each separately listed symptom/sign in its own manifestation node beneath a shared "Clinical manifestations" hub.
 - True divergence creates sibling buds. Continue each sibling independently to its own outcomes. Same-level categories such as Skin/GI/Pulmonary or stable/unstable are siblings, never ancestors of one another.
-- Limit every parent to three direct children. When there are more findings, introduce meaningful organizational hubs beneath "Clinical manifestations" (for example local symptoms, systemic symptoms, and infant signs), then place every supplied finding in its own child node. Organizational grouping must not merge findings.
+- Choose direct children and organizational hubs according to genuine clinical categories and visual readability. Place every supplied manifestation in its own node; organizational grouping must not merge findings or invent arbitrary categories.
 - Do not attach multiple organ-system manifestations directly to the disease root beside its mechanism. Route them through their causal mechanism or one shared manifestation hub so the tree grows vertically instead of becoming an unreadably wide row.
 - Never turn adjacency or a plain list into a chain. Chain only when causality, arrows, or explicit sequence supports it. Findings beneath one heading are sibling buds.
 - Diagnosis and treatment are decision trees: test/condition -> result -> next step. Other side sections may also branch. Build side trees with the same centered parent-to-sibling budding geometry as the main tree, not deep outline-style ladders.
 - Keep labels concise enough for one A4 page. Put useful qualifiers in sublabel. Use consistent tone along a chain and contrasting tones between neighboring branches.
 
 SIDE NOTES
-- Side sections render as concise nested bullet points. Keep each bullet self-contained, put a short paired explanation or mechanism in its sublabel, and use children only for genuine subpoints or dependent next steps.
-- Avoid decorative category nodes, repeated headings, and one-word ladders. Prefer a short parent bullet with 2-4 direct sub-bullets when hierarchy is useful.
+- Side sections use the established AMBOSS-style clinical panels, but the AI controls their information architecture. Freely choose section placement, order, nesting, category hubs, paired label/explanation structure, decision pathways, comparisons, and cross-links to maximize rapid recall.
+- Use a flat list when facts are independent, nesting when facts depend on a category or decision, and cross-links when one point logically depends on multiple others. Avoid decorative complexity: every structural choice must improve clinical logic or memorability.
 
 SEMANTIC COLOR ROLES
 - semanticRole "core": only the highest-yield/core facts.
@@ -309,9 +309,6 @@ function validateResult(
   for (const node of rawNodes) {
     if (new Set(node.parentNodeIds).size !== node.parentNodeIds.length) {
       throw new Error("AI returned duplicate flow connections");
-    }
-    if (node.section !== "main" && node.parentNodeIds.length > 1) {
-      throw new Error("AI returned converging side-note parents");
     }
     for (const parentId of node.parentNodeIds) {
       const parent = nodeById.get(parentId);
