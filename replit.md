@@ -36,6 +36,7 @@ MedCard turns user-researched medical information into a single landscape A4 vis
 - Medical prose is split into an immutable source ledger before AI is called.
 - AI may clarify wording, split or combine ideas, and add conservative high-yield context. Every node is labeled as source, enhanced, or AI-added.
 - Generation enforces compact visual-node and AI-addition budgets so cards remain memorable instead of becoming textbook outlines.
+- Explicit main-tree arrow stages and separately listed manifestations are never merged: each receives its own cell in the descending hierarchy.
 - Semantic colors are fixed: core facts pink, manifestations purple, diagnosis dark green, treatment bright green, complications red, mechanisms and supporting facts blue, and named medical concepts dark green.
 - The A4 renderer balances side sections into independent columns and scales type between 11.5 and 28 px without stretched empty panels.
 - Side information renders as spacious black sectioned bullet lists with one fact per line; recognized medical concepts remain dark green and the central pathophysiology remains a budding tree.

@@ -148,16 +148,18 @@ SOURCE PRESERVATION
 - Add only facts essential to understanding a missing causal bridge. Respect maxAiAddedNodes exactly as a hard ceiling. AI-created nodes use origin "ai_added" and an empty sourceBlockIds array. Never add optional presentation windows, alternate tests, confirmatory restatements, or long complication cascades unless supplied by the source.
 
 VISUAL DENSITY
-- Respect maxNodes as a hard ceiling. Merge related source blocks into one concise node when needed; sourceBlockIds preserves all traceability.
-- A node may contain one short causal arrow phrase when that avoids a ladder of tiny nodes. Side-tree depth must not exceed 4. Avoid nodes that merely say "confirms", "risk profile", "typical presentation", or repeat a section heading.
+- Respect maxNodes as a hard ceiling. Merge related side-section wording when needed, but never merge distinct supplied main-path stages or manifestations; sourceBlockIds preserves all traceability.
+- A side-note node may contain one short causal phrase. In main, every supplied arrow stage and every separately listed finding must have its own visual node. Side-tree depth must not exceed 4. Avoid nodes that merely say "confirms", "risk profile", "typical presentation", or repeat a side-section heading.
 - Prefer 2-5 memorable sibling buds beneath a mechanism/category. Keep labels under 7 words and sublabels under 10 words whenever medically possible.
 - A short source should produce a sparse visual structure that scales up to fill the card, not a textbook expansion or unused tiny text.
 
 HANDWRITTEN TREE GRAMMAR
 - Main starts from one disease trunk. Its first level contains at most three major mechanism/category buds, never a row of unrelated manifestations.
 - Main contains pathophysiology and the manifestations produced by each mechanism. Use the closest cause/category/process as parent.
+- Treat an explicit source sequence A -> B -> C as mandatory descending parentage: A is the parent of B and B is the parent of C. Give every supplied stage its own bordered-cell node in the same order; never combine, skip, reorder, or place two stages in one label.
+- A heading such as "Pathophysiology" or "Symptoms" establishes hierarchy. Continue the pathophysiology as a descending causal trunk. Place each separately listed symptom/sign in its own manifestation node beneath a shared "Clinical manifestations" hub.
 - True divergence creates sibling buds. Continue each sibling independently to its own outcomes. Same-level categories such as Skin/GI/Pulmonary or stable/unstable are siblings, never ancestors of one another.
-- Limit every parent to three direct children. When there are more findings, introduce a meaningful shared category such as "Clinical manifestations" or "Extra-articular disease", then group related findings beneath it. Combine closely related organ systems in one concise node when necessary.
+- Limit every parent to three direct children. When there are more findings, introduce meaningful organizational hubs beneath "Clinical manifestations" (for example local symptoms, systemic symptoms, and infant signs), then place every supplied finding in its own child node. Organizational grouping must not merge findings.
 - Do not attach multiple organ-system manifestations directly to the disease root beside its mechanism. Route them through their causal mechanism or one shared manifestation hub so the tree grows vertically instead of becoming an unreadably wide row.
 - Never turn adjacency or a plain list into a chain. Chain only when causality, arrows, or explicit sequence supports it. Findings beneath one heading are sibling buds.
 - Diagnosis and treatment are decision trees: test/condition -> result -> next step. Other side sections may also branch. Build side trees with the same centered parent-to-sibling budding geometry as the main tree, not deep outline-style ladders.
@@ -426,7 +428,8 @@ export async function organizeCard(
 ): Promise<OrganizedCard> {
   const blocks = splitSourceBlocks(rawText);
   if (!blocks.length) throw new Error("No source information was provided");
-  const maxNodes = Math.min(32, Math.max(16, Math.ceil(blocks.length * 0.8)));
+  // Dense source lists need enough cells to preserve every explicit main-tree point.
+  const maxNodes = Math.min(48, Math.max(18, Math.ceil(blocks.length * 1.05)));
   const maxAiAddedNodes = Math.min(
     4,
     Math.max(2, Math.ceil(blocks.length / 12)),
