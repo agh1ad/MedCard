@@ -214,6 +214,11 @@ function MemoryBulletList({
     <ul className="memory-bullets">
       {nodes.map((node) => {
         const semanticRole = roleOverride ?? node.semanticRole ?? "fact";
+        const detailParts = (node.sublabel ?? "")
+          .split(/\s*•\s*/)
+          .map((part) => part.trim())
+          .filter(Boolean);
+        const hasDetailList = detailParts.length > 1;
         return (
           <li
             className={`role-${semanticRole} origin-${node.origin ?? "source"}`}
@@ -226,16 +231,24 @@ function MemoryBulletList({
               <strong>
                 <HighlightedText text={node.label} terms={node.highlightTerms} />
               </strong>
-              {node.sublabel && (
+              {detailParts.length === 1 && (
                 <span className="memory-bullet-detail">
-                  {" — "}
                   <HighlightedText
-                    text={node.sublabel}
+                    text={detailParts[0]}
                     terms={node.highlightTerms}
                   />
                 </span>
               )}
             </div>
+            {hasDetailList && (
+              <ul className="memory-bullet-detail-list">
+                {detailParts.map((part, index) => (
+                  <li key={`${node.id}-detail-${index}`}>
+                    <HighlightedText text={part} terms={node.highlightTerms} />
+                  </li>
+                ))}
+              </ul>
+            )}
             <MemoryBulletList
               nodes={node.children ?? []}
               roleOverride={roleOverride}

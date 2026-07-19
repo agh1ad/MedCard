@@ -255,21 +255,33 @@
 
 .memory-bullets {
   margin: 0;
-  padding-left: max(12px, calc(var(--memory-font) * 1.05));
+  padding-left: max(15px, calc(var(--memory-font) * 1.15));
+  color: #24211d;
   font-size: max(8px, calc(var(--memory-font) * 0.84));
-  line-height: 1.28;
+  line-height: 1.42;
+  list-style: none;
 }
 .memory-bullets .memory-bullets {
-  margin-top: 2px;
-  padding-left: max(11px, calc(var(--memory-font) * 0.9));
+  margin-top: max(3px, calc(var(--memory-font) * 0.18));
+  padding-left: max(14px, calc(var(--memory-font) * 1.05));
   font-size: 0.95em;
 }
 .memory-bullets li {
   position: relative;
-  margin: 0 0 max(2px, calc(var(--memory-font) * 0.2));
+  margin: 0 0 max(4px, calc(var(--memory-font) * 0.34));
   padding-left: 1px;
+  color: #24211d;
 }
-.memory-bullets li::marker { font-size: 0.78em; }
+.memory-bullets > li::before,
+.memory-bullet-detail-list > li::before {
+  content: '•';
+  position: absolute;
+  left: max(-14px, calc(var(--memory-font) * -0.9));
+  top: -0.02em;
+  color: #24211d;
+  font-size: 1.05em;
+  font-weight: 900;
+}
 .memory-bullets li.origin-ai_added::after {
   content: '+';
   margin-left: 0.2em;
@@ -278,14 +290,22 @@
   font-weight: 900;
   vertical-align: top;
 }
-.memory-bullets li.role-core { color: #e21882; }
-.memory-bullets li.role-manifestation { color: #7135a8; }
-.memory-bullets li.role-diagnosis { color: #086447; }
-.memory-bullets li.role-treatment { color: #159947; }
-.memory-bullets li.role-complication { color: #c62828; }
-.memory-bullets li.role-explanation,
-.memory-bullets li.role-fact { color: #176ec8; }
-.memory-bullet-detail { color: #2c2a26; font-weight: 500; }
+.memory-bullet-detail {
+  display: block;
+  margin-top: 1px;
+  color: #24211d;
+  font-weight: 500;
+}
+.memory-bullet-detail-list {
+  margin: max(3px, calc(var(--memory-font) * 0.16)) 0 0;
+  padding-left: max(15px, calc(var(--memory-font) * 1.08));
+  color: #24211d;
+  font-weight: 500;
+  list-style: none;
+}
+.memory-bullet-detail-list > li {
+  margin-bottom: max(3px, calc(var(--memory-font) * 0.22));
+}
 
 .memory-main {
   --memory-font: var(--memory-main-font);
