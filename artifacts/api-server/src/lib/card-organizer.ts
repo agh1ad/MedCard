@@ -163,10 +163,9 @@ HANDWRITTEN TREE GRAMMAR
 - Diagnosis and treatment are decision trees: test/condition -> result -> next step. Other side sections may also branch. Build side trees with the same centered parent-to-sibling budding geometry as the main tree, not deep outline-style ladders.
 - Keep labels concise enough for one A4 page. Put useful qualifiers in sublabel. Use consistent tone along a chain and contrasting tones between neighboring branches.
 
-SIDE TABLES
-- Make comparable side facts table-ready when each item has one paired explanation, mechanism, key link, or pearl. Create one category root, then put each row key in a direct leaf child's label and its paired detail in that child's sublabel.
-- Good table-ready examples are organism -> key pearl, risk factor -> mechanism, and association -> key link. Do not add decorative intermediate nodes between the category and rows.
-- Do not force causal sequences, diagnostic decisions, treatment pathways, or multi-level hierarchies into this pattern; preserve those as branching trees.
+SIDE NOTES
+- Side sections render as concise nested bullet points. Keep each bullet self-contained, put a short paired explanation or mechanism in its sublabel, and use children only for genuine subpoints or dependent next steps.
+- Avoid decorative category nodes, repeated headings, and one-word ladders. Prefer a short parent bullet with 2-4 direct sub-bullets when hierarchy is useful.
 
 SEMANTIC COLOR ROLES
 - semanticRole "core": only the highest-yield/core facts.

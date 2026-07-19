@@ -45,53 +45,6 @@ const SECTION_ROLES: Partial<Record<keyof SectionTrees, SemanticRole>> = {
   complications: "complication",
 };
 
-const TABLE_HEADERS: Partial<
-  Record<keyof SectionTrees, readonly [string, string]>
-> = {
-  high_yield: ["Item", "Key pearl"],
-  risk_factors: ["Risk factor", "Mechanism"],
-  associations: ["Association", "Key link"],
-};
-
-interface MemoryTableGroup {
-  root?: FlowNode;
-  rows: FlowNode[];
-}
-
-function splitTableGroups(
-  section: keyof SectionTrees,
-  nodes: FlowNode[],
-): { tables: MemoryTableGroup[]; trees: FlowNode[] } {
-  if (!TABLE_HEADERS[section]) return { tables: [], trees: nodes };
-
-  const grouped = nodes.reduce<{ tables: MemoryTableGroup[]; trees: FlowNode[] }>(
-    (result, root) => {
-      const children = root.children ?? [];
-      const isPairedComparison =
-        children.length > 0 &&
-        children.every(
-          (child) =>
-            Boolean(child.sublabel?.trim()) && !(child.children?.length ?? 0),
-        );
-
-      if (isPairedComparison) result.tables.push({ root, rows: children });
-      else result.trees.push(root);
-      return result;
-    },
-    { tables: [], trees: [] },
-  );
-
-  const directRows = grouped.trees.filter(
-    (node) => Boolean(node.sublabel?.trim()) && !(node.children?.length ?? 0),
-  );
-  if (directRows.length === grouped.trees.length && directRows.length > 0) {
-    grouped.tables.push({ rows: directRows });
-    grouped.trees = [];
-  }
-
-  return grouped;
-}
-
 function countNodes(nodes: FlowNode[]): number {
   return nodes.reduce(
     (total, node) => total + 1 + countNodes(node.children ?? []),
@@ -248,66 +201,49 @@ function MemoryTree({
   );
 }
 
-function MemoryTable({
-  group,
-  headers,
+function MemoryBulletList({
+  nodes,
   roleOverride,
 }: {
-  group: MemoryTableGroup;
-  headers: readonly [string, string];
+  nodes: FlowNode[];
   roleOverride?: SemanticRole;
 }) {
-  const { root } = group;
+  if (!nodes.length) return null;
+
   return (
-    <div className={`memory-table-group origin-${root?.origin ?? "source"}`}>
-      {root && (
-        <>
-          <h3>
-            <HighlightedText text={root.label} terms={root.highlightTerms} />
-          </h3>
-          {root.sublabel && (
-            <p>
-              <HighlightedText
-                text={root.sublabel}
-                terms={root.highlightTerms}
-              />
-            </p>
-          )}
-        </>
-      )}
-      <table className="memory-table">
-        <thead>
-          <tr>
-            <th>{headers[0]}</th>
-            <th>{headers[1]}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {group.rows.map((row) => {
-            const semanticRole = roleOverride ?? row.semanticRole ?? "fact";
-            return (
-              <tr
-                className={`origin-${row.origin ?? "source"}`}
-                key={row.id}
-                title={
-                  row.origin === "ai_added" ? "Added by AI for context" : undefined
-                }
-              >
-                <td className={`role-${semanticRole}`}>
-                  <HighlightedText text={row.label} terms={row.highlightTerms} />
-                </td>
-                <td>
+    <ul className="memory-bullets">
+      {nodes.map((node) => {
+        const semanticRole = roleOverride ?? node.semanticRole ?? "fact";
+        return (
+          <li
+            className={`role-${semanticRole} origin-${node.origin ?? "source"}`}
+            key={node.id}
+            title={
+              node.origin === "ai_added" ? "Added by AI for context" : undefined
+            }
+          >
+            <div>
+              <strong>
+                <HighlightedText text={node.label} terms={node.highlightTerms} />
+              </strong>
+              {node.sublabel && (
+                <span className="memory-bullet-detail">
+                  {" — "}
                   <HighlightedText
-                    text={row.sublabel ?? ""}
-                    terms={row.highlightTerms}
+                    text={node.sublabel}
+                    terms={node.highlightTerms}
                   />
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+                </span>
+              )}
+            </div>
+            <MemoryBulletList
+              nodes={node.children ?? []}
+              roleOverride={roleOverride}
+            />
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -405,29 +341,18 @@ export function MemoryCardCanvas({
           {visibleSections.map(({ key, title, icon: Icon, accent }) => {
             const nodes = sectionTrees[key] ?? [];
             const sectionImages = imagesFor(key);
-            const { tables, trees } = splitTableGroups(key, nodes);
-            const tableHeaders = TABLE_HEADERS[key];
+            const nodeCount = countNodes(nodes);
             return (
               <section
-                className={`memory-section accent-${accent} ${tables.length ? "has-table" : ""} ${countNodes(nodes) > 5 ? "is-dense" : ""}`}
+                className={`memory-section accent-${accent} ${nodeCount > 3 ? "is-wide" : ""} ${nodeCount > 6 ? "is-dense" : ""}`}
                 key={key}
               >
                 <header>
                   <Icon />
                   <h2>{title}</h2>
                 </header>
-                {tableHeaders &&
-                  tables.map((group) => (
-                    <MemoryTable
-                      group={group}
-                      headers={tableHeaders}
-                      key={group.root?.id ?? `${key}-direct-table`}
-                      roleOverride={SECTION_ROLES[key]}
-                    />
-                  ))}
-                <MemoryTree
-                  nodes={trees}
-                  compact
+                <MemoryBulletList
+                  nodes={nodes}
                   roleOverride={SECTION_ROLES[key]}
                 />
                 <SectionImages images={sectionImages} />

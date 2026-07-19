@@ -153,15 +153,15 @@
   --memory-sidebar-font: 12px;
   position: relative;
   display: grid;
-  grid-template-columns: 31% 69%;
+  grid-template-columns: 38% 62%;
   grid-template-rows: 13% 81% 6%;
-  width: max(1080px, 100%);
+  width: max(1280px, 100%);
   aspect-ratio: 297 / 210;
   overflow: hidden;
   color: var(--paper-ink);
   background-color: #fbf8eb;
   background-image:
-    linear-gradient(90deg, transparent 0 30.7%, rgba(219, 66, 66, 0.24) 30.7% 30.82%, transparent 30.82%),
+    linear-gradient(90deg, transparent 0 37.7%, rgba(219, 66, 66, 0.24) 37.7% 37.82%, transparent 37.82%),
     repeating-linear-gradient(to bottom, transparent 0 31px, var(--paper-rule) 31px 32px);
   border: 1px solid rgba(99, 87, 63, 0.22);
   border-radius: 0.35rem;
@@ -202,7 +202,7 @@
 .memory-title-stem {
   position: absolute;
   bottom: -7px;
-  left: 65.5%;
+  left: 69%;
   width: 1.5px;
   height: 18px;
   background: #47443d;
@@ -234,7 +234,7 @@
   border-radius: 8px;
   box-shadow: 0 1px 4px rgba(70, 60, 42, 0.045);
 }
-.memory-section.has-table { grid-column: 1 / -1; }
+.memory-section.is-wide { grid-column: 1 / -1; }
 
 .memory-section header {
   display: flex;
@@ -253,26 +253,24 @@
 .memory-section.accent-bright-green header { color: #159947; }
 .memory-section.accent-red header { color: #c62828; }
 
-.memory-table-group + .memory-table-group,
-.memory-table-group + .memory-tree,
-.memory-tree + .memory-table-group { margin-top: 6px; }
-.memory-table-group { position: relative; min-width: 0; }
-.memory-table-group h3 {
-  margin: 0 0 3px;
-  color: #24211d;
-  font-size: max(8px, calc(var(--memory-font) * 0.92));
-  font-weight: 850;
-  line-height: 1.15;
+.memory-bullets {
+  margin: 0;
+  padding-left: max(12px, calc(var(--memory-font) * 1.05));
+  font-size: max(8px, calc(var(--memory-font) * 0.84));
+  line-height: 1.28;
 }
-.memory-table-group > p {
-  margin: -1px 0 4px;
-  color: #2c2a26;
-  font-size: max(7px, calc(var(--memory-font) * 0.7));
-  font-style: italic;
-  line-height: 1.15;
+.memory-bullets .memory-bullets {
+  margin-top: 2px;
+  padding-left: max(11px, calc(var(--memory-font) * 0.9));
+  font-size: 0.95em;
 }
-.memory-table-group.origin-ai_added h3::after,
-.memory-table tr.origin-ai_added td:first-child::after {
+.memory-bullets li {
+  position: relative;
+  margin: 0 0 max(2px, calc(var(--memory-font) * 0.2));
+  padding-left: 1px;
+}
+.memory-bullets li::marker { font-size: 0.78em; }
+.memory-bullets li.origin-ai_added::after {
   content: '+';
   margin-left: 0.2em;
   color: #8b6b20;
@@ -280,41 +278,14 @@
   font-weight: 900;
   vertical-align: top;
 }
-.memory-table {
-  width: 100%;
-  border-spacing: 0;
-  border-collapse: collapse;
-  table-layout: fixed;
-  color: #24211d;
-  font-size: max(7px, calc(var(--memory-font) * 0.76));
-  line-height: 1.18;
-}
-.memory-table th,
-.memory-table td {
-  padding: max(2px, calc(var(--memory-font) * 0.2)) 3px;
-  overflow-wrap: anywhere;
-  text-align: left;
-  vertical-align: top;
-  border-bottom: 1px solid rgba(78, 72, 61, 0.18);
-}
-.memory-table th {
-  color: #4a463e;
-  font-size: 0.76em;
-  font-weight: 850;
-  letter-spacing: 0.035em;
-  text-transform: uppercase;
-}
-.memory-table th:first-child,
-.memory-table td:first-child { width: 48%; }
-.memory-table td:first-child { font-weight: 760; }
-.memory-table td.role-core { color: #e21882; }
-.memory-table td.role-manifestation { color: #7135a8; }
-.memory-table td.role-diagnosis { color: #086447; }
-.memory-table td.role-treatment { color: #159947; }
-.memory-table td.role-complication { color: #c62828; }
-.memory-table td.role-explanation,
-.memory-table td.role-fact { color: #176ec8; }
-.memory-table tbody tr:last-child td { border-bottom-color: currentColor; }
+.memory-bullets li.role-core { color: #e21882; }
+.memory-bullets li.role-manifestation { color: #7135a8; }
+.memory-bullets li.role-diagnosis { color: #086447; }
+.memory-bullets li.role-treatment { color: #159947; }
+.memory-bullets li.role-complication { color: #c62828; }
+.memory-bullets li.role-explanation,
+.memory-bullets li.role-fact { color: #176ec8; }
+.memory-bullet-detail { color: #2c2a26; font-weight: 500; }
 
 .memory-main {
   --memory-font: var(--memory-main-font);
