@@ -216,20 +216,14 @@
   --memory-section-pad: max(4px, calc(var(--memory-font) * 0.58));
   grid-column: 1;
   grid-row: 2;
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
   align-items: flex-start;
   gap: 7px;
   min-height: 0;
   padding: 4px 12px 8px 14px;
   overflow: hidden;
-}
-
-.memory-sidebar-column {
-  display: flex;
-  flex: 1 1 0;
-  flex-direction: column;
-  gap: 7px;
-  min-width: 0;
 }
 
 .memory-section {
@@ -240,6 +234,7 @@
   border-radius: 8px;
   box-shadow: 0 1px 4px rgba(70, 60, 42, 0.045);
 }
+.memory-section.has-table { grid-column: 1 / -1; }
 
 .memory-section header {
   display: flex;

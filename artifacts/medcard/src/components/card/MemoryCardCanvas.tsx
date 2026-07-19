@@ -340,31 +340,9 @@ export function MemoryCardCanvas({
     Object.values(sectionTrees).reduce((total, nodes) => total + countNodes(nodes), 0);
   const imagesFor = (section: CardImageSection) =>
     images.filter((image) => image.section === section);
-  const sectionColumns = SECTION_CONFIG.reduce<
-    Array<Array<(typeof SECTION_CONFIG)[number]>>
-  >(
-    (columns, section) => {
-      const weight = (sectionTrees[section.key] ?? []).reduce(
-        (total, node) => total + countNodes([node]),
-        0,
-      );
-      const imageWeight = imagesFor(section.key).length * 3;
-      if (!weight && !imageWeight) return columns;
-      const columnWeights = columns.map((column) =>
-        column.reduce(
-          (total, item) =>
-            total +
-            countNodes(sectionTrees[item.key] ?? []) +
-            imagesFor(item.key).length * 3 +
-            1,
-          0,
-        ),
-      );
-      const target = columnWeights[0] <= columnWeights[1] ? 0 : 1;
-      columns[target].push(section);
-      return columns;
-    },
-    [[], []],
+  const visibleSections = SECTION_CONFIG.filter(
+    ({ key }) =>
+      (sectionTrees[key]?.length ?? 0) > 0 || imagesFor(key).length > 0,
   );
 
   useLayoutEffect(() => {
@@ -424,42 +402,38 @@ export function MemoryCardCanvas({
         </div>
 
         <aside className="memory-sidebar" ref={sidebarRef}>
-          {sectionColumns.map((column, columnIndex) => (
-            <div className="memory-sidebar-column" key={columnIndex}>
-              {column.map(({ key, title, icon: Icon, accent }) => {
-                const nodes = sectionTrees[key] ?? [];
-                const sectionImages = imagesFor(key);
-                const { tables, trees } = splitTableGroups(key, nodes);
-                const tableHeaders = TABLE_HEADERS[key];
-                return (
-                  <section
-                    className={`memory-section accent-${accent} ${countNodes(nodes) > 5 ? "is-dense" : ""}`}
-                    key={key}
-                  >
-                    <header>
-                      <Icon />
-                      <h2>{title}</h2>
-                    </header>
-                    {tableHeaders &&
-                      tables.map((group) => (
-                        <MemoryTable
-                          group={group}
-                          headers={tableHeaders}
-                          key={group.root?.id ?? `${key}-direct-table`}
-                          roleOverride={SECTION_ROLES[key]}
-                        />
-                      ))}
-                    <MemoryTree
-                      nodes={trees}
-                      compact
+          {visibleSections.map(({ key, title, icon: Icon, accent }) => {
+            const nodes = sectionTrees[key] ?? [];
+            const sectionImages = imagesFor(key);
+            const { tables, trees } = splitTableGroups(key, nodes);
+            const tableHeaders = TABLE_HEADERS[key];
+            return (
+              <section
+                className={`memory-section accent-${accent} ${tables.length ? "has-table" : ""} ${countNodes(nodes) > 5 ? "is-dense" : ""}`}
+                key={key}
+              >
+                <header>
+                  <Icon />
+                  <h2>{title}</h2>
+                </header>
+                {tableHeaders &&
+                  tables.map((group) => (
+                    <MemoryTable
+                      group={group}
+                      headers={tableHeaders}
+                      key={group.root?.id ?? `${key}-direct-table`}
                       roleOverride={SECTION_ROLES[key]}
                     />
-                    <SectionImages images={sectionImages} />
-                  </section>
-                );
-              })}
-            </div>
-          ))}
+                  ))}
+                <MemoryTree
+                  nodes={trees}
+                  compact
+                  roleOverride={SECTION_ROLES[key]}
+                />
+                <SectionImages images={sectionImages} />
+              </section>
+            );
+          })}
         </aside>
 
         <main className="memory-main" ref={mainRef}>
