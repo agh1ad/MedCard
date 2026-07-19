@@ -38,6 +38,7 @@ MedCard turns user-researched medical information into a single landscape A4 vis
 - Generation enforces compact visual-node and AI-addition budgets so cards remain memorable instead of becoming textbook outlines.
 - Semantic colors are fixed: core facts pink, manifestations purple, diagnosis dark green, treatment bright green, complications red, mechanisms and supporting facts blue, and named medical concepts dark green.
 - The A4 renderer balances side sections into independent columns and scales type between 11.5 and 28 px without stretched empty panels.
+- Comparable high-yield facts, risk factors, and associations render automatically as compact two-column tables; causal and decision content uses the same centered budding-tree geometry as the main flow.
 - The server rejects output that omits source blocks, invents source references, creates invalid parents, or contains hierarchy cycles.
 - Images are kept out of the AI request to reduce cost and preserve privacy; users place them on the card after generation.
 - Generation uses one Flex-tier request with medium reasoning, low verbosity, one choice, strict structured output, and a capped output budget.

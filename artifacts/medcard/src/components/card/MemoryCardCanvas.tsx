@@ -45,6 +45,43 @@ const SECTION_ROLES: Partial<Record<keyof SectionTrees, SemanticRole>> = {
   complications: "complication",
 };
 
+const TABLE_HEADERS: Partial<
+  Record<keyof SectionTrees, readonly [string, string]>
+> = {
+  high_yield: ["Item", "Key pearl"],
+  risk_factors: ["Risk factor", "Mechanism"],
+  associations: ["Association", "Key link"],
+};
+
+interface MemoryTableGroup {
+  root: FlowNode;
+  rows: FlowNode[];
+}
+
+function splitTableGroups(
+  section: keyof SectionTrees,
+  nodes: FlowNode[],
+): { tables: MemoryTableGroup[]; trees: FlowNode[] } {
+  if (!TABLE_HEADERS[section]) return { tables: [], trees: nodes };
+
+  return nodes.reduce<{ tables: MemoryTableGroup[]; trees: FlowNode[] }>(
+    (result, root) => {
+      const children = root.children ?? [];
+      const isPairedComparison =
+        children.length > 0 &&
+        children.every(
+          (child) =>
+            Boolean(child.sublabel?.trim()) && !(child.children?.length ?? 0),
+        );
+
+      if (isPairedComparison) result.tables.push({ root, rows: children });
+      else result.trees.push(root);
+      return result;
+    },
+    { tables: [], trees: [] },
+  );
+}
+
 function countNodes(nodes: FlowNode[]): number {
   return nodes.reduce(
     (total, node) => total + 1 + countNodes(node.children ?? []),
@@ -134,7 +171,7 @@ function MemoryNode({
               <div
                 className="memory-tree-child"
                 key={child.id}
-                style={{ flexGrow: compact ? 1 : countLeaves(child) }}
+                style={{ flexGrow: countLeaves(child) }}
               >
                 <div className="memory-tree-drop" />
                 <MemoryNode
@@ -162,9 +199,11 @@ function MemoryTree({
 }) {
   if (!nodes.length) return null;
 
-  if (!compact && nodes.length > 1) {
+  if (nodes.length > 1) {
     return (
-      <div className="memory-tree memory-tree-root-group">
+      <div
+        className={`memory-tree memory-tree-root-group ${compact ? "is-compact" : ""}`}
+      >
         <div className="memory-tree-children memory-tree-root-children">
           {nodes.map((node) => (
             <div
@@ -173,7 +212,11 @@ function MemoryTree({
               style={{ flexGrow: countLeaves(node) }}
             >
               <div className="memory-tree-drop" />
-              <MemoryNode node={node} roleOverride={roleOverride} />
+              <MemoryNode
+                node={node}
+                compact={compact}
+                roleOverride={roleOverride}
+              />
             </div>
           ))}
         </div>
@@ -191,6 +234,67 @@ function MemoryTree({
           roleOverride={roleOverride}
         />
       ))}
+    </div>
+  );
+}
+
+function MemoryTable({
+  group,
+  headers,
+  roleOverride,
+}: {
+  group: MemoryTableGroup;
+  headers: readonly [string, string];
+  roleOverride?: SemanticRole;
+}) {
+  return (
+    <div className={`memory-table-group origin-${group.root.origin ?? "source"}`}>
+      <h3>
+        <HighlightedText
+          text={group.root.label}
+          terms={group.root.highlightTerms}
+        />
+      </h3>
+      {group.root.sublabel && (
+        <p>
+          <HighlightedText
+            text={group.root.sublabel}
+            terms={group.root.highlightTerms}
+          />
+        </p>
+      )}
+      <table className="memory-table">
+        <thead>
+          <tr>
+            <th>{headers[0]}</th>
+            <th>{headers[1]}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {group.rows.map((row) => {
+            const semanticRole = roleOverride ?? row.semanticRole ?? "fact";
+            return (
+              <tr
+                className={`origin-${row.origin ?? "source"}`}
+                key={row.id}
+                title={
+                  row.origin === "ai_added" ? "Added by AI for context" : undefined
+                }
+              >
+                <td className={`role-${semanticRole}`}>
+                  <HighlightedText text={row.label} terms={row.highlightTerms} />
+                </td>
+                <td>
+                  <HighlightedText
+                    text={row.sublabel ?? ""}
+                    terms={row.highlightTerms}
+                  />
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -313,6 +417,8 @@ export function MemoryCardCanvas({
               {column.map(({ key, title, icon: Icon, accent }) => {
                 const nodes = sectionTrees[key] ?? [];
                 const sectionImages = imagesFor(key);
+                const { tables, trees } = splitTableGroups(key, nodes);
+                const tableHeaders = TABLE_HEADERS[key];
                 return (
                   <section
                     className={`memory-section accent-${accent} ${countNodes(nodes) > 5 ? "is-dense" : ""}`}
@@ -322,8 +428,17 @@ export function MemoryCardCanvas({
                       <Icon />
                       <h2>{title}</h2>
                     </header>
+                    {tableHeaders &&
+                      tables.map((group) => (
+                        <MemoryTable
+                          group={group}
+                          headers={tableHeaders}
+                          key={group.root.id}
+                          roleOverride={SECTION_ROLES[key]}
+                        />
+                      ))}
                     <MemoryTree
-                      nodes={nodes}
+                      nodes={trees}
                       compact
                       roleOverride={SECTION_ROLES[key]}
                     />

@@ -160,8 +160,13 @@ HANDWRITTEN TREE GRAMMAR
 - Limit every parent to three direct children. When there are more findings, introduce a meaningful shared category such as "Clinical manifestations" or "Extra-articular disease", then group related findings beneath it. Combine closely related organ systems in one concise node when necessary.
 - Do not attach multiple organ-system manifestations directly to the disease root beside its mechanism. Route them through their causal mechanism or one shared manifestation hub so the tree grows vertically instead of becoming an unreadably wide row.
 - Never turn adjacency or a plain list into a chain. Chain only when causality, arrows, or explicit sequence supports it. Findings beneath one heading are sibling buds.
-- Diagnosis and treatment are decision trees: test/condition -> result -> next step. Other side sections may also branch.
+- Diagnosis and treatment are decision trees: test/condition -> result -> next step. Other side sections may also branch. Build side trees with the same centered parent-to-sibling budding geometry as the main tree, not deep outline-style ladders.
 - Keep labels concise enough for one A4 page. Put useful qualifiers in sublabel. Use consistent tone along a chain and contrasting tones between neighboring branches.
+
+SIDE TABLES
+- Make comparable side facts table-ready when each item has one paired explanation, mechanism, key link, or pearl. Create one category root, then put each row key in a direct leaf child's label and its paired detail in that child's sublabel.
+- Good table-ready examples are organism -> key pearl, risk factor -> mechanism, and association -> key link. Do not add decorative intermediate nodes between the category and rows.
+- Do not force causal sequences, diagnostic decisions, treatment pathways, or multi-level hierarchies into this pattern; preserve those as branching trees.
 
 SEMANTIC COLOR ROLES
 - semanticRole "core": only the highest-yield/core facts.
