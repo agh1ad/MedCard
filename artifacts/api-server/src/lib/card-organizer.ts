@@ -49,7 +49,7 @@ interface AiNode {
   semanticRole: SemanticRole;
   highlightTerms: string[];
   section: SectionKey;
-  parentNodeId: string | null;
+  parentNodeIds: string[];
   order: number;
   tone: Tone;
 }
@@ -91,7 +91,7 @@ const STRUCTURE_SCHEMA = {
           "semanticRole",
           "highlightTerms",
           "section",
-          "parentNodeId",
+          "parentNodeIds",
           "order",
           "tone",
         ],
@@ -107,7 +107,7 @@ const STRUCTURE_SCHEMA = {
           semanticRole: { type: "string", enum: SEMANTIC_ROLES },
           highlightTerms: { type: "array", items: { type: "string" } },
           section: { type: "string", enum: SECTION_KEYS },
-          parentNodeId: { type: ["string", "null"] },
+          parentNodeIds: { type: "array", items: { type: "string" } },
           order: { type: "integer" },
           tone: { type: "string", enum: TONES },
         },
@@ -157,6 +157,10 @@ HANDWRITTEN TREE GRAMMAR
 - Main starts from one disease trunk. Its first level contains at most three major mechanism/category buds, never a row of unrelated manifestations.
 - Main contains pathophysiology and the manifestations produced by each mechanism. Use the closest cause/category/process as parent.
 - Treat an explicit source sequence A -> B -> C as mandatory descending parentage: A is the parent of B and B is the parent of C. Give every supplied stage its own bordered-cell node in the same order; never combine, skip, reorder, or place two stages in one label.
+- Model main as a directed medical flow graph using parentNodeIds. Give the AI freedom to select any structure that best expresses the supplied medical logic: sequence, divergence, parallel paths, convergence, repeated split/merge stages, feedback loops, vicious cycles, homeostatic loops, or combinations of these.
+- parentNodeIds[0] is the primary top-to-bottom layout parent and must maintain an acyclic readable backbone. Additional parentNodeIds are semantic connections and may converge from other branches, jump between stages, loop backward, or self-connect when a self-reinforcing process is medically justified. Use [] for a root.
+- Every connection must express cause, progression, dependency, reinforcement, inhibition, recurrence, or a clearly stated condition. Never connect items merely because they are adjacent, and never add complexity for decoration. Sequence and logical memorability are the primary goals.
+- Represent a shared downstream result once with multiple parentNodeIds. Never duplicate the same manifestation or outcome just to preserve a tree shape. Side sections remain simple bullet hierarchies and must have at most one parentNodeId.
 - A heading such as "Pathophysiology" or "Symptoms" establishes hierarchy. Continue the pathophysiology as a descending causal trunk. Place each separately listed symptom/sign in its own manifestation node beneath a shared "Clinical manifestations" hub.
 - True divergence creates sibling buds. Continue each sibling independently to its own outcomes. Same-level categories such as Skin/GI/Pulmonary or stable/unstable are siblings, never ancestors of one another.
 - Limit every parent to three direct children. When there are more findings, introduce meaningful organizational hubs beneath "Clinical manifestations" (for example local symptoms, systemic symptoms, and infant signs), then place every supplied finding in its own child node. Organizational grouping must not merge findings.
@@ -219,7 +223,8 @@ function isAiNode(value: unknown): value is AiNode {
     Array.isArray(item.highlightTerms) &&
     item.highlightTerms.every((term) => typeof term === "string") &&
     SECTION_KEYS.includes(item.section as SectionKey) &&
-    (item.parentNodeId === null || typeof item.parentNodeId === "string") &&
+    Array.isArray(item.parentNodeIds) &&
+    item.parentNodeIds.every((id) => typeof id === "string") &&
     Number.isInteger(item.order) &&
     TONES.includes(item.tone as Tone)
   );
@@ -283,7 +288,8 @@ function validateResult(
     if (node.origin !== "ai_added" && !node.sourceBlockIds.length) {
       throw new Error("AI omitted provenance for edited source content");
     }
-    const visibleText = `${node.label} ${node.sublabel ?? ""}`.toLocaleLowerCase();
+    const visibleText =
+      `${node.label} ${node.sublabel ?? ""}`.toLocaleLowerCase();
     node.highlightTerms = node.highlightTerms.filter(
       (term) => term.trim() && visibleText.includes(term.toLocaleLowerCase()),
     );
@@ -301,17 +307,28 @@ function validateResult(
   }
 
   for (const node of rawNodes) {
-    if (!node.parentNodeId) continue;
-    const parent = nodeById.get(node.parentNodeId);
-    if (
-      !parent ||
-      parent.section !== node.section ||
-      parent.nodeId === node.nodeId
-    ) {
-      throw new Error("AI returned an invalid cross-section parent");
+    if (new Set(node.parentNodeIds).size !== node.parentNodeIds.length) {
+      throw new Error("AI returned duplicate flow connections");
     }
-    if (createsCycle(node, nodeById)) {
-      throw new Error("AI returned a cyclic card hierarchy");
+    if (node.section !== "main" && node.parentNodeIds.length > 1) {
+      throw new Error("AI returned converging side-note parents");
+    }
+    for (const parentId of node.parentNodeIds) {
+      const parent = nodeById.get(parentId);
+      const isAllowedSelfLoop =
+        node.section === "main" &&
+        parentId === node.nodeId &&
+        node.parentNodeIds.indexOf(parentId) > 0;
+      if (
+        !parent ||
+        parent.section !== node.section ||
+        (parent.nodeId === node.nodeId && !isAllowedSelfLoop)
+      ) {
+        throw new Error("AI returned an invalid cross-section parent");
+      }
+    }
+    if (createsPrimaryCycle(node, nodeById)) {
+      throw new Error("AI returned a cyclic primary layout hierarchy");
     }
   }
 
@@ -336,17 +353,24 @@ function validateResult(
   };
 }
 
-function createsCycle(node: AiNode, byId: Map<string, AiNode>): boolean {
-  const visited = new Set([node.nodeId]);
-  let parentId = node.parentNodeId;
-
-  while (parentId) {
-    if (visited.has(parentId)) return true;
+function createsPrimaryCycle(node: AiNode, byId: Map<string, AiNode>): boolean {
+  const visitPrimaryAncestors = (
+    parentId: string,
+    visited: Set<string>,
+  ): boolean => {
+    if (parentId === node.nodeId) return true;
+    if (visited.has(parentId)) return false;
     visited.add(parentId);
-    parentId = byId.get(parentId)?.parentNodeId ?? null;
-  }
+    const primaryParentId = byId.get(parentId)?.parentNodeIds[0];
+    return primaryParentId
+      ? visitPrimaryAncestors(primaryParentId, visited)
+      : false;
+  };
 
-  return false;
+  const primaryParentId = node.parentNodeIds[0];
+  return primaryParentId
+    ? visitPrimaryAncestors(primaryParentId, new Set<string>())
+    : false;
 }
 
 function buildTrees(nodes: AiNode[], section: SectionKey): FlowNode[] {
@@ -366,6 +390,7 @@ function buildTrees(nodes: AiNode[], section: SectionKey): FlowNode[] {
       label: node.label.trim(),
       sublabel: node.sublabel?.trim() || null,
       tone: node.tone,
+      additionalParentIds: node.parentNodeIds.slice(1),
       children: [],
     });
   }
@@ -374,8 +399,9 @@ function buildTrees(nodes: AiNode[], section: SectionKey): FlowNode[] {
   for (const sourceNode of sectionNodes) {
     const flowNode = nodeById.get(sourceNode.nodeId);
     if (!flowNode) continue;
-    if (sourceNode.parentNodeId) {
-      nodeById.get(sourceNode.parentNodeId)?.children?.push(flowNode);
+    const primaryParentId = sourceNode.parentNodeIds[0];
+    if (primaryParentId) {
+      nodeById.get(primaryParentId)?.children?.push(flowNode);
     } else {
       roots.push(flowNode);
     }

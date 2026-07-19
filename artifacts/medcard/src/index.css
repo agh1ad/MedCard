@@ -334,6 +334,58 @@
   overflow: hidden;
 }
 
+.memory-flow-graph {
+  position: relative;
+  width: 100%;
+  min-height: 0;
+}
+.memory-flow-layers {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: max(12px, calc(var(--memory-v-gap) * 1.45));
+  width: 100%;
+}
+.memory-flow-layer {
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  gap: var(--memory-h-gap);
+  width: 100%;
+  min-width: 0;
+}
+.memory-flow-cell {
+  display: flex;
+  flex: 1 1 0;
+  justify-content: center;
+  min-width: 0;
+}
+.memory-flow-cell .memory-node { max-width: min(92%, var(--memory-node-width)); }
+.memory-flow-edges {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.memory-flow-edges marker path { fill: #58716c; }
+.memory-flow-edge {
+  fill: none;
+  stroke: #657874;
+  stroke-linecap: round;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.memory-flow-edge.is-additional { stroke: #177d72; stroke-width: 1.75; }
+.memory-flow-edge.is-feedback {
+  stroke: #a06b13;
+  stroke-dasharray: 4 3;
+  stroke-width: 1.65;
+}
+
 .memory-tree {
   display: flex;
   flex-direction: column;

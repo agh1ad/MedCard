@@ -12,7 +12,7 @@ import {
   Link2,
   Pill,
 } from "lucide-react";
-import { useLayoutEffect, useRef } from "react";
+import { useId, useLayoutEffect, useRef, useState } from "react";
 
 interface MemoryCardCanvasProps {
   topic: string;
@@ -28,12 +28,32 @@ const SECTION_CONFIG: Array<{
   icon: typeof Activity;
   accent: string;
 }> = [
-  { key: "high_yield", title: "High yield", icon: BookOpenCheck, accent: "pink" },
-  { key: "risk_factors", title: "Risk factors", icon: AlertTriangle, accent: "blue" },
+  {
+    key: "high_yield",
+    title: "High yield",
+    icon: BookOpenCheck,
+    accent: "pink",
+  },
+  {
+    key: "risk_factors",
+    title: "Risk factors",
+    icon: AlertTriangle,
+    accent: "blue",
+  },
   { key: "associations", title: "Associations", icon: Link2, accent: "blue" },
-  { key: "diagnosis", title: "Diagnosis", icon: Activity, accent: "dark-green" },
+  {
+    key: "diagnosis",
+    title: "Diagnosis",
+    icon: Activity,
+    accent: "dark-green",
+  },
   { key: "treatment", title: "Treatment", icon: Pill, accent: "bright-green" },
-  { key: "complications", title: "Complications", icon: HeartPulse, accent: "red" },
+  {
+    key: "complications",
+    title: "Complications",
+    icon: HeartPulse,
+    accent: "red",
+  },
 ];
 
 type SemanticRole = NonNullable<FlowNode["semanticRole"]>;
@@ -81,12 +101,22 @@ function escapePattern(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function HighlightedText({ text, terms = [] }: { text: string; terms?: string[] }) {
-  const usableTerms = [...new Set(terms.map((term) => term.trim()).filter(Boolean))]
-    .sort((a, b) => b.length - a.length);
+function HighlightedText({
+  text,
+  terms = [],
+}: {
+  text: string;
+  terms?: string[];
+}) {
+  const usableTerms = [
+    ...new Set(terms.map((term) => term.trim()).filter(Boolean)),
+  ].sort((a, b) => b.length - a.length);
   if (!usableTerms.length) return text;
 
-  const pattern = new RegExp(`(${usableTerms.map(escapePattern).join("|")})`, "gi");
+  const pattern = new RegExp(
+    `(${usableTerms.map(escapePattern).join("|")})`,
+    "gi",
+  );
   const lookup = new Set(usableTerms.map((term) => term.toLocaleLowerCase()));
   return text.split(pattern).map((part, index) =>
     lookup.has(part.toLocaleLowerCase()) ? (
@@ -109,23 +139,10 @@ function MemoryNode({
   roleOverride?: SemanticRole;
 }) {
   const children = node.children ?? [];
-  const semanticRole = roleOverride ?? node.semanticRole ?? "fact";
 
   return (
     <div className={`memory-tree-branch ${compact ? "is-compact" : ""}`}>
-      <div
-        className={`memory-node role-${semanticRole} origin-${node.origin ?? "source"}`}
-        title={node.origin === "ai_added" ? "Added by AI for context" : undefined}
-      >
-        <span>
-          <HighlightedText text={node.label} terms={node.highlightTerms} />
-        </span>
-        {node.sublabel && (
-          <small>
-            <HighlightedText text={node.sublabel} terms={node.highlightTerms} />
-          </small>
-        )}
-      </div>
+      <MemoryNodeCell node={node} roleOverride={roleOverride} />
       {children.length > 0 && (
         <div className="memory-tree-descendants">
           <div className="memory-tree-stem" />
@@ -146,6 +163,32 @@ function MemoryNode({
             ))}
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+function MemoryNodeCell({
+  node,
+  roleOverride,
+}: {
+  node: FlowNode;
+  roleOverride?: SemanticRole;
+}) {
+  const semanticRole = roleOverride ?? node.semanticRole ?? "fact";
+
+  return (
+    <div
+      className={`memory-node role-${semanticRole} origin-${node.origin ?? "source"}`}
+      title={node.origin === "ai_added" ? "Added by AI for context" : undefined}
+    >
+      <span>
+        <HighlightedText text={node.label} terms={node.highlightTerms} />
+      </span>
+      {node.sublabel && (
+        <small>
+          <HighlightedText text={node.sublabel} terms={node.highlightTerms} />
+        </small>
       )}
     </div>
   );
@@ -201,6 +244,182 @@ function MemoryTree({
   );
 }
 
+interface FlowGraphEdge {
+  from: string;
+  to: string;
+  kind: "primary" | "additional";
+}
+
+function buildFlowGraph(roots: FlowNode[]) {
+  const nodes = new Map<
+    string,
+    { node: FlowNode; depth: number; order: number }
+  >();
+  const edges: FlowGraphEdge[] = [];
+  let order = 0;
+
+  const visit = (node: FlowNode, depth: number, parentId?: string) => {
+    const existing = nodes.get(node.id);
+    if (!existing) {
+      nodes.set(node.id, { node, depth, order: order++ });
+    } else if (depth > existing.depth) {
+      existing.depth = depth;
+    }
+    if (parentId) edges.push({ from: parentId, to: node.id, kind: "primary" });
+    (node.children ?? []).forEach((child) => visit(child, depth + 1, node.id));
+  };
+
+  roots.forEach((root) => visit(root, 0));
+  for (const { node } of nodes.values()) {
+    for (const parentId of node.additionalParentIds ?? []) {
+      if (nodes.has(parentId)) {
+        edges.push({ from: parentId, to: node.id, kind: "additional" });
+      }
+    }
+  }
+
+  const layers = [...nodes.values()].reduce<
+    Array<Array<{ node: FlowNode; order: number }>>
+  >((result, entry) => {
+    result[entry.depth] ??= [];
+    result[entry.depth].push({ node: entry.node, order: entry.order });
+    return result;
+  }, []);
+  layers.forEach((layer) => layer.sort((a, b) => a.order - b.order));
+  return { edges, layers };
+}
+
+function MemoryFlowGraph({ nodes }: { nodes: FlowNode[] }) {
+  const graphRef = useRef<HTMLDivElement>(null);
+  const nodeRefs = useRef(new Map<string, HTMLDivElement>());
+  const markerId = `memory-arrow-${useId().replace(/:/g, "")}`;
+  const [paths, setPaths] = useState<
+    Array<FlowGraphEdge & { d: string; feedback: boolean }>
+  >([]);
+  const graph = buildFlowGraph(nodes);
+
+  useLayoutEffect(() => {
+    const graphElement = graphRef.current;
+    if (!graphElement) return;
+    let frame = 0;
+
+    const drawConnections = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const graphBox = graphElement.getBoundingClientRect();
+        const nextPaths = graph.edges.flatMap((edge, index) => {
+          const source = nodeRefs.current
+            .get(edge.from)
+            ?.getBoundingClientRect();
+          const target = nodeRefs.current.get(edge.to)?.getBoundingClientRect();
+          if (!source || !target) return [];
+
+          if (edge.from === edge.to) {
+            const x = source.right - graphBox.left;
+            const startY = source.top - graphBox.top + source.height * 0.32;
+            const endY = source.top - graphBox.top + source.height * 0.72;
+            const loopX = x + Math.max(18, source.width * 0.18);
+            return [
+              {
+                ...edge,
+                feedback: true,
+                d: `M ${x} ${startY} C ${loopX} ${startY - 12}, ${loopX} ${endY + 12}, ${x} ${endY}`,
+              },
+            ];
+          }
+
+          const isFeedback = source.top >= target.top;
+          if (isFeedback) {
+            const startX = source.right - graphBox.left;
+            const startY = source.top - graphBox.top + source.height / 2;
+            const endX = target.right - graphBox.left;
+            const endY = target.top - graphBox.top + target.height / 2;
+            const routeX = Math.max(startX, endX) + 18 + (index % 3) * 7;
+            return [
+              {
+                ...edge,
+                feedback: true,
+                d: `M ${startX} ${startY} C ${routeX} ${startY}, ${routeX} ${endY}, ${endX} ${endY}`,
+              },
+            ];
+          }
+
+          const startX = source.left - graphBox.left + source.width / 2;
+          const startY = source.bottom - graphBox.top;
+          const endX = target.left - graphBox.left + target.width / 2;
+          const endY = target.top - graphBox.top;
+          const bend = Math.max(8, (endY - startY) * 0.48);
+          return [
+            {
+              ...edge,
+              feedback: false,
+              d: `M ${startX} ${startY} C ${startX} ${startY + bend}, ${endX} ${endY - bend}, ${endX} ${endY}`,
+            },
+          ];
+        });
+        setPaths(nextPaths);
+      });
+    };
+
+    const observer = new ResizeObserver(drawConnections);
+    observer.observe(graphElement);
+    nodeRefs.current.forEach((element) => observer.observe(element));
+    drawConnections();
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [nodes]);
+
+  if (!graph.layers.length) return null;
+
+  return (
+    <div className="memory-flow-graph" ref={graphRef}>
+      <svg className="memory-flow-edges" aria-hidden="true">
+        <defs>
+          <marker
+            id={markerId}
+            markerHeight="6"
+            markerWidth="6"
+            orient="auto"
+            refX="5"
+            refY="3"
+          >
+            <path d="M 0 0 L 6 3 L 0 6 z" />
+          </marker>
+        </defs>
+        {paths.map((path, index) => (
+          <path
+            className={`memory-flow-edge ${path.kind === "additional" ? "is-additional" : ""} ${path.feedback ? "is-feedback" : ""}`}
+            d={path.d}
+            key={`${path.from}-${path.to}-${index}`}
+            markerEnd={`url(#${markerId})`}
+          />
+        ))}
+      </svg>
+      <div className="memory-flow-layers">
+        {graph.layers.map((layer, depth) => (
+          <div className="memory-flow-layer" key={depth}>
+            {layer.map(({ node }) => (
+              <div
+                className="memory-flow-cell"
+                data-flow-node-id={node.id}
+                key={node.id}
+                ref={(element) => {
+                  if (element) nodeRefs.current.set(node.id, element);
+                  else nodeRefs.current.delete(node.id);
+                }}
+              >
+                <MemoryNodeCell node={node} />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function MemoryBulletList({
   nodes,
   roleOverride,
@@ -229,7 +448,10 @@ function MemoryBulletList({
           >
             <div>
               <strong>
-                <HighlightedText text={node.label} terms={node.highlightTerms} />
+                <HighlightedText
+                  text={node.label}
+                  terms={node.highlightTerms}
+                />
               </strong>
               {detailParts.length === 1 && (
                 <span className="memory-bullet-detail">
@@ -286,7 +508,10 @@ export function MemoryCardCanvas({
   const mainRef = useRef<HTMLElement>(null);
   const totalNodes =
     countNodes(flow) +
-    Object.values(sectionTrees).reduce((total, nodes) => total + countNodes(nodes), 0);
+    Object.values(sectionTrees).reduce(
+      (total, nodes) => total + countNodes(nodes),
+      0,
+    );
   const imagesFor = (section: CardImageSection) =>
     images.filter((image) => image.section === section);
   const visibleSections = SECTION_CONFIG.filter(
@@ -335,9 +560,9 @@ export function MemoryCardCanvas({
     return () => {
       cancelAnimationFrame(animationFrame);
       resizeObserver.disconnect();
-      card.querySelectorAll("img").forEach((image) =>
-        image.removeEventListener("load", fitCard),
-      );
+      card
+        .querySelectorAll("img")
+        .forEach((image) => image.removeEventListener("load", fitCard));
     };
   }, [topic, flow, sectionTrees, images]);
 
@@ -376,9 +601,11 @@ export function MemoryCardCanvas({
 
         <main className="memory-main" ref={mainRef}>
           {flow.length ? (
-            <MemoryTree nodes={flow} />
+            <MemoryFlowGraph nodes={flow} />
           ) : (
-            <div className="memory-empty">No central mechanism was identified.</div>
+            <div className="memory-empty">
+              No central mechanism was identified.
+            </div>
           )}
           <SectionImages images={imagesFor("main")} />
         </main>

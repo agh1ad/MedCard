@@ -2,8 +2,7 @@ import { pgTable, serial, text, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
-// Recursive FlowNode schema — a branching tree node
-// Children are displayed side-by-side horizontally beneath the parent
+// Recursive primary hierarchy with optional extra incoming DAG connections.
 const FlowNodeSchemaBase = z.object({
   id: z.string(),
   label: z.string(),
@@ -12,6 +11,7 @@ const FlowNodeSchemaBase = z.object({
 
 export type FlowNode = z.infer<typeof FlowNodeSchemaBase> & {
   children?: FlowNode[];
+  additionalParentIds?: string[];
   sourceBlockId?: string;
   sourceBlockIds?: string[];
   origin?: "source" | "enhanced" | "ai_added";
@@ -29,6 +29,7 @@ export type FlowNode = z.infer<typeof FlowNodeSchemaBase> & {
 
 export const FlowNodeSchema: z.ZodType<FlowNode> = FlowNodeSchemaBase.extend({
   children: z.lazy(() => z.array(FlowNodeSchema)).optional(),
+  additionalParentIds: z.array(z.string()).optional(),
   sourceBlockId: z.string().optional(),
   sourceBlockIds: z.array(z.string()).optional(),
   origin: z.enum(["source", "enhanced", "ai_added"]).optional(),
@@ -44,9 +45,7 @@ export const FlowNodeSchema: z.ZodType<FlowNode> = FlowNodeSchemaBase.extend({
     ])
     .optional(),
   highlightTerms: z.array(z.string()).optional(),
-  tone: z
-    .enum(["ink", "blue", "green", "pink", "violet", "amber"])
-    .optional(),
+  tone: z.enum(["ink", "blue", "green", "pink", "violet", "amber"]).optional(),
 });
 
 export const SidebarSectionsSchema = z.object({
@@ -113,7 +112,10 @@ export const cardsTable = pgTable("cards", {
   sidebar: jsonb("sidebar").notNull().$type<SidebarSections>(),
   rawText: text("raw_text").notNull(),
   tags: text("tags").array().notNull().default([]),
-  sourceBlocks: jsonb("source_blocks").notNull().$type<SourceBlock[]>().default([]),
+  sourceBlocks: jsonb("source_blocks")
+    .notNull()
+    .$type<SourceBlock[]>()
+    .default([]),
   sectionTrees: jsonb("section_trees")
     .notNull()
     .$type<SectionTrees>()
@@ -155,7 +157,11 @@ export function convertFlatFlowToTree(flow: unknown[]): FlowNode[] {
   const stack: { node: FlowNode; indent: number }[] = [];
 
   for (const raw of flow) {
-    const step = raw as { label: string; sublabel?: string | null; indent?: number };
+    const step = raw as {
+      label: string;
+      sublabel?: string | null;
+      indent?: number;
+    };
     const indent = step.indent ?? 0;
     const node: FlowNode = {
       id: compatId(),

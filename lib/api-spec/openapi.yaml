@@ -209,6 +209,11 @@ components:
           items:
             $ref: "#/components/schemas/FlowNode"
           description: Child nodes branching from this node (shown side by side)
+        additionalParentIds:
+          type: array
+          items:
+            type: string
+          description: Additional incoming directed connections, including convergence and feedback loops
         sourceBlockId:
           type: string
           description: Immutable source block represented by this node
