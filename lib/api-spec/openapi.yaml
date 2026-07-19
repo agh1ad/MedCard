@@ -214,6 +214,10 @@ components:
           items:
             type: string
           description: Additional incoming directed connections, including convergence and feedback loops
+        presentation:
+          type: string
+          enum: [bullets, table, diagram, callout]
+          description: AI-selected presentation for a side-note root group
         sourceBlockId:
           type: string
           description: Immutable source block represented by this node

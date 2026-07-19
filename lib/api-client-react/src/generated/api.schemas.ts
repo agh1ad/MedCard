@@ -66,6 +66,8 @@ export interface FlowNode {
   children?: FlowNode[];
   /** Additional incoming directed connections, including convergence and feedback loops */
   additionalParentIds?: string[];
+  /** AI-selected presentation for a side-note root group */
+  presentation?: 'bullets' | 'table' | 'diagram' | 'callout';
   /** Immutable source block represented by this node */
   sourceBlockId?: string;
   /** Original source blocks preserved by this node */

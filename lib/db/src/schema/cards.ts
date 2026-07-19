@@ -12,6 +12,7 @@ const FlowNodeSchemaBase = z.object({
 export type FlowNode = z.infer<typeof FlowNodeSchemaBase> & {
   children?: FlowNode[];
   additionalParentIds?: string[];
+  presentation?: "bullets" | "table" | "diagram" | "callout";
   sourceBlockId?: string;
   sourceBlockIds?: string[];
   origin?: "source" | "enhanced" | "ai_added";
@@ -30,6 +31,7 @@ export type FlowNode = z.infer<typeof FlowNodeSchemaBase> & {
 export const FlowNodeSchema: z.ZodType<FlowNode> = FlowNodeSchemaBase.extend({
   children: z.lazy(() => z.array(FlowNodeSchema)).optional(),
   additionalParentIds: z.array(z.string()).optional(),
+  presentation: z.enum(["bullets", "table", "diagram", "callout"]).optional(),
   sourceBlockId: z.string().optional(),
   sourceBlockIds: z.array(z.string()).optional(),
   origin: z.enum(["source", "enhanced", "ai_added"]).optional(),

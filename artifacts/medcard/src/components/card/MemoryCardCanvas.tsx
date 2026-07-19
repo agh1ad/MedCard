@@ -501,6 +501,112 @@ function collectNodeLabels(nodes: FlowNode[], labels = new Map<string, string>()
   return labels;
 }
 
+function MemorySideTable({
+  root,
+  nodeLabels,
+}: {
+  root: FlowNode;
+  nodeLabels: Map<string, string>;
+}) {
+  const rows = root.children?.length ? root.children : [root];
+  return (
+    <div className="memory-side-table-wrap">
+      {root.children?.length ? (
+        <h3>
+          <HighlightedText text={root.label} terms={root.highlightTerms} />
+        </h3>
+      ) : null}
+      <table className="memory-side-table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Key point</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.id}>
+              <td>
+                <strong>
+                  <HighlightedText text={row.label} terms={row.highlightTerms} />
+                </strong>
+              </td>
+              <td>
+                {row.sublabel ? (
+                  <HighlightedText
+                    text={row.sublabel}
+                    terms={row.highlightTerms}
+                  />
+                ) : null}
+                <MemoryBulletList
+                  nodes={row.children ?? []}
+                  nodeLabels={nodeLabels}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function MemorySideCallout({
+  root,
+  nodeLabels,
+}: {
+  root: FlowNode;
+  nodeLabels: Map<string, string>;
+}) {
+  return (
+    <div className="memory-side-callout">
+      <strong>
+        <HighlightedText text={root.label} terms={root.highlightTerms} />
+      </strong>
+      {root.sublabel && (
+        <p>
+          <HighlightedText text={root.sublabel} terms={root.highlightTerms} />
+        </p>
+      )}
+      <MemoryBulletList
+        nodes={root.children ?? []}
+        nodeLabels={nodeLabels}
+      />
+    </div>
+  );
+}
+
+function MemorySideGroup({
+  root,
+  nodeLabels,
+  roleOverride,
+}: {
+  root: FlowNode;
+  nodeLabels: Map<string, string>;
+  roleOverride?: SemanticRole;
+}) {
+  switch (root.presentation) {
+    case "table":
+      return <MemorySideTable root={root} nodeLabels={nodeLabels} />;
+    case "diagram":
+      return (
+        <div className="memory-side-diagram">
+          <MemoryFlowGraph nodes={[root]} />
+        </div>
+      );
+    case "callout":
+      return <MemorySideCallout root={root} nodeLabels={nodeLabels} />;
+    default:
+      return (
+        <MemoryBulletList
+          nodes={[root]}
+          nodeLabels={nodeLabels}
+          roleOverride={roleOverride}
+        />
+      );
+  }
+}
+
 function SectionImages({ images }: { images: CardImage[] }) {
   if (!images.length) return null;
   return (
@@ -600,20 +706,28 @@ export function MemoryCardCanvas({
             const sectionImages = imagesFor(key);
             const nodeCount = countNodes(nodes);
             const nodeLabels = collectNodeLabels(nodes);
+            const usesWidePresentation = nodes.some(
+              (node) => node.presentation === "table" || node.presentation === "diagram",
+            );
             return (
               <section
-                className={`memory-section accent-${accent} ${nodeCount > 3 ? "is-wide" : ""} ${nodeCount > 6 ? "is-dense" : ""}`}
+                className={`memory-section accent-${accent} ${nodeCount > 3 || usesWidePresentation ? "is-wide" : ""} ${nodeCount > 6 ? "is-dense" : ""}`}
                 key={key}
               >
                 <header>
                   <Icon />
                   <h2>{title}</h2>
                 </header>
-                <MemoryBulletList
-                  nodes={nodes}
-                  nodeLabels={nodeLabels}
-                  roleOverride={SECTION_ROLES[key]}
-                />
+                <div className="memory-side-groups">
+                  {nodes.map((root) => (
+                    <MemorySideGroup
+                      key={root.id}
+                      nodeLabels={nodeLabels}
+                      roleOverride={SECTION_ROLES[key]}
+                      root={root}
+                    />
+                  ))}
+                </div>
                 <SectionImages images={sectionImages} />
               </section>
             );

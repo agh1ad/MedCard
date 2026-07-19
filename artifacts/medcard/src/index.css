@@ -326,6 +326,64 @@
 }
 .memory-bullet-links::before { content: '↳ '; }
 
+.memory-side-groups { display: flex; flex-direction: column; gap: max(6px, calc(var(--memory-font) * 0.42)); }
+.memory-side-table-wrap h3 {
+  margin: 0 0 4px;
+  color: #202625;
+  font-size: max(8px, calc(var(--memory-font) * 0.88));
+  font-weight: 800;
+}
+.memory-side-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  color: #202625;
+  font-size: max(7px, calc(var(--memory-font) * 0.76));
+  line-height: 1.3;
+}
+.memory-side-table th,
+.memory-side-table td {
+  padding: max(3px, calc(var(--memory-font) * 0.24)) 4px;
+  overflow-wrap: anywhere;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid #d9e0df;
+}
+.memory-side-table th {
+  color: #52605d;
+  background: var(--section-wash);
+  font-size: 0.78em;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.memory-side-table th:first-child,
+.memory-side-table td:first-child { width: 42%; }
+.memory-side-table .memory-bullets { margin-top: 3px; font-size: 0.92em; }
+.memory-side-callout {
+  padding: max(7px, calc(var(--memory-font) * 0.5));
+  color: #202625;
+  background: color-mix(in srgb, var(--section-wash) 80%, white);
+  border: 1px solid color-mix(in srgb, var(--section-accent) 28%, #d9e0df);
+  border-left: 3px solid var(--section-accent);
+  border-radius: 3px;
+  font-size: max(8px, calc(var(--memory-font) * 0.86));
+  line-height: 1.35;
+}
+.memory-side-callout > strong { font-size: 1.06em; }
+.memory-side-callout > p { margin: 3px 0 0; color: #424b49; }
+.memory-side-callout .memory-bullets { margin-top: 5px; }
+.memory-side-diagram {
+  --memory-node-width: max(105px, calc(var(--memory-font) * 10.5));
+  padding: 2px 3px 4px;
+}
+.memory-side-diagram .memory-flow-layers { gap: max(9px, calc(var(--memory-font) * 0.9)); }
+.memory-side-diagram .memory-node {
+  padding: max(3px, calc(var(--memory-font) * 0.22)) max(5px, calc(var(--memory-font) * 0.38));
+  font-size: max(7px, calc(var(--memory-font) * 0.72));
+  box-shadow: 0 1px 3px rgba(25, 46, 43, 0.06);
+}
+
 .memory-main {
   --memory-font: var(--memory-main-font);
   --memory-h-gap: max(3px, calc(var(--memory-font) * 0.5));

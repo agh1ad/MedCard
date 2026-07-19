@@ -27,6 +27,7 @@ const SEMANTIC_ROLES = [
   "explanation",
   "fact",
 ] as const;
+const PRESENTATIONS = ["bullets", "table", "diagram", "callout"] as const;
 const SIDE_SECTIONS = [
   "high_yield",
   "risk_factors",
@@ -39,6 +40,7 @@ const SIDE_SECTIONS = [
 type SectionKey = (typeof SECTION_KEYS)[number];
 type Tone = (typeof TONES)[number];
 type SemanticRole = (typeof SEMANTIC_ROLES)[number];
+type Presentation = (typeof PRESENTATIONS)[number];
 
 interface AiNode {
   nodeId: string;
@@ -50,6 +52,7 @@ interface AiNode {
   highlightTerms: string[];
   section: SectionKey;
   parentNodeIds: string[];
+  presentation: Presentation;
   order: number;
   tone: Tone;
 }
@@ -92,6 +95,7 @@ const STRUCTURE_SCHEMA = {
           "highlightTerms",
           "section",
           "parentNodeIds",
+          "presentation",
           "order",
           "tone",
         ],
@@ -108,6 +112,7 @@ const STRUCTURE_SCHEMA = {
           highlightTerms: { type: "array", items: { type: "string" } },
           section: { type: "string", enum: SECTION_KEYS },
           parentNodeIds: { type: "array", items: { type: "string" } },
+          presentation: { type: "string", enum: PRESENTATIONS },
           order: { type: "integer" },
           tone: { type: "string", enum: TONES },
         },
@@ -170,7 +175,9 @@ HANDWRITTEN TREE GRAMMAR
 - Keep labels concise enough for one A4 page. Put useful qualifiers in sublabel. Use consistent tone along a chain and contrasting tones between neighboring branches.
 
 SIDE NOTES
-- Side sections use the established AMBOSS-style clinical panels, but the AI controls their information architecture. Freely choose section placement, order, nesting, category hubs, paired label/explanation structure, decision pathways, comparisons, and cross-links to maximize rapid recall.
+- Side sections use the established AMBOSS-style clinical panels, but the AI controls their information architecture and each root group's presentation. Set presentation to "bullets", "table", "diagram", or "callout" on every node; only a root node's value controls rendering.
+- Choose "bullets" for independent or nested clinical facts, "table" for true comparisons with parallel label/detail rows, "diagram" for a short causal or decision pathway where arrows add understanding, and "callout" for one compact must-remember pearl with optional supporting bullets. Mix modes across a card when that is clearer.
+- Freely choose section placement, order, nesting, category hubs, paired label/explanation structure, decision pathways, comparisons, and cross-links to maximize rapid recall.
 - Use a flat list when facts are independent, nesting when facts depend on a category or decision, and cross-links when one point logically depends on multiple others. Avoid decorative complexity: every structural choice must improve clinical logic or memorability.
 
 SEMANTIC COLOR ROLES
@@ -225,6 +232,7 @@ function isAiNode(value: unknown): value is AiNode {
     SECTION_KEYS.includes(item.section as SectionKey) &&
     Array.isArray(item.parentNodeIds) &&
     item.parentNodeIds.every((id) => typeof id === "string") &&
+    PRESENTATIONS.includes(item.presentation as Presentation) &&
     Number.isInteger(item.order) &&
     TONES.includes(item.tone as Tone)
   );
@@ -388,6 +396,7 @@ function buildTrees(nodes: AiNode[], section: SectionKey): FlowNode[] {
       sublabel: node.sublabel?.trim() || null,
       tone: node.tone,
       additionalParentIds: node.parentNodeIds.slice(1),
+      presentation: node.presentation,
       children: [],
     });
   }

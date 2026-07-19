@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { FlowNodeOrigin } from './flowNodeOrigin';
+import type { FlowNodePresentation } from './flowNodePresentation';
 import type { FlowNodeSemanticRole } from './flowNodeSemanticRole';
 import type { FlowNodeTone } from './flowNodeTone';
 
@@ -23,6 +24,8 @@ export interface FlowNode {
   children?: FlowNode[];
   /** Additional incoming directed connections, including convergence and feedback loops */
   additionalParentIds?: string[];
+  /** AI-selected presentation for a side-note root group */
+  presentation?: FlowNodePresentation;
   /** Immutable source block represented by this node */
   sourceBlockId?: string;
   /** Original source blocks preserved by this node */
