@@ -156,7 +156,7 @@
   --memory-section-pad: 7px;
   position: relative;
   display: grid;
-  grid-template-columns: 34% 66%;
+  grid-template-columns: 31% 69%;
   grid-template-rows: 13% 81% 6%;
   width: max(1080px, 100%);
   aspect-ratio: 297 / 210;
@@ -164,7 +164,7 @@
   color: var(--paper-ink);
   background-color: #fbf8eb;
   background-image:
-    linear-gradient(90deg, transparent 0 33.7%, rgba(219, 66, 66, 0.24) 33.7% 33.82%, transparent 33.82%),
+    linear-gradient(90deg, transparent 0 30.7%, rgba(219, 66, 66, 0.24) 30.7% 30.82%, transparent 30.82%),
     repeating-linear-gradient(to bottom, transparent 0 31px, var(--paper-rule) 31px 32px);
   border: 1px solid rgba(99, 87, 63, 0.22);
   border-radius: 0.35rem;
@@ -205,7 +205,7 @@
 .memory-title-stem {
   position: absolute;
   bottom: -7px;
-  left: 67%;
+  left: 65.5%;
   width: 1.5px;
   height: 18px;
   background: #47443d;

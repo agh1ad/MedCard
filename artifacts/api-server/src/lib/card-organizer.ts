@@ -154,8 +154,11 @@ VISUAL DENSITY
 - A short source should produce a sparse visual structure that scales up to fill the card, not a textbook expansion or unused tiny text.
 
 HANDWRITTEN TREE GRAMMAR
+- Main starts from one disease trunk. Its first level contains at most three major mechanism/category buds, never a row of unrelated manifestations.
 - Main contains pathophysiology and the manifestations produced by each mechanism. Use the closest cause/category/process as parent.
 - True divergence creates sibling buds. Continue each sibling independently to its own outcomes. Same-level categories such as Skin/GI/Pulmonary or stable/unstable are siblings, never ancestors of one another.
+- Limit every parent to three direct children. When there are more findings, introduce a meaningful shared category such as "Clinical manifestations" or "Extra-articular disease", then group related findings beneath it. Combine closely related organ systems in one concise node when necessary.
+- Do not attach multiple organ-system manifestations directly to the disease root beside its mechanism. Route them through their causal mechanism or one shared manifestation hub so the tree grows vertically instead of becoming an unreadably wide row.
 - Never turn adjacency or a plain list into a chain. Chain only when causality, arrows, or explicit sequence supports it. Findings beneath one heading are sibling buds.
 - Diagnosis and treatment are decision trees: test/condition -> result -> next step. Other side sections may also branch.
 - Keep labels concise enough for one A4 page. Put useful qualifiers in sublabel. Use consistent tone along a chain and contrasting tones between neighboring branches.
