@@ -412,6 +412,7 @@
 .is-compact .memory-tree-stem, .is-compact .memory-tree-drop { height: max(4px, calc(var(--memory-font) * 0.42)); }
 .memory-tree-children { position: relative; display: flex; justify-content: center; gap: var(--memory-h-gap); width: 100%; }
 .memory-tree-children::before { content: ''; position: absolute; top: 0; left: 8%; right: 8%; height: 1.5px; background: #657874; }
+.memory-tree-children:has(> .memory-tree-child:only-child)::before { display: none; }
 .memory-tree-child { display: flex; flex: 1 1 0; flex-direction: column; align-items: center; min-width: 0; }
 .memory-tree-root-group { padding-top: 0; }
 .memory-tree-root-children::before { left: 4%; right: 4%; }
