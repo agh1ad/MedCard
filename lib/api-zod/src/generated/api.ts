@@ -36,6 +36,8 @@ export const ListCardsResponseItem = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })).describe('Root nodes of the pathophysiology branching tree'),
   "sidebar": zod.object({
@@ -54,6 +56,8 @@ export const ListCardsResponseItem = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "risk_factors": zod.array(zod.object({
@@ -64,6 +68,8 @@ export const ListCardsResponseItem = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "associations": zod.array(zod.object({
@@ -74,6 +80,8 @@ export const ListCardsResponseItem = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "diagnosis": zod.array(zod.object({
@@ -84,6 +92,8 @@ export const ListCardsResponseItem = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "treatment": zod.array(zod.object({
@@ -94,6 +104,8 @@ export const ListCardsResponseItem = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "complications": zod.array(zod.object({
@@ -104,6 +116,8 @@ export const ListCardsResponseItem = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 }))
 }),
@@ -142,6 +156,8 @@ export const CreateCardBody = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "sidebar": zod.object({
@@ -160,6 +176,8 @@ export const CreateCardBody = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "risk_factors": zod.array(zod.object({
@@ -170,6 +188,8 @@ export const CreateCardBody = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "associations": zod.array(zod.object({
@@ -180,6 +200,8 @@ export const CreateCardBody = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "diagnosis": zod.array(zod.object({
@@ -190,6 +212,8 @@ export const CreateCardBody = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "treatment": zod.array(zod.object({
@@ -200,6 +224,8 @@ export const CreateCardBody = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "complications": zod.array(zod.object({
@@ -210,6 +236,8 @@ export const CreateCardBody = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 }))
 }),
@@ -239,6 +267,8 @@ export const CreateCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })).describe('Root nodes of the pathophysiology branching tree'),
   "sidebar": zod.object({
@@ -257,6 +287,8 @@ export const CreateCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "risk_factors": zod.array(zod.object({
@@ -267,6 +299,8 @@ export const CreateCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "associations": zod.array(zod.object({
@@ -277,6 +311,8 @@ export const CreateCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "diagnosis": zod.array(zod.object({
@@ -287,6 +323,8 @@ export const CreateCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "treatment": zod.array(zod.object({
@@ -297,6 +335,8 @@ export const CreateCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "complications": zod.array(zod.object({
@@ -307,6 +347,8 @@ export const CreateCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 }))
 }),
@@ -367,6 +409,8 @@ export const GenerateCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "sidebar": zod.object({
@@ -385,6 +429,8 @@ export const GenerateCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "risk_factors": zod.array(zod.object({
@@ -395,6 +441,8 @@ export const GenerateCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "associations": zod.array(zod.object({
@@ -405,6 +453,8 @@ export const GenerateCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "diagnosis": zod.array(zod.object({
@@ -415,6 +465,8 @@ export const GenerateCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "treatment": zod.array(zod.object({
@@ -425,6 +477,8 @@ export const GenerateCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "complications": zod.array(zod.object({
@@ -435,6 +489,8 @@ export const GenerateCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 }))
 }),
@@ -486,6 +542,8 @@ export const GetCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })).describe('Root nodes of the pathophysiology branching tree'),
   "sidebar": zod.object({
@@ -504,6 +562,8 @@ export const GetCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "risk_factors": zod.array(zod.object({
@@ -514,6 +574,8 @@ export const GetCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "associations": zod.array(zod.object({
@@ -524,6 +586,8 @@ export const GetCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "diagnosis": zod.array(zod.object({
@@ -534,6 +598,8 @@ export const GetCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "treatment": zod.array(zod.object({
@@ -544,6 +610,8 @@ export const GetCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "complications": zod.array(zod.object({
@@ -554,6 +622,8 @@ export const GetCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 }))
 }),
@@ -595,6 +665,8 @@ export const UpdateCardBody = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })).optional(),
   "sidebar": zod.object({
@@ -613,6 +685,8 @@ export const UpdateCardBody = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "risk_factors": zod.array(zod.object({
@@ -623,6 +697,8 @@ export const UpdateCardBody = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "associations": zod.array(zod.object({
@@ -633,6 +709,8 @@ export const UpdateCardBody = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "diagnosis": zod.array(zod.object({
@@ -643,6 +721,8 @@ export const UpdateCardBody = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "treatment": zod.array(zod.object({
@@ -653,6 +733,8 @@ export const UpdateCardBody = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "complications": zod.array(zod.object({
@@ -663,6 +745,8 @@ export const UpdateCardBody = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 }))
 }).optional(),
@@ -691,6 +775,8 @@ export const UpdateCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })).describe('Root nodes of the pathophysiology branching tree'),
   "sidebar": zod.object({
@@ -709,6 +795,8 @@ export const UpdateCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "risk_factors": zod.array(zod.object({
@@ -719,6 +807,8 @@ export const UpdateCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "associations": zod.array(zod.object({
@@ -729,6 +819,8 @@ export const UpdateCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "diagnosis": zod.array(zod.object({
@@ -739,6 +831,8 @@ export const UpdateCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "treatment": zod.array(zod.object({
@@ -749,6 +843,8 @@ export const UpdateCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 })),
   "complications": zod.array(zod.object({
@@ -759,6 +855,8 @@ export const UpdateCardResponse = zod.object({
   "sourceBlockId": zod.string().optional().describe('Immutable source block represented by this node'),
   "sourceBlockIds": zod.array(zod.string()).optional().describe('Original source blocks preserved by this node'),
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
+  "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
+  "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
   "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
 }))
 }),

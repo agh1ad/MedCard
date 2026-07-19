@@ -22,6 +22,22 @@ export const FlowNodeOrigin = {
 } as const;
 
 /**
+ * Meaning-based color role for visual memorization
+ */
+export type FlowNodeSemanticRole = typeof FlowNodeSemanticRole[keyof typeof FlowNodeSemanticRole];
+
+
+export const FlowNodeSemanticRole = {
+  core: 'core',
+  manifestation: 'manifestation',
+  diagnosis: 'diagnosis',
+  treatment: 'treatment',
+  complication: 'complication',
+  explanation: 'explanation',
+  fact: 'fact',
+} as const;
+
+/**
  * Visual-memory color assigned to this node
  */
 export type FlowNodeTone = typeof FlowNodeTone[keyof typeof FlowNodeTone];
@@ -54,6 +70,10 @@ export interface FlowNode {
   sourceBlockIds?: string[];
   /** Whether the wording is original, AI-enhanced, or newly added by AI */
   origin?: FlowNodeOrigin;
+  /** Meaning-based color role for visual memorization */
+  semanticRole?: FlowNodeSemanticRole;
+  /** Exact named concepts to highlight in dark green */
+  highlightTerms?: string[];
   /** Visual-memory color assigned to this node */
   tone?: FlowNodeTone;
 }

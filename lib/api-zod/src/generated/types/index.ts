@@ -15,6 +15,7 @@ export * from './cardStatsTopTagsItem';
 export * from './cardUpdate';
 export * from './flowNode';
 export * from './flowNodeOrigin';
+export * from './flowNodeSemanticRole';
 export * from './flowNodeTone';
 export * from './generateCardInput';
 export * from './generatedCard';

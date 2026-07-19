@@ -155,7 +155,7 @@
   --memory-section-pad: 7px;
   position: relative;
   display: grid;
-  grid-template-columns: 29% 71%;
+  grid-template-columns: 34% 66%;
   grid-template-rows: 13% 81% 6%;
   width: max(1080px, 100%);
   aspect-ratio: 297 / 210;
@@ -163,7 +163,7 @@
   color: var(--paper-ink);
   background-color: #fbf8eb;
   background-image:
-    linear-gradient(90deg, transparent 0 28.7%, rgba(219, 66, 66, 0.24) 28.7% 28.82%, transparent 28.82%),
+    linear-gradient(90deg, transparent 0 33.7%, rgba(219, 66, 66, 0.24) 33.7% 33.82%, transparent 33.82%),
     repeating-linear-gradient(to bottom, transparent 0 31px, var(--paper-rule) 31px 32px);
   border: 1px solid rgba(99, 87, 63, 0.22);
   border-radius: 0.35rem;
@@ -204,7 +204,7 @@
 .memory-title-stem {
   position: absolute;
   bottom: -7px;
-  left: 64.5%;
+  left: 67%;
   width: 1.5px;
   height: 18px;
   background: #47443d;
@@ -213,13 +213,20 @@
 .memory-sidebar {
   grid-column: 1;
   grid-row: 2;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-content: start;
+  display: flex;
+  align-items: flex-start;
   gap: 7px;
   min-height: 0;
   padding: 4px 12px 8px 14px;
   overflow: hidden;
+}
+
+.memory-sidebar-column {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
 }
 
 .memory-section {
@@ -228,7 +235,7 @@
   background: rgba(255, 255, 255, 0.62);
   border: 1px solid rgba(92, 84, 68, 0.12);
   border-radius: 8px;
-  box-shadow: 0 2px 7px rgba(70, 60, 42, 0.06);
+  box-shadow: 0 1px 4px rgba(70, 60, 42, 0.045);
 }
 
 .memory-section header {
@@ -242,12 +249,11 @@
 
 .memory-section header svg { width: max(10px, calc(var(--memory-font) * 0.85)); height: max(10px, calc(var(--memory-font) * 0.85)); }
 .memory-section h2 { margin: 0; font-size: max(8px, calc(var(--memory-font) * 0.72)); font-weight: 850; letter-spacing: 0.08em; text-transform: uppercase; }
-.memory-section.accent-amber header { color: #9b6b12; }
-.memory-section.accent-rose header { color: #b83b51; }
+.memory-section.accent-pink header { color: #e21882; }
 .memory-section.accent-blue header { color: #2870ba; }
-.memory-section.accent-cyan header { color: #147f8c; }
-.memory-section.accent-emerald header { color: #197952; }
-.memory-section.accent-violet header { color: #7448a5; }
+.memory-section.accent-dark-green header { color: #086447; }
+.memory-section.accent-bright-green header { color: #159947; }
+.memory-section.accent-red header { color: #c62828; }
 
 .memory-main {
   grid-column: 2;
@@ -301,25 +307,32 @@
 .memory-node small { display: block; margin-top: 2px; color: #625d53; font-size: 0.82em; font-style: italic; font-weight: 500; }
 .memory-node.origin-ai_added { border-bottom-style: dashed; }
 .memory-node.origin-ai_added::after {
-  content: 'AI+';
+  content: '+';
   position: absolute;
   top: -0.45em;
   right: -0.7em;
-  padding: 0 0.28em;
-  color: #8a5d08;
-  background: #fff4bf;
-  border: 1px solid rgba(166, 109, 10, 0.28);
-  border-radius: 999px;
-  font-size: 0.48em;
+  padding: 0;
+  color: #8b6b20;
+  background: transparent;
+  border: 0;
+  font-size: 0.62em;
   font-weight: 900;
   letter-spacing: 0.04em;
 }
-.memory-node.tone-ink { color: #2c2a26; }
-.memory-node.tone-blue { color: #176ec8; }
-.memory-node.tone-green { color: #0d7b5c; }
-.memory-node.tone-pink { color: #e33991; }
-.memory-node.tone-violet { color: #7f389c; }
-.memory-node.tone-amber { color: #a66d0a; }
+.memory-node.role-core { color: #e21882; }
+.memory-node.role-manifestation { color: #7135a8; }
+.memory-node.role-diagnosis { color: #086447; }
+.memory-node.role-treatment { color: #159947; }
+.memory-node.role-complication { color: #c62828; }
+.memory-node.role-explanation { color: #176ec8; }
+.memory-node.role-fact { color: #176ec8; }
+.memory-node small { color: #2c2a26; }
+.memory-concept {
+  padding: 0;
+  color: #086447;
+  background: transparent;
+  font-weight: 800;
+}
 
 .memory-tree-descendants { display: flex; flex-direction: column; align-items: center; width: 100%; }
 .memory-tree-stem, .memory-tree-drop { width: 1px; height: var(--memory-gap); background: #4b4841; }

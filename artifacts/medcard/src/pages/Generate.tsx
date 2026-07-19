@@ -322,7 +322,7 @@ export function Generate() {
           </div>
           {preview.quality.aiAddedFactsCount > 0 && (
             <p className="text-xs text-emerald-900/70 lg:col-span-2">
-              Nodes marked <strong>AI+</strong> were added for context and
+              Nodes marked <strong>+</strong> were added for context and
               should be reviewed before clinical use. Your original source
               remains preserved.
             </p>

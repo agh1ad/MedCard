@@ -221,6 +221,15 @@ components:
           type: string
           enum: [source, enhanced, ai_added]
           description: Whether the wording is original, AI-enhanced, or newly added by AI
+        semanticRole:
+          type: string
+          enum: [core, manifestation, diagnosis, treatment, complication, explanation, fact]
+          description: Meaning-based color role for visual memorization
+        highlightTerms:
+          type: array
+          items:
+            type: string
+          description: Exact named concepts to highlight in dark green
         tone:
           type: string
           enum: [ink, blue, green, pink, violet, amber]

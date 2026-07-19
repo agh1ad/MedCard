@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { FlowNodeOrigin } from './flowNodeOrigin';
+import type { FlowNodeSemanticRole } from './flowNodeSemanticRole';
 import type { FlowNodeTone } from './flowNodeTone';
 
 export interface FlowNode {
@@ -26,6 +27,10 @@ export interface FlowNode {
   sourceBlockIds?: string[];
   /** Whether the wording is original, AI-enhanced, or newly added by AI */
   origin?: FlowNodeOrigin;
+  /** Meaning-based color role for visual memorization */
+  semanticRole?: FlowNodeSemanticRole;
+  /** Exact named concepts to highlight in dark green */
+  highlightTerms?: string[];
   /** Visual-memory color assigned to this node */
   tone?: FlowNodeTone;
 }

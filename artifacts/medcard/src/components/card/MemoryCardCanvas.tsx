@@ -28,13 +28,22 @@ const SECTION_CONFIG: Array<{
   icon: typeof Activity;
   accent: string;
 }> = [
-  { key: "high_yield", title: "High yield", icon: BookOpenCheck, accent: "amber" },
-  { key: "risk_factors", title: "Risk factors", icon: AlertTriangle, accent: "rose" },
+  { key: "high_yield", title: "High yield", icon: BookOpenCheck, accent: "pink" },
+  { key: "risk_factors", title: "Risk factors", icon: AlertTriangle, accent: "blue" },
   { key: "associations", title: "Associations", icon: Link2, accent: "blue" },
-  { key: "diagnosis", title: "Diagnosis", icon: Activity, accent: "cyan" },
-  { key: "treatment", title: "Treatment", icon: Pill, accent: "emerald" },
-  { key: "complications", title: "Complications", icon: HeartPulse, accent: "violet" },
+  { key: "diagnosis", title: "Diagnosis", icon: Activity, accent: "dark-green" },
+  { key: "treatment", title: "Treatment", icon: Pill, accent: "bright-green" },
+  { key: "complications", title: "Complications", icon: HeartPulse, accent: "red" },
 ];
+
+type SemanticRole = NonNullable<FlowNode["semanticRole"]>;
+
+const SECTION_ROLES: Partial<Record<keyof SectionTrees, SemanticRole>> = {
+  high_yield: "core",
+  diagnosis: "diagnosis",
+  treatment: "treatment",
+  complications: "complication",
+};
 
 function countNodes(nodes: FlowNode[]): number {
   return nodes.reduce(
@@ -50,8 +59,8 @@ function countLeaves(node: FlowNode): number {
     : 1;
 }
 
-const MIN_FONT_SIZE = 8.5;
-const MAX_FONT_SIZE = 24;
+const MIN_FONT_SIZE = 11.5;
+const MAX_FONT_SIZE = 28;
 
 function setCardScale(card: HTMLElement, fontSize: number) {
   const scale = fontSize / 12;
@@ -68,17 +77,54 @@ function contentFits(element: HTMLElement) {
   );
 }
 
-function MemoryNode({ node, compact = false }: { node: FlowNode; compact?: boolean }) {
+function escapePattern(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function HighlightedText({ text, terms = [] }: { text: string; terms?: string[] }) {
+  const usableTerms = [...new Set(terms.map((term) => term.trim()).filter(Boolean))]
+    .sort((a, b) => b.length - a.length);
+  if (!usableTerms.length) return text;
+
+  const pattern = new RegExp(`(${usableTerms.map(escapePattern).join("|")})`, "gi");
+  const lookup = new Set(usableTerms.map((term) => term.toLocaleLowerCase()));
+  return text.split(pattern).map((part, index) =>
+    lookup.has(part.toLocaleLowerCase()) ? (
+      <mark className="memory-concept" key={`${part}-${index}`}>
+        {part}
+      </mark>
+    ) : (
+      part
+    ),
+  );
+}
+
+function MemoryNode({
+  node,
+  compact = false,
+  roleOverride,
+}: {
+  node: FlowNode;
+  compact?: boolean;
+  roleOverride?: SemanticRole;
+}) {
   const children = node.children ?? [];
+  const semanticRole = roleOverride ?? node.semanticRole ?? "fact";
 
   return (
     <div className={`memory-tree-branch ${compact ? "is-compact" : ""}`}>
       <div
-        className={`memory-node tone-${node.tone ?? "ink"} origin-${node.origin ?? "source"}`}
+        className={`memory-node role-${semanticRole} origin-${node.origin ?? "source"}`}
         title={node.origin === "ai_added" ? "Added by AI for context" : undefined}
       >
-        <span>{node.label}</span>
-        {node.sublabel && <small>{node.sublabel}</small>}
+        <span>
+          <HighlightedText text={node.label} terms={node.highlightTerms} />
+        </span>
+        {node.sublabel && (
+          <small>
+            <HighlightedText text={node.sublabel} terms={node.highlightTerms} />
+          </small>
+        )}
       </div>
       {children.length > 0 && (
         <div className="memory-tree-descendants">
@@ -91,7 +137,11 @@ function MemoryNode({ node, compact = false }: { node: FlowNode; compact?: boole
                 style={{ flexGrow: compact ? 1 : countLeaves(child) }}
               >
                 <div className="memory-tree-drop" />
-                <MemoryNode node={child} compact={compact} />
+                <MemoryNode
+                  node={child}
+                  compact={compact}
+                  roleOverride={roleOverride}
+                />
               </div>
             ))}
           </div>
@@ -101,7 +151,15 @@ function MemoryNode({ node, compact = false }: { node: FlowNode; compact?: boole
   );
 }
 
-function MemoryTree({ nodes, compact = false }: { nodes: FlowNode[]; compact?: boolean }) {
+function MemoryTree({
+  nodes,
+  compact = false,
+  roleOverride,
+}: {
+  nodes: FlowNode[];
+  compact?: boolean;
+  roleOverride?: SemanticRole;
+}) {
   if (!nodes.length) return null;
 
   if (!compact && nodes.length > 1) {
@@ -115,7 +173,7 @@ function MemoryTree({ nodes, compact = false }: { nodes: FlowNode[]; compact?: b
               style={{ flexGrow: countLeaves(node) }}
             >
               <div className="memory-tree-drop" />
-              <MemoryNode node={node} />
+              <MemoryNode node={node} roleOverride={roleOverride} />
             </div>
           ))}
         </div>
@@ -126,7 +184,12 @@ function MemoryTree({ nodes, compact = false }: { nodes: FlowNode[]; compact?: b
   return (
     <div className={`memory-tree ${compact ? "is-compact" : ""}`}>
       {nodes.map((node) => (
-        <MemoryNode key={node.id} node={node} compact={compact} />
+        <MemoryNode
+          key={node.id}
+          node={node}
+          compact={compact}
+          roleOverride={roleOverride}
+        />
       ))}
     </div>
   );
@@ -161,6 +224,32 @@ export function MemoryCardCanvas({
     Object.values(sectionTrees).reduce((total, nodes) => total + countNodes(nodes), 0);
   const imagesFor = (section: CardImageSection) =>
     images.filter((image) => image.section === section);
+  const sectionColumns = SECTION_CONFIG.reduce<
+    Array<Array<(typeof SECTION_CONFIG)[number]>>
+  >(
+    (columns, section) => {
+      const weight = (sectionTrees[section.key] ?? []).reduce(
+        (total, node) => total + countNodes([node]),
+        0,
+      );
+      const imageWeight = imagesFor(section.key).length * 3;
+      if (!weight && !imageWeight) return columns;
+      const columnWeights = columns.map((column) =>
+        column.reduce(
+          (total, item) =>
+            total +
+            countNodes(sectionTrees[item.key] ?? []) +
+            imagesFor(item.key).length * 3 +
+            1,
+          0,
+        ),
+      );
+      const target = columnWeights[0] <= columnWeights[1] ? 0 : 1;
+      columns[target].push(section);
+      return columns;
+    },
+    [[], []],
+  );
 
   useLayoutEffect(() => {
     const card = cardRef.current;
@@ -217,21 +306,31 @@ export function MemoryCardCanvas({
         </div>
 
         <aside className="memory-sidebar" ref={sidebarRef}>
-          {SECTION_CONFIG.map(({ key, title, icon: Icon, accent }) => {
-            const nodes = sectionTrees[key] ?? [];
-            const sectionImages = imagesFor(key);
-            if (!nodes.length && !sectionImages.length) return null;
-            return (
-              <section className={`memory-section accent-${accent}`} key={key}>
-                <header>
-                  <Icon />
-                  <h2>{title}</h2>
-                </header>
-                <MemoryTree nodes={nodes} compact />
-                <SectionImages images={sectionImages} />
-              </section>
-            );
-          })}
+          {sectionColumns.map((column, columnIndex) => (
+            <div className="memory-sidebar-column" key={columnIndex}>
+              {column.map(({ key, title, icon: Icon, accent }) => {
+                const nodes = sectionTrees[key] ?? [];
+                const sectionImages = imagesFor(key);
+                return (
+                  <section
+                    className={`memory-section accent-${accent} ${countNodes(nodes) > 5 ? "is-dense" : ""}`}
+                    key={key}
+                  >
+                    <header>
+                      <Icon />
+                      <h2>{title}</h2>
+                    </header>
+                    <MemoryTree
+                      nodes={nodes}
+                      compact
+                      roleOverride={SECTION_ROLES[key]}
+                    />
+                    <SectionImages images={sectionImages} />
+                  </section>
+                );
+              })}
+            </div>
+          ))}
         </aside>
 
         <main className="memory-main" ref={mainRef}>
@@ -244,7 +343,7 @@ export function MemoryCardCanvas({
         </main>
 
         <footer className="memory-card-footer">
-          <span>VERBATIM SOURCE</span>
+          <span>SOURCE-TRACEABLE VISUAL CARD</span>
           <span>{totalNodes} information blocks</span>
         </footer>
       </article>

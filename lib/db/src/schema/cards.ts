@@ -15,6 +15,15 @@ export type FlowNode = z.infer<typeof FlowNodeSchemaBase> & {
   sourceBlockId?: string;
   sourceBlockIds?: string[];
   origin?: "source" | "enhanced" | "ai_added";
+  semanticRole?:
+    | "core"
+    | "manifestation"
+    | "diagnosis"
+    | "treatment"
+    | "complication"
+    | "explanation"
+    | "fact";
+  highlightTerms?: string[];
   tone?: "ink" | "blue" | "green" | "pink" | "violet" | "amber";
 };
 
@@ -23,6 +32,18 @@ export const FlowNodeSchema: z.ZodType<FlowNode> = FlowNodeSchemaBase.extend({
   sourceBlockId: z.string().optional(),
   sourceBlockIds: z.array(z.string()).optional(),
   origin: z.enum(["source", "enhanced", "ai_added"]).optional(),
+  semanticRole: z
+    .enum([
+      "core",
+      "manifestation",
+      "diagnosis",
+      "treatment",
+      "complication",
+      "explanation",
+      "fact",
+    ])
+    .optional(),
+  highlightTerms: z.array(z.string()).optional(),
   tone: z
     .enum(["ink", "blue", "green", "pink", "violet", "amber"])
     .optional(),

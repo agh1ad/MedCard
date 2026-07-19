@@ -18,6 +18,15 @@ const SECTION_KEYS = [
 ] as const;
 
 const TONES = ["ink", "blue", "green", "pink", "violet", "amber"] as const;
+const SEMANTIC_ROLES = [
+  "core",
+  "manifestation",
+  "diagnosis",
+  "treatment",
+  "complication",
+  "explanation",
+  "fact",
+] as const;
 const SIDE_SECTIONS = [
   "high_yield",
   "risk_factors",
@@ -29,6 +38,7 @@ const SIDE_SECTIONS = [
 
 type SectionKey = (typeof SECTION_KEYS)[number];
 type Tone = (typeof TONES)[number];
+type SemanticRole = (typeof SEMANTIC_ROLES)[number];
 
 interface AiNode {
   nodeId: string;
@@ -36,6 +46,8 @@ interface AiNode {
   sublabel: string | null;
   sourceBlockIds: string[];
   origin: "source" | "enhanced" | "ai_added";
+  semanticRole: SemanticRole;
+  highlightTerms: string[];
   section: SectionKey;
   parentNodeId: string | null;
   order: number;
@@ -76,6 +88,8 @@ const STRUCTURE_SCHEMA = {
           "sublabel",
           "sourceBlockIds",
           "origin",
+          "semanticRole",
+          "highlightTerms",
           "section",
           "parentNodeId",
           "order",
@@ -90,6 +104,8 @@ const STRUCTURE_SCHEMA = {
             type: "string",
             enum: ["source", "enhanced", "ai_added"],
           },
+          semanticRole: { type: "string", enum: SEMANTIC_ROLES },
+          highlightTerms: { type: "array", items: { type: "string" } },
           section: { type: "string", enum: SECTION_KEYS },
           parentNodeId: { type: ["string", "null"] },
           order: { type: "integer" },
@@ -129,7 +145,13 @@ Create one accurate, memorable landscape study card in the author's handwritten 
 SOURCE PRESERVATION
 - Preserve every supplied source block's meaning. Every blockId must appear in sourceBlockIds on at least one node; never silently omit or contradict it.
 - You may correct grammar, standardize terminology, clarify wording, combine repetition, and split dense ideas into clearer nodes. Use origin "source" only when wording is essentially unchanged and "enhanced" when edited.
-- You may add concise, broadly established medical facts needed to complete a causal bridge, explain a manifestation, or add essential high-yield context. AI-created nodes use origin "ai_added" and an empty sourceBlockIds array. Never guess, add fringe claims, or invent patient-specific advice.
+- Add only facts essential to understanding a missing causal bridge. Respect maxAiAddedNodes exactly as a hard ceiling. AI-created nodes use origin "ai_added" and an empty sourceBlockIds array. Never add optional presentation windows, alternate tests, confirmatory restatements, or long complication cascades unless supplied by the source.
+
+VISUAL DENSITY
+- Respect maxNodes as a hard ceiling. Merge related source blocks into one concise node when needed; sourceBlockIds preserves all traceability.
+- A node may contain one short causal arrow phrase when that avoids a ladder of tiny nodes. Side-tree depth must not exceed 4. Avoid nodes that merely say "confirms", "risk profile", "typical presentation", or repeat a section heading.
+- Prefer 2-5 memorable sibling buds beneath a mechanism/category. Keep labels under 7 words and sublabels under 10 words whenever medically possible.
+- A short source should produce a sparse visual structure that scales up to fill the card, not a textbook expansion or unused tiny text.
 
 HANDWRITTEN TREE GRAMMAR
 - Main contains pathophysiology and the manifestations produced by each mechanism. Use the closest cause/category/process as parent.
@@ -137,6 +159,13 @@ HANDWRITTEN TREE GRAMMAR
 - Never turn adjacency or a plain list into a chain. Chain only when causality, arrows, or explicit sequence supports it. Findings beneath one heading are sibling buds.
 - Diagnosis and treatment are decision trees: test/condition -> result -> next step. Other side sections may also branch.
 - Keep labels concise enough for one A4 page. Put useful qualifiers in sublabel. Use consistent tone along a chain and contrasting tones between neighboring branches.
+
+SEMANTIC COLOR ROLES
+- semanticRole "core": only the highest-yield/core facts.
+- "manifestation": symptoms, signs, examination findings, and systemic manifestations.
+- "diagnosis", "treatment", and "complication": matching section content.
+- "explanation": causal/mechanistic explanations. "fact": risk factors, associations, and other supporting facts.
+- highlightTerms contains exact substrings from label or sublabel that are recognizable named concepts: anatomy/organs, diseases, syndromes, cells, antibodies, cytokines, genes, drugs, tests, named signs, and named procedures. Do not include ordinary verbs or whole sentences.
 
 QUALITY GATE
 Before returning JSON, internally draft, inspect, and revise the card. Score 10 only if: all source blocks are traceable; hierarchy is causal and correctly branched; wording is clear and memorable; added medical content is conservative and consistent; no node is duplicated; all parents are valid; and the result can fit one page. Return only the final revised structure and honest audit.`;
@@ -177,6 +206,9 @@ function isAiNode(value: unknown): value is AiNode {
     Array.isArray(item.sourceBlockIds) &&
     item.sourceBlockIds.every((id) => typeof id === "string") &&
     ["source", "enhanced", "ai_added"].includes(item.origin as string) &&
+    SEMANTIC_ROLES.includes(item.semanticRole as SemanticRole) &&
+    Array.isArray(item.highlightTerms) &&
+    item.highlightTerms.every((term) => typeof term === "string") &&
     SECTION_KEYS.includes(item.section as SectionKey) &&
     (item.parentNodeId === null || typeof item.parentNodeId === "string") &&
     Number.isInteger(item.order) &&
@@ -191,6 +223,8 @@ function isScore(value: unknown): value is number {
 function validateResult(
   blocks: SourceBlock[],
   value: unknown,
+  maxNodes: number,
+  maxAiAddedNodes: number,
 ): { nodes: AiNode[]; quality: QualityReview } {
   if (!value || typeof value !== "object") {
     throw new Error("AI returned an invalid card result");
@@ -205,6 +239,9 @@ function validateResult(
     !rawNodes.every(isAiNode)
   ) {
     throw new Error("AI returned invalid card nodes");
+  }
+  if (rawNodes.length > maxNodes) {
+    throw new Error("AI exceeded the visual node budget");
   }
   if (!rawQuality || typeof rawQuality !== "object") {
     throw new Error("AI omitted its quality review");
@@ -237,6 +274,14 @@ function validateResult(
     if (node.origin !== "ai_added" && !node.sourceBlockIds.length) {
       throw new Error("AI omitted provenance for edited source content");
     }
+    const visibleText = `${node.label} ${node.sublabel ?? ""}`.toLocaleLowerCase();
+    if (
+      node.highlightTerms.some(
+        (term) => !term.trim() || !visibleText.includes(term.toLocaleLowerCase()),
+      )
+    ) {
+      throw new Error("AI returned a concept highlight outside the node text");
+    }
     for (const blockId of node.sourceBlockIds) {
       if (!expectedBlockIds.has(blockId)) {
         throw new Error("AI referenced an unknown source block");
@@ -268,6 +313,9 @@ function validateResult(
   const aiAddedFactsCount = rawNodes.filter(
     (node) => node.origin === "ai_added",
   ).length;
+  if (aiAddedFactsCount > maxAiAddedNodes) {
+    throw new Error("AI exceeded the added-context budget");
+  }
 
   return {
     nodes: rawNodes,
@@ -308,6 +356,8 @@ function buildTrees(nodes: AiNode[], section: SectionKey): FlowNode[] {
       sourceBlockId: node.sourceBlockIds[0],
       sourceBlockIds: node.sourceBlockIds,
       origin: node.origin,
+      semanticRole: node.semanticRole,
+      highlightTerms: node.highlightTerms,
       label: node.label.trim(),
       sublabel: node.sublabel?.trim() || null,
       tone: node.tone,
@@ -373,6 +423,11 @@ export async function organizeCard(
 ): Promise<OrganizedCard> {
   const blocks = splitSourceBlocks(rawText);
   if (!blocks.length) throw new Error("No source information was provided");
+  const maxNodes = Math.min(32, Math.max(16, Math.ceil(blocks.length * 0.8)));
+  const maxAiAddedNodes = Math.min(
+    4,
+    Math.max(2, Math.ceil(blocks.length / 12)),
+  );
 
   const model = process.env.OPENAI_MODEL ?? "gpt-5.6-sol";
   const serviceTier =
@@ -391,7 +446,12 @@ export async function organizeCard(
       { role: "system", content: ORGANIZER_PROMPT },
       {
         role: "user",
-        content: JSON.stringify({ topic: topic || null, blocks }),
+        content: JSON.stringify({
+          topic: topic || null,
+          maxNodes,
+          maxAiAddedNodes,
+          blocks,
+        }),
       },
     ],
     response_format: {
@@ -420,6 +480,11 @@ export async function organizeCard(
   const content = completion.choices[0]?.message?.content;
   if (!content) throw new Error("AI returned an empty organization result");
 
-  const result = validateResult(blocks, JSON.parse(content));
+  const result = validateResult(
+    blocks,
+    JSON.parse(content),
+    maxNodes,
+    maxAiAddedNodes,
+  );
   return composeCard(blocks, result.nodes, result.quality);
 }
