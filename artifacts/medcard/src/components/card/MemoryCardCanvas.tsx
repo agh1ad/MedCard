@@ -79,7 +79,7 @@ function countLeaves(node: FlowNode): number {
     : 1;
 }
 
-const MIN_FONT_SIZE = 10.5;
+const MIN_FONT_SIZE = 11.5;
 const MAX_FONT_SIZE = 28;
 
 function setRegionScale(
@@ -91,18 +91,7 @@ function setRegionScale(
 }
 
 function contentFits(element: HTMLElement) {
-  const bounds = element.getBoundingClientRect();
-  const descendants = Array.from(element.children) as HTMLElement[];
-  const childrenFit = descendants.every((child) => {
-    const childBounds = child.getBoundingClientRect();
-    return (
-      childBounds.right <= bounds.right + 1 &&
-      childBounds.bottom <= bounds.bottom + 1
-    );
-  });
-
   return (
-    childrenFit &&
     element.scrollHeight <= element.clientHeight + 1 &&
     element.scrollWidth <= element.clientWidth + 1
   );
@@ -504,10 +493,7 @@ function MemoryBulletList({
   );
 }
 
-function collectNodeLabels(
-  nodes: FlowNode[],
-  labels = new Map<string, string>(),
-) {
+function collectNodeLabels(nodes: FlowNode[], labels = new Map<string, string>()) {
   for (const node of nodes) {
     labels.set(node.id, node.label);
     collectNodeLabels(node.children ?? [], labels);
@@ -542,10 +528,7 @@ function MemorySideTable({
             <tr key={row.id}>
               <td>
                 <strong>
-                  <HighlightedText
-                    text={row.label}
-                    terms={row.highlightTerms}
-                  />
+                  <HighlightedText text={row.label} terms={row.highlightTerms} />
                 </strong>
               </td>
               <td>
@@ -585,7 +568,10 @@ function MemorySideCallout({
           <HighlightedText text={root.sublabel} terms={root.highlightTerms} />
         </p>
       )}
-      <MemoryBulletList nodes={root.children ?? []} nodeLabels={nodeLabels} />
+      <MemoryBulletList
+        nodes={root.children ?? []}
+        nodeLabels={nodeLabels}
+      />
     </div>
   );
 }
@@ -721,9 +707,7 @@ export function MemoryCardCanvas({
             const nodeCount = countNodes(nodes);
             const nodeLabels = collectNodeLabels(nodes);
             const usesWidePresentation = nodes.some(
-              (node) =>
-                node.presentation === "table" ||
-                node.presentation === "diagram",
+              (node) => node.presentation === "table" || node.presentation === "diagram",
             );
             return (
               <section
