@@ -23,5 +23,5 @@ timeoutMs = 20000
 
 [userenv.shared]
 OPENAI_MODEL = "gpt-5-nano"
-OPENAI_SERVICE_TIER = "flex"
+OPENAI_SERVICE_TIER = "default"
 BASE_PATH = "/"
