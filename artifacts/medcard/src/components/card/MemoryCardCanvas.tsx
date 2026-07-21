@@ -79,7 +79,7 @@ function countLeaves(node: FlowNode): number {
     : 1;
 }
 
-const MIN_FONT_SIZE = 11.5;
+const MIN_FONT_SIZE = 10.5;
 const MAX_FONT_SIZE = 28;
 
 function setRegionScale(
@@ -91,7 +91,17 @@ function setRegionScale(
 }
 
 function contentFits(element: HTMLElement) {
+  const bounds = element.getBoundingClientRect();
+  const childrenFit = Array.from(element.children).every((child) => {
+    const childBounds = child.getBoundingClientRect();
+    return (
+      childBounds.right <= bounds.right + 1 &&
+      childBounds.bottom <= bounds.bottom + 1
+    );
+  });
+
   return (
+    childrenFit &&
     element.scrollHeight <= element.clientHeight + 1 &&
     element.scrollWidth <= element.clientWidth + 1
   );

@@ -521,7 +521,7 @@
   position: relative;
   display: grid;
   grid-template-columns: 38% 62%;
-  grid-template-rows: 13% 81% 6%;
+  grid-template-rows: 10% 86% 4%;
   width: max(1280px, 100%);
   aspect-ratio: 297 / 210;
   overflow: hidden;
