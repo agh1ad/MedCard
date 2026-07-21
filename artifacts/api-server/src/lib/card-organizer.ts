@@ -520,10 +520,12 @@ export async function organizeCard(
   const model = process.env.OPENAI_MODEL ?? "gpt-5.6-sol";
   const serviceTier =
     process.env.OPENAI_SERVICE_TIER === "default" ? "default" : "flex";
+  const reasoningEffort =
+    process.env.OPENAI_REASONING_EFFORT === "medium" ? "medium" : "low";
   const completion = await openai.chat.completions.create({
     model,
     service_tier: serviceTier,
-    reasoning_effort: "medium",
+    reasoning_effort: reasoningEffort,
     verbosity: "low",
     n: 1,
     max_completion_tokens: Math.min(
@@ -558,6 +560,7 @@ export async function organizeCard(
     console.info("MedCard AI usage", {
       model,
       serviceTier: completion.service_tier ?? serviceTier,
+      reasoningEffort,
       finishReason: completion.choices[0]?.finish_reason,
       promptTokens: usage.prompt_tokens,
       cachedPromptTokens: usage.prompt_tokens_details?.cached_tokens ?? 0,
