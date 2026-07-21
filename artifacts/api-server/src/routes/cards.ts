@@ -31,6 +31,21 @@ function getOpenAI(): OpenAI {
 }
 
 function sendGenerationError(res: Response, err: unknown): void {
+  if (err instanceof OpenAI.APIConnectionTimeoutError) {
+    res.status(504).json({
+      error:
+        "AI generation took too long. Please retry; the request was stopped safely and no card was saved.",
+    });
+    return;
+  }
+
+  if (err instanceof OpenAI.APIUserAbortError) {
+    if (!res.headersSent) {
+      res.status(499).json({ error: "AI generation was cancelled." });
+    }
+    return;
+  }
+
   if (err instanceof OpenAI.APIError) {
     if (err.code === "insufficient_quota") {
       res.status(402).json({
@@ -276,7 +291,8 @@ router.post("/generate", async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  const { rawText, topic, imageManifest } = parsed.data;
+  const { rawText, topic } = parsed.data;
+  const imageManifest = parsed.data.imageManifest ?? [];
 
   let openai: OpenAI;
   try {
@@ -288,7 +304,25 @@ router.post("/generate", async (req: Request, res: Response): Promise<void> => {
   }
 
   try {
-    res.json(await organizeCard(openai, rawText, topic, imageManifest));
+    const startedAt = Date.now();
+    const controller = new AbortController();
+    req.once("aborted", () => controller.abort());
+    req.log.info(
+      { sourceCharacters: rawText.length, imageCount: imageManifest.length },
+      "Starting card generation",
+    );
+    const card = await organizeCard(
+      openai,
+      rawText,
+      topic,
+      imageManifest,
+      controller.signal,
+    );
+    req.log.info(
+      { durationMs: Date.now() - startedAt },
+      "Completed card generation",
+    );
+    res.json(card);
   } catch (err) {
     req.log.error({ err }, "Error calling OpenAI");
     sendGenerationError(res, err);

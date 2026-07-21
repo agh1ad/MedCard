@@ -534,6 +534,7 @@ export async function organizeCard(
   rawText: string,
   topic?: string | null,
   imageManifest: Array<{ id: string; name: string; ocrText?: string }> = [],
+  signal?: AbortSignal,
 ): Promise<OrganizedCard> {
   const blocks = splitSourceBlocks(rawText);
   if (!blocks.length) throw new Error("No source information was provided");
@@ -544,18 +545,24 @@ export async function organizeCard(
     Math.max(2, Math.ceil(blocks.length / 12)),
   );
 
-  const model = process.env.OPENAI_MODEL ?? "gpt-5.6-sol";
+  const model = process.env.OPENAI_MODEL?.trim() || "gpt-5.6-sol";
+  // Flex can remain queued for several minutes. Keep it opt-in so the normal
+  // interactive card-building flow responds within the UI's time budget.
   const serviceTier =
-    process.env.OPENAI_SERVICE_TIER === "default" ? "default" : "flex";
+    process.env.OPENAI_SERVICE_TIER === "flex" ? "flex" : "default";
+  const configuredTimeout = Number(process.env.OPENAI_TIMEOUT_MS);
+  const requestTimeoutMs = Number.isFinite(configuredTimeout)
+    ? Math.min(120_000, Math.max(15_000, configuredTimeout))
+    : 55_000;
   const completion = await openai.chat.completions.create({
     model,
     service_tier: serviceTier,
-    reasoning_effort: "medium",
+    reasoning_effort: "low",
     verbosity: "low",
     n: 1,
     max_completion_tokens: Math.min(
-      24_000,
-      Math.max(6_000, blocks.length * 240),
+      16_000,
+      Math.max(4_000, blocks.length * 180),
     ),
     messages: [
       { role: "system", content: ORGANIZER_PROMPT },
@@ -578,6 +585,10 @@ export async function organizeCard(
         schema: STRUCTURE_SCHEMA,
       },
     },
+  }, {
+    timeout: requestTimeoutMs,
+    maxRetries: 0,
+    signal,
   });
 
   const usage = completion.usage;
