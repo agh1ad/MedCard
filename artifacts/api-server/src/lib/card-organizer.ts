@@ -553,10 +553,6 @@ export async function organizeCard(
     reasoning_effort: "medium",
     verbosity: "low",
     n: 1,
-    max_completion_tokens: Math.min(
-      24_000,
-      Math.max(6_000, blocks.length * 240),
-    ),
     messages: [
       { role: "system", content: ORGANIZER_PROMPT },
       {
