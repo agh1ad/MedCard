@@ -11,3 +11,4 @@ export interface SourceBlock {
   /** Verbatim text copied from the user's input */
   text: string;
 }
+

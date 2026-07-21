@@ -119,6 +119,22 @@ export interface CardImage {
   section: CardImageSection;
 }
 
+export interface CardLayout {
+  style: 'notebook' | 'clinical' | 'diagram' | 'image_led' | 'minimal';
+  preset: 'a4_landscape' | 'a4_portrait' | 'a5_landscape' | 'a5_portrait' | 'square' | 'wide';
+  widthMm: number;
+  heightMm: number;
+  minReadableFontPx: number;
+  focalSection: CardImageSection;
+  rationale: string;
+}
+
+export interface ImagePlacement {
+  id: string;
+  section: CardImageSection;
+  rationale: string;
+}
+
 export interface SidebarSections {
   /** High-yield notes and key facts */
   high_yield: string[];
@@ -142,6 +158,7 @@ export interface Card {
   sectionTrees: SectionTrees;
   sourceBlocks: SourceBlock[];
   images: CardImage[];
+  layout?: CardLayout;
   tags: string[];
   /** Original raw input text */
   rawText: string;
@@ -188,6 +205,8 @@ export interface GeneratedCard {
   sectionTrees: SectionTrees;
   sourceBlocks: SourceBlock[];
   quality: QualityReview;
+  layout: CardLayout;
+  imagePlacements: ImagePlacement[];
 }
 
 export interface CardInput {
@@ -198,6 +217,7 @@ export interface CardInput {
   sectionTrees: SectionTrees;
   sourceBlocks: SourceBlock[];
   images: CardImage[];
+  layout?: CardLayout;
   rawText: string;
   tags: string[];
   /** @nullable */
@@ -212,6 +232,7 @@ export interface CardUpdate {
   sectionTrees?: SectionTrees;
   sourceBlocks?: SourceBlock[];
   images?: CardImage[];
+  layout?: CardLayout;
   tags?: string[];
   /** @nullable */
   notebookId?: number | null;
@@ -228,6 +249,7 @@ export interface GenerateCardInput {
      * @nullable
      */
   topic?: string | null;
+  imageManifest?: Array<{ id: string; name: string; ocrText?: string }>;
 }
 
 export type CardStatsTopTagsItem = {

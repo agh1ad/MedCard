@@ -13,3 +13,4 @@ export interface FolderInput {
   /** @nullable */
   parentId?: number | null;
 }
+

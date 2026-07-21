@@ -18,3 +18,4 @@ export const CardImageSection = {
   treatment: 'treatment',
   complications: 'complications',
 } as const;
+

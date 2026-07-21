@@ -204,10 +204,26 @@ export function Generate() {
     }
 
     generateMutation.mutate(
-      { data: { rawText: sourceText, topic: topic.trim() } },
+      {
+        data: {
+          rawText: sourceText,
+          topic: topic.trim(),
+          imageManifest: images.map((image) => ({
+            id: image.id,
+            name: image.name,
+            ocrText: imageOcr[image.id]?.text ?? "",
+          })),
+        },
+      },
       {
         onSuccess: (data) => {
           setPreview(data);
+          if (data.imagePlacements?.length) {
+            setImages((current) => current.map((image) => {
+              const placement = data.imagePlacements.find((item) => item.id === image.id);
+              return placement ? { ...image, section: placement.section } : image;
+            }));
+          }
           window.scrollTo({ top: 0, behavior: "smooth" });
         },
         onError: (error) => {
@@ -237,6 +253,7 @@ export function Generate() {
           sectionTrees: preview.sectionTrees,
           sourceBlocks: preview.sourceBlocks,
           images,
+          layout: preview.layout,
         },
       },
       {
@@ -320,6 +337,18 @@ export function Generate() {
               </div>
             ))}
           </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-emerald-950/75 lg:col-span-2">
+            <span className="rounded-full bg-white/80 px-3 py-1 font-bold">
+              AI canvas: {preview.layout.preset.replaceAll("_", " ")}
+            </span>
+            <span className="rounded-full bg-white/80 px-3 py-1 font-bold">
+              {preview.layout.style.replace("_", " ")} style
+            </span>
+            <span className="rounded-full bg-white/80 px-3 py-1 font-bold">
+              {preview.layout.widthMm} × {preview.layout.heightMm} mm
+            </span>
+            <span>{preview.layout.rationale}</span>
+          </div>
           {preview.quality.aiAddedFactsCount > 0 && (
             <p className="text-xs text-emerald-900/70 lg:col-span-2">
               Nodes marked <strong>+</strong> were added for context and
@@ -334,6 +363,7 @@ export function Generate() {
           flow={preview.flow}
           sectionTrees={preview.sectionTrees}
           images={images}
+          layout={preview.layout}
         />
 
         {images.length > 0 && (
@@ -351,6 +381,11 @@ export function Generate() {
                     className="h-20 w-24 rounded-md object-cover"
                   />
                   <div className="min-w-0 flex-1 space-y-2">
+                    {preview.imagePlacements?.find((placement) => placement.id === image.id) && (
+                      <p className="text-[11px] leading-snug text-emerald-800">
+                        AI linked this image to {preview.imagePlacements.find((placement) => placement.id === image.id)?.section.replace("_", " ")} for recall.
+                      </p>
+                    )}
                     <select
                       value={image.section}
                       onChange={(event) =>

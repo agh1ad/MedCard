@@ -11,10 +11,24 @@ import type { SectionTrees } from './sectionTrees';
 import type { SidebarSections } from './sidebarSections';
 import type { SourceBlock } from './sourceBlock';
 
+export interface CardLayout {
+  style: 'notebook' | 'clinical' | 'diagram' | 'image_led' | 'minimal';
+  preset: 'a4_landscape' | 'a4_portrait' | 'a5_landscape' | 'a5_portrait' | 'square' | 'wide';
+  widthMm: number;
+  heightMm: number;
+  minReadableFontPx: number;
+  focalSection: string;
+  rationale: string;
+}
+
+export interface ImagePlacement { id: string; section: string; rationale: string; }
+
 export interface GeneratedCard {
   flow: FlowNode[];
   sidebar: SidebarSections;
   sectionTrees: SectionTrees;
   sourceBlocks: SourceBlock[];
   quality: QualityReview;
+  layout: CardLayout;
+  imagePlacements: ImagePlacement[];
 }

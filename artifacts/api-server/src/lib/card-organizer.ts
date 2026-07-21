@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import {
   emptySectionTrees,
+  type CardLayout,
   type FlowNode,
   type SectionTrees,
   type SidebarSections,
@@ -73,12 +74,14 @@ export interface OrganizedCard {
   sectionTrees: SectionTrees;
   sourceBlocks: SourceBlock[];
   quality: QualityReview;
+  layout: CardLayout;
+  imagePlacements: Array<{ id: string; section: SectionKey; rationale: string }>;
 }
 
 const STRUCTURE_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["nodes", "quality"],
+  required: ["nodes", "quality", "layout", "imagePlacements"],
   properties: {
     nodes: {
       type: "array",
@@ -140,6 +143,33 @@ const STRUCTURE_SCHEMA = {
         summary: { type: "string" },
       },
     },
+    layout: {
+      type: "object",
+      additionalProperties: false,
+      required: ["style", "preset", "widthMm", "heightMm", "minReadableFontPx", "focalSection", "rationale"],
+      properties: {
+        style: { type: "string", enum: ["notebook", "clinical", "diagram", "image_led", "minimal"] },
+        preset: { type: "string", enum: ["a4_landscape", "a4_portrait", "a5_landscape", "a5_portrait", "square", "wide"] },
+        widthMm: { type: "number", minimum: 120, maximum: 500 },
+        heightMm: { type: "number", minimum: 100, maximum: 500 },
+        minReadableFontPx: { type: "number", minimum: 12, maximum: 24 },
+        focalSection: { type: "string", enum: SECTION_KEYS },
+        rationale: { type: "string" },
+      },
+    },
+    imagePlacements: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["id", "section", "rationale"],
+        properties: {
+          id: { type: "string" },
+          section: { type: "string", enum: SECTION_KEYS },
+          rationale: { type: "string" },
+        },
+      },
+    },
   },
 } as const;
 
@@ -179,6 +209,12 @@ SIDE NOTES
 - Choose "bullets" for independent or nested clinical facts, "table" for true comparisons with parallel label/detail rows, "diagram" for a short causal or decision pathway where arrows add understanding, and "callout" for one compact must-remember pearl with optional supporting bullets. Mix modes across a card when that is clearer.
 - Freely choose section placement, order, nesting, category hubs, paired label/explanation structure, decision pathways, comparisons, and cross-links to maximize rapid recall.
 - Use a flat list when facts are independent, nesting when facts depend on a category or decision, and cross-links when one point logically depends on multiple others. Avoid decorative complexity: every structural choice must improve clinical logic or memorability.
+
+ADAPTIVE CANVAS AND IMAGES
+- Choose the smallest page that comfortably fits all content while keeping minReadableFontPx between 14 and 20. Use a larger or wider page when the structure is dense; never use empty space merely to force A4.
+- Choose a style that reinforces the topic: notebook for sequence-heavy mechanisms, clinical for decision/reference cards, diagram for causal systems, image_led when supplied images carry diagnostic meaning, and minimal for sparse high-yield notes.
+- Choose one focalSection that deserves the strongest visual hierarchy.
+- For every supplied image in imageManifest, return one imagePlacement. Place it where it creates a retrieval cue or explains a node, not simply where there is room.
 
 SEMANTIC COLOR ROLES
 - semanticRole "core": only the highest-yield/core facts.
@@ -247,7 +283,12 @@ function validateResult(
   value: unknown,
   maxNodes: number,
   maxAiAddedNodes: number,
-): { nodes: AiNode[]; quality: QualityReview } {
+): {
+  nodes: AiNode[];
+  quality: QualityReview;
+  layout: CardLayout;
+  imagePlacements: Array<{ id: string; section: SectionKey; rationale: string }>;
+} {
   if (!value || typeof value !== "object") {
     throw new Error("AI returned an invalid card result");
   }
@@ -378,6 +419,8 @@ function validateResult(
       aiAddedFactsCount,
       summary: String(quality.summary),
     },
+    layout: result.layout as CardLayout,
+    imagePlacements: Array.isArray(result.imagePlacements) ? result.imagePlacements as Array<{ id: string; section: SectionKey; rationale: string }> : [],
   };
 }
 
@@ -473,6 +516,16 @@ function composeCard(
       treatment: flattenLabels(sectionTrees.treatment),
       complications: flattenLabels(sectionTrees.complications),
     },
+    layout: {
+      style: "notebook",
+      preset: "a4_landscape",
+      widthMm: 297,
+      heightMm: 210,
+      minReadableFontPx: 14,
+      focalSection: "main",
+      rationale: "Fallback layout",
+    },
+    imagePlacements: [],
   };
 }
 
@@ -480,6 +533,7 @@ export async function organizeCard(
   openai: OpenAI,
   rawText: string,
   topic?: string | null,
+  imageManifest: Array<{ id: string; name: string; ocrText?: string }> = [],
 ): Promise<OrganizedCard> {
   const blocks = splitSourceBlocks(rawText);
   if (!blocks.length) throw new Error("No source information was provided");
@@ -512,6 +566,7 @@ export async function organizeCard(
           maxNodes,
           maxAiAddedNodes,
           blocks,
+          imageManifest,
         }),
       },
     ],
@@ -547,5 +602,9 @@ export async function organizeCard(
     maxNodes,
     maxAiAddedNodes,
   );
-  return composeCard(blocks, result.nodes, result.quality);
+  const layout = result.layout as CardLayout;
+  const imageIds = new Set(imageManifest.map((image) => image.id));
+  const imagePlacements = (result.imagePlacements as Array<{ id: string; section: SectionKey; rationale: string }>)
+    .filter((placement) => imageIds.has(placement.id));
+  return { ...composeCard(blocks, result.nodes, result.quality), layout, imagePlacements };
 }

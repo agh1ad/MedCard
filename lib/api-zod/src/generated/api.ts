@@ -424,7 +424,12 @@ export const CreateCardResponse = zod.object({
 
 export const GenerateCardBody = zod.object({
   "rawText": zod.string().min(1).describe('Raw medical information to restructure'),
-  "topic": zod.string().nullish().describe('Optional topic hint')
+  "topic": zod.string().nullish().describe('Optional topic hint'),
+  "imageManifest": zod.array(zod.object({
+    "id": zod.string(),
+    "name": zod.string(),
+    "ocrText": zod.string().optional()
+  })).optional()
 })
 
 export const generateCardResponseQualityScoreMin = 0;

@@ -98,6 +98,18 @@ export const CardImageSchema = z.object({
 
 export type CardImage = z.infer<typeof CardImageSchema>;
 
+export const CardLayoutSchema = z.object({
+  style: z.enum(["notebook", "clinical", "diagram", "image_led", "minimal"]),
+  preset: z.enum(["a4_landscape", "a4_portrait", "a5_landscape", "a5_portrait", "square", "wide"]),
+  widthMm: z.number().min(120).max(500),
+  heightMm: z.number().min(100).max(500),
+  minReadableFontPx: z.number().min(12).max(24),
+  focalSection: z.enum(["main", "high_yield", "risk_factors", "associations", "diagnosis", "treatment", "complications"]),
+  rationale: z.string(),
+});
+
+export type CardLayout = z.infer<typeof CardLayoutSchema>;
+
 export const emptySectionTrees = (): SectionTrees => ({
   high_yield: [],
   risk_factors: [],
@@ -123,6 +135,7 @@ export const cardsTable = pgTable("cards", {
     .$type<SectionTrees>()
     .default(emptySectionTrees()),
   images: jsonb("images").notNull().$type<CardImage[]>().default([]),
+  layout: jsonb("layout").$type<CardLayout>(),
   notebookId: integer("notebook_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

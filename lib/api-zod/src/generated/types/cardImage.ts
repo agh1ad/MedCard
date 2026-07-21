@@ -15,3 +15,4 @@ export interface CardImage {
   caption?: string;
   section: CardImageSection;
 }
+

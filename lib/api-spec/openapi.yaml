@@ -500,6 +500,34 @@ components:
           type: string
           enum: [main, high_yield, risk_factors, associations, diagnosis, treatment, complications]
 
+    CardLayout:
+      type: object
+      required: [style, preset, widthMm, heightMm, minReadableFontPx, focalSection, rationale]
+      properties:
+        style:
+          type: string
+          enum: [notebook, clinical, diagram, image_led, minimal]
+        preset:
+          type: string
+          enum: [a4_landscape, a4_portrait, a5_landscape, a5_portrait, square, wide]
+        widthMm:
+          type: number
+          minimum: 120
+          maximum: 500
+        heightMm:
+          type: number
+          minimum: 100
+          maximum: 500
+        minReadableFontPx:
+          type: number
+          minimum: 12
+          maximum: 24
+        focalSection:
+          type: string
+          enum: [main, high_yield, risk_factors, associations, diagnosis, treatment, complications]
+        rationale:
+          type: string
+
     SidebarSections:
       type: object
       required: [high_yield, risk_factors, diagnosis, treatment, complications]
@@ -532,7 +560,7 @@ components:
 
     Card:
       type: object
-      required: [id, topic, flow, sidebar, sectionTrees, sourceBlocks, images, tags, rawText, createdAt, updatedAt]
+      required: [id, topic, flow, sidebar, sectionTrees, sourceBlocks, images, layout, tags, rawText, createdAt, updatedAt]
       properties:
         id:
           type: integer
@@ -556,6 +584,19 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CardImage"
+        layout:
+          $ref: "#/components/schemas/CardLayout"
+        imagePlacements:
+          type: array
+          items:
+            type: object
+            required: [id, section, rationale]
+            properties:
+              id: { type: string }
+              section:
+                type: string
+                enum: [main, high_yield, risk_factors, associations, diagnosis, treatment, complications]
+              rationale: { type: string }
         tags:
           type: array
           items:
@@ -574,7 +615,7 @@ components:
 
     GeneratedCard:
       type: object
-      required: [flow, sidebar, sectionTrees, sourceBlocks, quality]
+      required: [flow, sidebar, sectionTrees, sourceBlocks, quality, layout, imagePlacements]
       properties:
         flow:
           type: array
@@ -590,6 +631,19 @@ components:
             $ref: "#/components/schemas/SourceBlock"
         quality:
           $ref: "#/components/schemas/QualityReview"
+        layout:
+          $ref: "#/components/schemas/CardLayout"
+        imagePlacements:
+          type: array
+          items:
+            type: object
+            required: [id, section, rationale]
+            properties:
+              id: { type: string }
+              section:
+                type: string
+                enum: [main, high_yield, risk_factors, associations, diagnosis, treatment, complications]
+              rationale: { type: string }
 
     QualityReview:
       type: object
@@ -623,7 +677,7 @@ components:
 
     CardInput:
       type: object
-      required: [topic, flow, sidebar, sectionTrees, sourceBlocks, images, rawText, tags]
+      required: [topic, flow, sidebar, sectionTrees, sourceBlocks, images, layout, rawText, tags]
       properties:
         topic:
           type: string
@@ -644,6 +698,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CardImage"
+        layout:
+          $ref: "#/components/schemas/CardLayout"
         rawText:
           type: string
         tags:
@@ -675,6 +731,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CardImage"
+        layout:
+          $ref: "#/components/schemas/CardLayout"
         tags:
           type: array
           items:
@@ -693,6 +751,28 @@ components:
         topic:
           type: ["string", "null"]
           description: Optional topic hint
+        imageManifest:
+          type: array
+          items:
+            type: object
+            required: [id, name]
+            properties:
+              id: { type: string }
+              name: { type: string }
+              ocrText: { type: string }
+        imageManifest:
+          type: array
+          description: Image identities and reviewed OCR text used to choose semantic placement
+          items:
+            type: object
+            required: [id, name]
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              ocrText:
+                type: string
 
     CardStats:
       type: object

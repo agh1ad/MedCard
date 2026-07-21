@@ -68,6 +68,15 @@ function normalizeCard(card: typeof cardsTable.$inferSelect) {
     sourceBlocks: card.sourceBlocks ?? [],
     sectionTrees: card.sectionTrees ?? emptySectionTrees(),
     images: card.images ?? [],
+    layout: card.layout ?? {
+      style: "notebook",
+      preset: "a4_landscape",
+      widthMm: 297,
+      heightMm: 210,
+      minReadableFontPx: 14,
+      focalSection: "main",
+      rationale: "Legacy card layout",
+    },
   };
 }
 
@@ -267,7 +276,7 @@ router.post("/generate", async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  const { rawText, topic } = parsed.data;
+  const { rawText, topic, imageManifest } = parsed.data;
 
   let openai: OpenAI;
   try {
@@ -279,7 +288,7 @@ router.post("/generate", async (req: Request, res: Response): Promise<void> => {
   }
 
   try {
-    res.json(await organizeCard(openai, rawText, topic));
+    res.json(await organizeCard(openai, rawText, topic, imageManifest));
   } catch (err) {
     req.log.error({ err }, "Error calling OpenAI");
     sendGenerationError(res, err);
@@ -308,6 +317,7 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
       tags,
       notebookId,
     } = parsed.data;
+    const layout = req.body?.layout;
 
     const [card] = await db
       .insert(cardsTable)
@@ -321,6 +331,7 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
           sectionTrees as (typeof cardsTable.$inferInsert)["sectionTrees"],
         sourceBlocks,
         images,
+        ...(layout ? { layout } : {}),
         notebookId: notebookId ?? null,
       })
       .returning();
@@ -419,6 +430,7 @@ router.patch("/:id", async (req: Request, res: Response): Promise<void> => {
       .update(cardsTable)
       .set({
         updatedAt: new Date(),
+        ...(req.body?.layout !== undefined && { layout: req.body.layout }),
         ...(parsedBody.data.topic !== undefined && {
           topic: parsedBody.data.topic,
         }),

@@ -29,3 +29,4 @@ export interface Card {
   /** @nullable */
   notebookId?: number | null;
 }
+

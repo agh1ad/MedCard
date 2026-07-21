@@ -17,4 +17,5 @@ export interface GenerateCardInput {
      * @nullable
      */
   topic?: string | null;
+  imageManifest?: Array<{ id: string; name: string; ocrText?: string }>;
 }

@@ -15,3 +15,4 @@ export interface Notebook {
   createdAt: Date;
   updatedAt: Date;
 }
+

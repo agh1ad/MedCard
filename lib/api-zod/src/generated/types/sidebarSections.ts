@@ -18,3 +18,4 @@ export interface SidebarSections {
   /** Complications and prognosis */
   complications: string[];
 }
+

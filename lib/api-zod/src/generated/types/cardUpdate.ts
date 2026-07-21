@@ -23,3 +23,4 @@ export interface CardUpdate {
   /** @nullable */
   notebookId?: number | null;
 }
+
