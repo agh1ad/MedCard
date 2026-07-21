@@ -545,24 +545,29 @@ export async function organizeCard(
     Math.max(2, Math.ceil(blocks.length / 12)),
   );
 
-  const model = process.env.OPENAI_MODEL?.trim() || "gpt-5.6-sol";
+  // Replit's public development proxy closes long-running requests at roughly
+  // 30 seconds. gpt-4.1-mini is fast enough for this interactive structured
+  // editing pass while still supporting strict JSON-schema output.
+  const model = process.env.OPENAI_MODEL?.trim() || "gpt-4.1-mini";
   // Flex can remain queued for several minutes. Keep it opt-in so the normal
   // interactive card-building flow responds within the UI's time budget.
   const serviceTier =
     process.env.OPENAI_SERVICE_TIER === "flex" ? "flex" : "default";
   const configuredTimeout = Number(process.env.OPENAI_TIMEOUT_MS);
   const requestTimeoutMs = Number.isFinite(configuredTimeout)
-    ? Math.min(120_000, Math.max(15_000, configuredTimeout))
-    : 55_000;
+    ? Math.min(28_000, Math.max(15_000, configuredTimeout))
+    : 25_000;
+  const usesReasoningControls = model.startsWith("gpt-5");
   const completion = await openai.chat.completions.create({
     model,
     service_tier: serviceTier,
-    reasoning_effort: "low",
-    verbosity: "low",
+    ...(usesReasoningControls
+      ? { reasoning_effort: "low" as const, verbosity: "low" as const }
+      : {}),
     n: 1,
     max_completion_tokens: Math.min(
-      16_000,
-      Math.max(4_000, blocks.length * 180),
+      8_000,
+      Math.max(2_000, blocks.length * 140),
     ),
     messages: [
       { role: "system", content: ORGANIZER_PROMPT },

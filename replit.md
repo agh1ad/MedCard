@@ -11,9 +11,9 @@ MedCard turns user-researched medical information into a single landscape A4 vis
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - Required env: `DATABASE_URL` — Postgres connection string
 - Required env: `OPENAI_API_KEY` — restricted OpenAI project API key
-- Optional env: `OPENAI_MODEL` — defaults to the quality-first `gpt-5.6-sol`
+- Optional env: `OPENAI_MODEL` — defaults to the fast, structured-output-capable `gpt-4.1-mini` so interactive requests finish within Replit's gateway window
 - Optional env: `OPENAI_SERVICE_TIER` — defaults to responsive standard processing; set to `flex` only for non-interactive lower-cost generation
-- Optional env: `OPENAI_TIMEOUT_MS` — generation deadline in milliseconds (defaults to 55000, clamped to 15000–120000)
+- Optional env: `OPENAI_TIMEOUT_MS` — generation deadline in milliseconds (defaults to 25000, clamped to 15000–28000 so errors arrive before Replit's gateway closes)
 
 ## Stack
 
