@@ -30,31 +30,28 @@ function getOpenAI(): OpenAI {
   return new OpenAI({ apiKey, maxRetries: 0 });
 }
 
-function sendGenerationError(res: Response, err: unknown): void {
+function generationErrorPayload(err: unknown): { error: string } {
   if (err instanceof OpenAI.APIError) {
     if (err.code === "insufficient_quota") {
-      res.status(402).json({
+      return {
         error:
           "OpenAI API credit is unavailable. Check that billing is active for the project that owns this API key.",
-      });
-      return;
+      };
     }
 
     if (err.status === 429) {
-      res.status(429).json({
+      return {
         error:
           "OpenAI is temporarily rate-limited. Flex processing can be retried in a moment without switching to a more expensive model.",
-      });
-      return;
+      };
     }
 
-    res.status(502).json({ error: `OpenAI request failed: ${err.message}` });
-    return;
+    return { error: `OpenAI request failed: ${err.message}` };
   }
 
-  const message =
-    err instanceof Error ? err.message : "Unknown generation error";
-  res.status(500).json({ error: message });
+  return {
+    error: err instanceof Error ? err.message : "Unknown generation error",
+  };
 }
 
 // Apply compat conversion to a card coming from the DB
@@ -278,11 +275,25 @@ router.post("/generate", async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
+  // Replit's proxy can close an otherwise healthy request while a dense Flex
+  // generation is silent. JSON permits leading whitespace, so a small
+  // heartbeat keeps the connection alive without changing the response shape.
+  res.status(200);
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.flushHeaders();
+  res.write("\n");
+  const heartbeat = setInterval(() => res.write(" \n"), 10_000);
+  res.once("close", () => clearInterval(heartbeat));
+
   try {
-    res.json(await organizeCard(openai, rawText, topic));
+    const card = await organizeCard(openai, rawText, topic);
+    clearInterval(heartbeat);
+    res.end(JSON.stringify(card));
   } catch (err) {
+    clearInterval(heartbeat);
     req.log.error({ err }, "Error calling OpenAI");
-    sendGenerationError(res, err);
+    res.end(JSON.stringify(generationErrorPayload(err)));
   }
 });
 

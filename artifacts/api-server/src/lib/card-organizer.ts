@@ -149,8 +149,8 @@ Create one accurate, memorable landscape study card in the author's handwritten 
 
 SOURCE PRESERVATION
 - Preserve every supplied source block's meaning. Every blockId must appear in sourceBlockIds on at least one node; never silently omit or contradict it.
-- You have full editorial authority over wording and organization. Correct spelling, grammar, abbreviations, terminology, and awkward phrasing; remove redundant headings; combine repetition; split dense ideas; and relocate any fact to the section or branch where it is most logical. Preserve every source assertion, qualifier, comparison, and clinical detail even when rewriting it. Use origin "source" only when wording is essentially unchanged and "enhanced" whenever wording or placement is improved.
-- The original sourceOutline preserves the author's headings, newlines, indentation, arrows, and ordering. Use it to recover intended hierarchy and sequence; use blocks and blockId only for provenance. A standalone arrow is a connector, never medical content.
+- You have full editorial authority over wording and organization. Correct spelling, grammar, abbreviations, terminology, and awkward phrasing; combine repetition; split dense ideas; and move facts to the section or branch where they are most logical. Preserve every assertion, qualifier, comparison, and clinical detail. Use origin "source" only when wording is essentially unchanged and "enhanced" whenever wording or placement is improved.
+- sourceOutline preserves the author's headings, newlines, arrows, and ordering. Use it to infer hierarchy and sequence; use blocks and blockId only for provenance. A standalone arrow or section heading is structure, never a medical-content node.
 - Add only facts essential to understanding a missing causal bridge. Respect maxAiAddedNodes exactly as a hard ceiling. AI-created nodes use origin "ai_added" and an empty sourceBlockIds array. Never add optional presentation windows, alternate tests, confirmatory restatements, or long complication cascades unless supplied by the source.
 
 VISUAL DENSITY
@@ -162,21 +162,21 @@ VISUAL DENSITY
 HANDWRITTEN TREE GRAMMAR
 - Main normally starts from one disease trunk, but the AI may choose multiple roots when the source truly describes independent processes that later connect.
 - Main contains pathophysiology and the manifestations produced by each mechanism. Use the closest cause/category/process as parent.
-- A normal-physiology pathway, differential diagnosis, or comparison is a comparator, not an effect of the disease. Keep comparator pathways as separate labeled roots/branches under a neutral shared concept; never draw a causal arrow from the disease to normal physiology or from normal physiology to the disease.
+- A normal-physiology pathway, differential diagnosis, or comparison is a separate comparator branch under a neutral shared concept, not an effect of the disease. Never draw a causal arrow from a disease to normal physiology.
 - Treat an explicit source sequence A -> B -> C as mandatory descending parentage: A is the parent of B and B is the parent of C. Give every supplied stage its own bordered-cell node in the same order; never combine, skip, reorder, or place two stages in one label.
 - Model main as a directed medical flow graph using parentNodeIds. Give the AI freedom to select any structure that best expresses the supplied medical logic: sequence, divergence, parallel paths, convergence, repeated split/merge stages, feedback loops, vicious cycles, homeostatic loops, or combinations of these.
 - parentNodeIds[0] is the primary top-to-bottom layout parent and must maintain an acyclic readable backbone. Additional parentNodeIds are semantic connections and may converge from other branches, jump between stages, loop backward, or self-connect when a self-reinforcing process is medically justified. Use [] for a root.
-- Every connection must express cause, progression, dependency, reinforcement, inhibition, recurrence, or a clearly stated condition. Never connect items merely because they are adjacent, and never add complexity for decoration. Create a backward edge or feedback cycle only when the source explicitly describes feedback, recurrence, or a vicious cycle; never infer one from an ordinary downstream consequence. Sequence and logical memorability are the primary goals.
+- Every connection must express cause, progression, dependency, reinforcement, inhibition, recurrence, or a clearly stated condition. Never connect items merely because they are adjacent, and never add complexity for decoration. Sequence and logical memorability are the primary goals.
 - Represent a shared downstream result once with multiple parentNodeIds. Never duplicate the same manifestation or outcome just to preserve a tree shape. Parent connections must stay within the same section; move a fact to the best section rather than linking across sections. Side sections may use additional same-section parentNodeIds for meaningful cross-links, convergence, or feedback.
 - A heading such as "Pathophysiology" or "Symptoms" establishes hierarchy. Continue the pathophysiology as a descending causal trunk. Place each separately listed symptom/sign in its own manifestation node beneath a shared "Clinical manifestations" hub.
-- Every finding listed under Symptoms, Signs, Presentation, or Clinical manifestations belongs in section "main" with semanticRole "manifestation". Connect it to the closest mechanism or a shared Clinical manifestations hub at the end of the causal pathway. Never move symptoms into High Yield, Risk factors, or Associations merely to save space. High Yield may contain a concise distinguishing pearl, but must not duplicate the symptom list.
+- Every finding under Symptoms, Signs, Presentation, or Clinical manifestations belongs in section "main" with semanticRole "manifestation". Never move the symptom list into High Yield or another side panel to save space.
 - True divergence creates sibling buds. Continue each sibling independently to its own outcomes. Same-level categories such as Skin/GI/Pulmonary or stable/unstable are siblings, never ancestors of one another.
 - Choose direct children and organizational hubs according to genuine clinical categories and visual readability. Place every supplied manifestation in its own node; organizational grouping must not merge findings or invent arbitrary categories.
 - Do not attach multiple organ-system manifestations directly to the disease root beside its mechanism. Route them through their causal mechanism or one shared manifestation hub so the tree grows vertically instead of becoming an unreadably wide row.
 - Never turn adjacency or a plain list into a chain. Chain only when causality, arrows, or explicit sequence supports it. Findings beneath one heading are sibling buds.
-- Diagnosis preserves the supplied clinical order: initial/exclusion test -> next test -> gold-standard/confirmatory test -> findings. Treatment groups modalities under their real indication (e.g. definitive therapy versus therapy for poor surgical candidates), with mechanisms/qualifiers as children of the correct modality. Do not make one sibling treatment the child of another.
 - Diagnosis and treatment are decision trees: test/condition -> result -> next step. Other side sections may also branch. Build side trees with the same centered parent-to-sibling budding geometry as the main tree, not deep outline-style ladders.
-- Never create a node whose label or sublabel is only an arrow, bullet, punctuation, section title such as "Symptoms"/"Treatment", or vague placeholder such as "Other symptoms". Use headings to organize their actual child facts, not as empty content cells.
+- Preserve supplied clinical order in diagnosis (initial/exclusion test -> next test -> gold standard -> findings). Group treatments by their real indication; keep sibling treatment modalities as siblings and attach each mechanism or qualifier to the correct modality.
+- Never create a node whose label or sublabel is only an arrow, punctuation, a section title, or a vague placeholder such as "Other symptoms".
 - Keep labels concise enough for one A4 page. Put useful qualifiers in sublabel. Use consistent tone along a chain and contrasting tones between neighboring branches.
 
 SIDE NOTES
@@ -184,7 +184,7 @@ SIDE NOTES
 - Choose "bullets" for independent or nested clinical facts, "table" for true comparisons with parallel label/detail rows, "diagram" for a short causal or decision pathway where arrows add understanding, and "callout" for one compact must-remember pearl with optional supporting bullets. Mix modes across a card when that is clearer.
 - Freely choose section placement, order, nesting, category hubs, paired label/explanation structure, decision pathways, comparisons, and cross-links to maximize rapid recall.
 - Use a flat list when facts are independent, nesting when facts depend on a category or decision, and cross-links when one point logically depends on multiple others. Avoid decorative complexity: every structural choice must improve clinical logic or memorability.
-- The panel already supplies its section title. Never prefix a node with "Diagnosis:", "Treatment:", "Complications:", "Risk factors:", "Associations:", "High yield:", or "Symptoms:". Never repeat a panel title as a node.
+- The panel already supplies its title. Never prefix a node with "Diagnosis:", "Treatment:", "Complications:", "Risk factors:", "Associations:", "High yield:", or "Symptoms:", and never repeat a panel title as a node.
 
 SEMANTIC COLOR ROLES
 - semanticRole "core": only the highest-yield/core facts.
@@ -194,7 +194,7 @@ SEMANTIC COLOR ROLES
 - highlightTerms contains exact substrings from label or sublabel that are recognizable named concepts: anatomy/organs, diseases, syndromes, cells, antibodies, cytokines, genes, drugs, tests, named signs, and named procedures. Do not include ordinary verbs or whole sentences.
 
 QUALITY GATE
-Before returning JSON, internally draft, inspect, and revise the card. Trace every edge from parent to child and remove any connection that does not read as a true logical sentence. Verify comparator pathways are not represented as disease effects, diagnosis and treatment retain clinical order, and no connector-only or heading-only nodes remain. Score 10 only if: all source blocks are traceable; hierarchy is causal and correctly branched; wording is clear and memorable; added medical content is conservative and consistent; no node is duplicated; all parents are valid; and the result can fit one page. Return only the final revised structure and honest audit.`;
+Before returning JSON, internally draft, inspect, and revise the card. Score 10 only if: all source blocks are traceable; hierarchy is causal and correctly branched; wording is clear and memorable; added medical content is conservative and consistent; no node is duplicated; all parents are valid; and the result can fit one page. Return only the final revised structure and honest audit.`;
 
 function cleanLine(line: string): string {
   return line.replace(/^\s+|\s+$/g, "");
@@ -220,13 +220,6 @@ function isStructuralHeading(line: string): boolean {
   ].includes(heading);
 }
 
-function stripRedundantPanelPrefix(text: string): string {
-  return text.replace(
-    /^(?:high[ -]?yield|risk factors?|associations?|diagnosis|treatment|complications?|symptoms?)\s*:\s*/i,
-    "",
-  );
-}
-
 export function splitSourceBlocks(rawText: string): SourceBlock[] {
   const normalized = rawText.replace(/\r\n?/g, "\n").trim();
   if (!normalized) return [];
@@ -234,9 +227,8 @@ export function splitSourceBlocks(rawText: string): SourceBlock[] {
   const fragments: string[] = [];
   for (const line of normalized.split(/\n+/)) {
     const clean = cleanLine(line);
-    if (!clean || isConnectorOnly(clean) || isStructuralHeading(clean)) {
+    if (!clean || isConnectorOnly(clean) || isStructuralHeading(clean))
       continue;
-    }
 
     const arrowParts = clean.split(/\s*(?:→|--?>|=>|⟶)\s*/g);
     for (const arrowPart of arrowParts) {
@@ -277,30 +269,6 @@ function isScore(value: unknown): value is number {
   return Number.isInteger(value) && Number(value) >= 0 && Number(value) <= 10;
 }
 
-function meaningfulWords(text: string): Set<string> {
-  return new Set(
-    text
-      .toLocaleLowerCase()
-      .match(/[\p{L}\p{N}]+/gu)
-      ?.filter((word) => word.length > 2) ?? [],
-  );
-}
-
-function sharedWordCount(left: string, right: string): number {
-  const leftWords = meaningfulWords(left);
-  return [...meaningfulWords(right)].filter((word) => leftWords.has(word))
-    .length;
-}
-
-function visiblyRepresents(sourceText: string, visibleText: string): boolean {
-  const sourceWords = meaningfulWords(sourceText);
-  if (!sourceWords.size) return false;
-
-  const sharedWords = sharedWordCount(sourceText, visibleText);
-  const requiredWords = Math.min(2, sourceWords.size);
-  return sharedWords >= requiredWords && sharedWords / sourceWords.size >= 0.5;
-}
-
 function validateResult(
   blocks: SourceBlock[],
   value: unknown,
@@ -321,36 +289,6 @@ function validateResult(
   ) {
     throw new Error("AI returned invalid card nodes");
   }
-
-  for (const node of rawNodes) {
-    node.label = stripRedundantPanelPrefix(node.label).trim();
-    if (isStructuralHeading(node.label) && node.sublabel?.trim()) {
-      node.label = node.sublabel.trim();
-      node.sublabel = null;
-    }
-  }
-
-  const nonContentNodes = new Map(
-    rawNodes
-      .filter(
-        (node) =>
-          isConnectorOnly(node.label) ||
-          (isStructuralHeading(node.label) && !node.sublabel?.trim()),
-      )
-      .map((node) => [node.nodeId, node.parentNodeIds] as const),
-  );
-  if (nonContentNodes.size) {
-    for (const node of rawNodes) {
-      node.parentNodeIds = node.parentNodeIds.flatMap(
-        (parentId) => nonContentNodes.get(parentId) ?? [parentId],
-      );
-    }
-    for (let index = rawNodes.length - 1; index >= 0; index -= 1) {
-      if (nonContentNodes.has(rawNodes[index].nodeId))
-        rawNodes.splice(index, 1);
-    }
-  }
-  if (!rawNodes.length) throw new Error("AI returned no medical card nodes");
   if (rawNodes.length > maxNodes) {
     throw new Error("AI exceeded the visual node budget");
   }
@@ -375,43 +313,15 @@ function validateResult(
   const expectedBlockIds = new Set(blocks.map((block) => block.id));
   const coveredBlockIds = new Set<string>();
   const nodeById = new Map<string, AiNode>();
-
-  // Provenance is metadata. Repair a missing/invalid ID when the source text is
-  // visibly present instead of discarding an otherwise complete card.
-  const claimedBlockIds = new Set<string>();
-  for (const node of rawNodes) {
-    node.sourceBlockIds = [
-      ...new Set(node.sourceBlockIds.filter((id) => expectedBlockIds.has(id))),
-    ];
-    for (const blockId of node.sourceBlockIds) claimedBlockIds.add(blockId);
-    if (node.origin === "ai_added" && node.sourceBlockIds.length) {
-      node.origin = "enhanced";
-    }
-  }
-
-  for (const node of rawNodes) {
-    if (node.origin === "ai_added" || node.sourceBlockIds.length) continue;
-    const nodeText = `${node.label} ${node.sublabel ?? ""}`;
-    const candidates = blocks.filter((block) => !claimedBlockIds.has(block.id));
-    const match = candidates
-      .map((block) => ({
-        block,
-        score: visiblyRepresents(block.text, nodeText)
-          ? sharedWordCount(nodeText, block.text)
-          : 0,
-      }))
-      .sort((a, b) => b.score - a.score)[0];
-    if (match?.score) {
-      node.sourceBlockIds = [match.block.id];
-      claimedBlockIds.add(match.block.id);
-    } else {
-      node.origin = "ai_added";
-    }
-  }
-
   for (const node of rawNodes) {
     if (!node.nodeId || !node.label.trim() || nodeById.has(node.nodeId)) {
       throw new Error("AI returned duplicate or empty card nodes");
+    }
+    if (node.origin === "ai_added" && node.sourceBlockIds.length) {
+      throw new Error("AI mislabeled added content as source-backed");
+    }
+    if (node.origin !== "ai_added" && !node.sourceBlockIds.length) {
+      throw new Error("AI omitted provenance for edited source content");
     }
     const visibleText =
       `${node.label} ${node.sublabel ?? ""}`.toLocaleLowerCase();
@@ -427,59 +337,8 @@ function validateResult(
     nodeById.set(node.nodeId, node);
   }
 
-  // If a source block is not visibly represented, preserve it verbatim. This
-  // guarantees source fidelity without paying for a second AI request.
-  let recoveryOrder =
-    rawNodes.reduce((highest, node) => Math.max(highest, node.order), 0) + 1;
-  for (const block of blocks) {
-    if (coveredBlockIds.has(block.id)) continue;
-
-    const visibleMatch = rawNodes
-      .filter((node) => node.origin !== "ai_added")
-      .map((node) => ({
-        node,
-        score: visiblyRepresents(
-          block.text,
-          `${node.label} ${node.sublabel ?? ""}`,
-        )
-          ? sharedWordCount(`${node.label} ${node.sublabel ?? ""}`, block.text)
-          : 0,
-      }))
-      .sort((a, b) => b.score - a.score)[0];
-    if (visibleMatch?.score) {
-      visibleMatch.node.sourceBlockIds.push(block.id);
-      coveredBlockIds.add(block.id);
-      continue;
-    }
-
-    const anchor = [...rawNodes]
-      .filter((node) => node.origin !== "ai_added")
-      .sort((left, right) => {
-        const leftBlock = Number(left.sourceBlockIds[0]?.slice(1)) || 0;
-        const rightBlock = Number(right.sourceBlockIds[0]?.slice(1)) || 0;
-        const targetBlock = Number(block.id.slice(1)) || 0;
-        return (
-          Math.abs(leftBlock - targetBlock) - Math.abs(rightBlock - targetBlock)
-        );
-      })[0];
-    const section = anchor?.section ?? "high_yield";
-    const recoveryNode: AiNode = {
-      nodeId: `source-recovery-${block.id}`,
-      label: block.text,
-      sublabel: null,
-      sourceBlockIds: [block.id],
-      origin: "source",
-      semanticRole: anchor?.semanticRole ?? "fact",
-      highlightTerms: [],
-      section,
-      parentNodeIds: anchor ? [anchor.nodeId] : [],
-      presentation: anchor?.presentation ?? "bullets",
-      order: recoveryOrder++,
-      tone: anchor?.tone ?? "blue",
-    };
-    rawNodes.push(recoveryNode);
-    nodeById.set(recoveryNode.nodeId, recoveryNode);
-    coveredBlockIds.add(block.id);
+  if (coveredBlockIds.size !== expectedBlockIds.size) {
+    throw new Error("AI omitted source information");
   }
 
   // Keep model creativity from turning a recoverable cross-section link into a 500.
@@ -661,19 +520,16 @@ export async function organizeCard(
   const model = process.env.OPENAI_MODEL ?? "gpt-5.6-sol";
   const serviceTier =
     process.env.OPENAI_SERVICE_TIER === "default" ? "default" : "flex";
-  const configuredReasoning = process.env.OPENAI_REASONING_EFFORT;
-  const reasoningEffort =
-    configuredReasoning === "low" || configuredReasoning === "medium"
-      ? configuredReasoning
-      : blocks.length >= 24
-        ? "medium"
-        : "low";
   const completion = await openai.chat.completions.create({
     model,
     service_tier: serviceTier,
-    reasoning_effort: reasoningEffort,
+    reasoning_effort: "medium",
     verbosity: "low",
     n: 1,
+    max_completion_tokens: Math.min(
+      24_000,
+      Math.max(6_000, blocks.length * 240),
+    ),
     messages: [
       { role: "system", content: ORGANIZER_PROMPT },
       {
@@ -702,7 +558,6 @@ export async function organizeCard(
     console.info("MedCard AI usage", {
       model,
       serviceTier: completion.service_tier ?? serviceTier,
-      reasoningEffort,
       finishReason: completion.choices[0]?.finish_reason,
       promptTokens: usage.prompt_tokens,
       cachedPromptTokens: usage.prompt_tokens_details?.cached_tokens ?? 0,
@@ -711,22 +566,8 @@ export async function organizeCard(
     });
   }
 
-  const choice = completion.choices[0];
-  const content = choice?.message?.content;
-  if (!content) {
-    if (choice?.message?.refusal) {
-      throw new Error(
-        `AI could not organize this source: ${choice.message.refusal}`,
-      );
-    }
-
-    const finishReason = choice?.finish_reason;
-    throw new Error(
-      finishReason === "length"
-        ? "AI used its output budget before producing the card. Please try again."
-        : `AI returned no card content${finishReason ? ` (finish reason: ${finishReason})` : ""}`,
-    );
-  }
+  const content = completion.choices[0]?.message?.content;
+  if (!content) throw new Error("AI returned an empty organization result");
 
   const result = validateResult(
     blocks,

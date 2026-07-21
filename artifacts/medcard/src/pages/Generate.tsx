@@ -207,6 +207,14 @@ export function Generate() {
       { data: { rawText: sourceText, topic: topic.trim() } },
       {
         onSuccess: (data) => {
+          if ("error" in data && typeof data.error === "string") {
+            toast({
+              title: "Card organization failed",
+              description: data.error,
+              variant: "destructive",
+            });
+            return;
+          }
           setPreview(data);
           window.scrollTo({ top: 0, behavior: "smooth" });
         },
@@ -322,9 +330,9 @@ export function Generate() {
           </div>
           {preview.quality.aiAddedFactsCount > 0 && (
             <p className="text-xs text-emerald-900/70 lg:col-span-2">
-              Nodes marked <strong>+</strong> were added for context and
-              should be reviewed before clinical use. Your original source
-              remains preserved.
+              Nodes marked <strong>+</strong> were added for context and should
+              be reviewed before clinical use. Your original source remains
+              preserved.
             </p>
           )}
         </section>
