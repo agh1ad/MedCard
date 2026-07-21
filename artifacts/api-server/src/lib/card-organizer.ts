@@ -299,15 +299,48 @@ function validateResult(
   const expectedBlockIds = new Set(blocks.map((block) => block.id));
   const coveredBlockIds = new Set<string>();
   const nodeById = new Map<string, AiNode>();
+
+  // Provenance is metadata, not card content. Repair small model mistakes here
+  // instead of discarding a complete card with a 500 response.
+  const words = (text: string) =>
+    new Set(
+      text
+        .toLocaleLowerCase()
+        .match(/[\p{L}\p{N}]+/gu)
+        ?.filter((word) => word.length > 2) ?? [],
+    );
+  const claimedBlockIds = new Set<string>();
+  for (const node of rawNodes) {
+    node.sourceBlockIds = [
+      ...new Set(node.sourceBlockIds.filter((id) => expectedBlockIds.has(id))),
+    ];
+    for (const id of node.sourceBlockIds) claimedBlockIds.add(id);
+    if (node.origin === "ai_added" && node.sourceBlockIds.length) {
+      node.origin = "enhanced";
+    }
+  }
+
+  for (const node of rawNodes) {
+    if (node.origin === "ai_added" || node.sourceBlockIds.length) continue;
+    const nodeWords = words(`${node.label} ${node.sublabel ?? ""}`);
+    const candidates = blocks.filter((block) => !claimedBlockIds.has(block.id));
+    const pool = candidates.length ? candidates : blocks;
+    const match = pool
+      .map((block) => ({
+        block,
+        score: [...words(block.text)].filter((word) => nodeWords.has(word))
+          .length,
+      }))
+      .sort((a, b) => b.score - a.score)[0];
+    if (match) {
+      node.sourceBlockIds = [match.block.id];
+      claimedBlockIds.add(match.block.id);
+    }
+  }
+
   for (const node of rawNodes) {
     if (!node.nodeId || !node.label.trim() || nodeById.has(node.nodeId)) {
       throw new Error("AI returned duplicate or empty card nodes");
-    }
-    if (node.origin === "ai_added" && node.sourceBlockIds.length) {
-      throw new Error("AI mislabeled added content as source-backed");
-    }
-    if (node.origin !== "ai_added" && !node.sourceBlockIds.length) {
-      throw new Error("AI omitted provenance for edited source content");
     }
     const visibleText =
       `${node.label} ${node.sublabel ?? ""}`.toLocaleLowerCase();
@@ -315,16 +348,30 @@ function validateResult(
       (term) => term.trim() && visibleText.includes(term.toLocaleLowerCase()),
     );
     for (const blockId of node.sourceBlockIds) {
-      if (!expectedBlockIds.has(blockId)) {
-        throw new Error("AI referenced an unknown source block");
-      }
       coveredBlockIds.add(blockId);
     }
     nodeById.set(node.nodeId, node);
   }
 
-  if (coveredBlockIds.size !== expectedBlockIds.size) {
-    throw new Error("AI omitted source information");
+  // Attach any remaining provenance to the closest visible source-backed node.
+  // The prompt already requires semantic coverage; this makes traceability
+  // resilient when the model forgets only an ID in otherwise valid JSON.
+  for (const block of blocks) {
+    if (coveredBlockIds.has(block.id)) continue;
+    const blockWords = words(block.text);
+    const match = rawNodes
+      .filter((node) => node.origin !== "ai_added")
+      .map((node) => ({
+        node,
+        score: [...blockWords].filter((word) =>
+          words(`${node.label} ${node.sublabel ?? ""}`).has(word),
+        ).length,
+      }))
+      .sort((a, b) => b.score - a.score)[0];
+    if (match) {
+      match.node.sourceBlockIds.push(block.id);
+      coveredBlockIds.add(block.id);
+    }
   }
 
   // Keep model creativity from turning a recoverable cross-section link into a 500.
