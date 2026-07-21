@@ -257,6 +257,15 @@ function sharedWordCount(left: string, right: string): number {
     .length;
 }
 
+function visiblyRepresents(sourceText: string, visibleText: string): boolean {
+  const sourceWords = meaningfulWords(sourceText);
+  if (!sourceWords.size) return false;
+
+  const sharedWords = sharedWordCount(sourceText, visibleText);
+  const requiredWords = Math.min(2, sourceWords.size);
+  return sharedWords >= requiredWords && sharedWords / sourceWords.size >= 0.5;
+}
+
 function validateResult(
   blocks: SourceBlock[],
   value: unknown,
@@ -322,7 +331,9 @@ function validateResult(
     const match = candidates
       .map((block) => ({
         block,
-        score: sharedWordCount(nodeText, block.text),
+        score: visiblyRepresents(block.text, nodeText)
+          ? sharedWordCount(nodeText, block.text)
+          : 0,
       }))
       .sort((a, b) => b.score - a.score)[0];
     if (match?.score) {
@@ -362,10 +373,12 @@ function validateResult(
       .filter((node) => node.origin !== "ai_added")
       .map((node) => ({
         node,
-        score: sharedWordCount(
-          `${node.label} ${node.sublabel ?? ""}`,
+        score: visiblyRepresents(
           block.text,
-        ),
+          `${node.label} ${node.sublabel ?? ""}`,
+        )
+          ? sharedWordCount(`${node.label} ${node.sublabel ?? ""}`, block.text)
+          : 0,
       }))
       .sort((a, b) => b.score - a.score)[0];
     if (visibleMatch?.score) {
