@@ -516,13 +516,18 @@ export async function startCardOrganization(
 ): Promise<CardOrganizationProgress> {
   const { blocks, maxNodes, maxAiAddedNodes } = organizationLimits(rawText);
   const model = process.env.OPENAI_MODEL ?? "gpt-5.6-sol";
+  // Card generation is an interactive workflow. Use the standard-priority queue
+  // and low reasoning by default; Flex + medium reasoning can take several
+  // minutes for long sources. Both remain available as explicit opt-ins.
   const serviceTier =
-    process.env.OPENAI_SERVICE_TIER === "default" ? "default" : "flex";
+    process.env.OPENAI_SERVICE_TIER === "flex" ? "flex" : "default";
+  const reasoningEffort =
+    process.env.OPENAI_REASONING_EFFORT === "medium" ? "medium" : "low";
 
   const response = await openai.responses.create({
     model,
     service_tier: serviceTier,
-    reasoning: { effort: "medium" },
+    reasoning: { effort: reasoningEffort },
     instructions: ORGANIZER_PROMPT,
     input: JSON.stringify({
       topic: topic || null,
