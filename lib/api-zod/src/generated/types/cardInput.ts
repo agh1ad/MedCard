@@ -24,4 +24,3 @@ export interface CardInput {
   /** @nullable */
   notebookId?: number | null;
 }
-

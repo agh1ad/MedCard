@@ -17,4 +17,3 @@ export const FlowNodeOrigin = {
   enhanced: 'enhanced',
   ai_added: 'ai_added',
 } as const;
-

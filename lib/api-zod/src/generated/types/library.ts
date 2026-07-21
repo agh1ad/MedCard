@@ -12,4 +12,3 @@ export interface Library {
   folders: Folder[];
   notebooks: Notebook[];
 }
-

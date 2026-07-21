@@ -20,4 +20,3 @@ export const FlowNodeTone = {
   violet: 'violet',
   amber: 'amber',
 } as const;
-

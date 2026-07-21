@@ -14,4 +14,3 @@ export interface CardStats {
   recentCount: number;
   topTags?: CardStatsTopTagsItem[];
 }
-

@@ -471,8 +471,8 @@
     margin: 0;
   }
   html, body {
-    width: var(--memory-card-width);
-    height: var(--memory-card-height);
+    width: 297mm;
+    height: 210mm;
     margin: 0;
     background: white;
   }
@@ -518,15 +518,12 @@
   --paper-rule: rgba(92, 132, 153, 0.16);
   --memory-main-font: 12px;
   --memory-sidebar-font: 12px;
-  --memory-card-width: 297mm;
-  --memory-card-height: 210mm;
-  --memory-card-ratio: 1.414;
   position: relative;
   display: grid;
   grid-template-columns: 38% 62%;
   grid-template-rows: 13% 81% 6%;
   width: max(1280px, 100%);
-  aspect-ratio: var(--memory-card-ratio);
+  aspect-ratio: 297 / 210;
   overflow: hidden;
   color: var(--paper-ink);
   background-color: #fbf8eb;
@@ -538,16 +535,6 @@
   box-shadow: 0 24px 65px rgba(42, 50, 52, 0.16), 0 2px 4px rgba(42, 50, 52, 0.08);
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
-
-.memory-style-clinical { --paper-ink: #172b3a; --paper-rule: rgba(49, 123, 145, .12); background-color: #f4fbfc; }
-.memory-style-diagram { --paper-ink: #172b3a; --paper-rule: rgba(92, 75, 153, .13); background-color: #f8f7ff; }
-.memory-style-image_led { --paper-ink: #253326; --paper-rule: rgba(61, 126, 86, .13); background-color: #f7fbf5; }
-.memory-style-minimal { --paper-ink: #20252a; --paper-rule: rgba(78, 91, 102, .09); background-color: #fff; background-image: none; }
-.memory-focus-main .memory-main { box-shadow: 0 0 0 2px rgba(213, 155, 0, .2), 0 5px 16px rgba(35, 55, 58, .08); }
-.memory-focus-high_yield .memory-section.accent-pink,
-.memory-focus-diagnosis .memory-section.accent-dark-green,
-.memory-focus-treatment .memory-section.accent-bright-green,
-.memory-focus-complications .memory-section.accent-red { box-shadow: 0 0 0 2px rgba(213, 155, 0, .2), 0 5px 16px rgba(35, 55, 58, .08); }
 
 .memory-card-title {
   grid-column: 1 / -1;

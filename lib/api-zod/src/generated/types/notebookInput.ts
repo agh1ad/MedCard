@@ -13,4 +13,3 @@ export interface NotebookInput {
   /** @nullable */
   folderId?: number | null;
 }
-

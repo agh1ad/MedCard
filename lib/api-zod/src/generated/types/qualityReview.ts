@@ -36,4 +36,3 @@ export interface QualityReview {
   aiAddedFactsCount: number;
   summary: string;
 }
-

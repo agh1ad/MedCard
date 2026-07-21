@@ -39,4 +39,3 @@ export interface FlowNode {
   /** Visual-memory color assigned to this node */
   tone?: FlowNodeTone;
 }
-

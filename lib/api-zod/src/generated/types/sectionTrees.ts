@@ -15,4 +15,3 @@ export interface SectionTrees {
   treatment: FlowNode[];
   complications: FlowNode[];
 }
-

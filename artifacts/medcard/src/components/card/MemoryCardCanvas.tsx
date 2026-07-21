@@ -1,7 +1,6 @@
 import type {
   CardImage,
   CardImageSection,
-  CardLayout,
   FlowNode,
   SectionTrees,
 } from "@workspace/api-client-react";
@@ -13,14 +12,13 @@ import {
   Link2,
   Pill,
 } from "lucide-react";
-import { useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useId, useLayoutEffect, useRef, useState } from "react";
 
 interface MemoryCardCanvasProps {
   topic: string;
   flow: FlowNode[];
   sectionTrees: SectionTrees;
   images?: CardImage[];
-  layout?: CardLayout;
   className?: string;
 }
 
@@ -81,7 +79,7 @@ function countLeaves(node: FlowNode): number {
     : 1;
 }
 
-const MIN_FONT_SIZE = 14;
+const MIN_FONT_SIZE = 11.5;
 const MAX_FONT_SIZE = 28;
 
 function setRegionScale(
@@ -628,7 +626,6 @@ export function MemoryCardCanvas({
   flow,
   sectionTrees,
   images = [],
-  layout,
   className = "",
 }: MemoryCardCanvasProps) {
   const cardRef = useRef<HTMLElement>(null);
@@ -661,7 +658,7 @@ export function MemoryCardCanvas({
           region: "main" | "sidebar",
           element: HTMLElement,
         ) => {
-          let low = layout?.minReadableFontPx ?? MIN_FONT_SIZE;
+          let low = MIN_FONT_SIZE;
           let high = MAX_FONT_SIZE;
           for (let pass = 0; pass < 10; pass += 1) {
             const candidate = (low + high) / 2;
@@ -692,30 +689,11 @@ export function MemoryCardCanvas({
         .querySelectorAll("img")
         .forEach((image) => image.removeEventListener("load", fitCard));
     };
-  }, [topic, flow, sectionTrees, images, layout]);
-
-  const adaptiveLayout = layout ?? {
-    style: "notebook",
-    preset: "a4_landscape",
-    widthMm: 297,
-    heightMm: 210,
-    minReadableFontPx: 14,
-    focalSection: "main",
-    rationale: "Legacy card layout",
-  } satisfies CardLayout;
+  }, [topic, flow, sectionTrees, images]);
 
   return (
     <div id="print-area" className={`memory-card-shell ${className}`}>
-      <article
-        id="memory-card-print"
-        className={`memory-card memory-style-${adaptiveLayout.style} memory-focus-${adaptiveLayout.focalSection}`}
-        ref={cardRef}
-        style={{
-          "--memory-card-width": `${adaptiveLayout.widthMm}mm`,
-          "--memory-card-height": `${adaptiveLayout.heightMm}mm`,
-          "--memory-card-ratio": adaptiveLayout.widthMm / adaptiveLayout.heightMm,
-        } as CSSProperties}
-      >
+      <article id="memory-card-print" className="memory-card" ref={cardRef}>
         <div className="memory-card-title">
           <span className="memory-card-kicker">MEDCARD / VISUAL NOTE</span>
           <h1>{topic || "Untitled medical card"}</h1>

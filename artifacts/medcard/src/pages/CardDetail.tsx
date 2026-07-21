@@ -8,7 +8,6 @@ import {
   useUpdateCard,
   type CardImage,
   type CardImageSection,
-  type CardLayout,
   type FlowNode,
   type SectionTrees,
 } from "@workspace/api-client-react";
@@ -38,16 +37,6 @@ const EMPTY_TREES: SectionTrees = {
   diagnosis: [],
   treatment: [],
   complications: [],
-};
-
-const DEFAULT_LAYOUT: CardLayout = {
-  style: "notebook",
-  preset: "a4_landscape",
-  widthMm: 297,
-  heightMm: 210,
-  minReadableFontPx: 14,
-  focalSection: "main",
-  rationale: "Legacy card layout",
 };
 
 const SECTION_LABELS: Record<keyof SectionTrees, string> = {
@@ -86,7 +75,6 @@ export function CardDetail() {
   const [sectionTrees, setSectionTrees] = useState<SectionTrees>(EMPTY_TREES);
   const [images, setImages] = useState<CardImage[]>([]);
   const [tags, setTags] = useState<string[]>([]);
-  const [layout, setLayout] = useState<CardLayout>(DEFAULT_LAYOUT);
   const [tagInput, setTagInput] = useState("");
 
   useEffect(() => {
@@ -97,7 +85,6 @@ export function CardDetail() {
     setSectionTrees(card.sectionTrees ?? EMPTY_TREES);
     setImages(card.images ?? []);
     setTags(card.tags ?? []);
-    setLayout(card.layout ?? DEFAULT_LAYOUT);
   }, [card, id]);
 
   const reset = () => {
@@ -107,7 +94,6 @@ export function CardDetail() {
     setSectionTrees(card.sectionTrees ?? EMPTY_TREES);
     setImages(card.images ?? []);
     setTags(card.tags ?? []);
-    setLayout(card.layout ?? DEFAULT_LAYOUT);
     setEditing(false);
   };
 
@@ -117,7 +103,7 @@ export function CardDetail() {
       return;
     }
     updateMutation.mutate(
-      { id, data: { topic: topic.trim(), flow, sectionTrees, images, tags, layout } },
+      { id, data: { topic: topic.trim(), flow, sectionTrees, images, tags } },
       {
         onSuccess: (updated) => {
           queryClient.setQueryData(getGetCardQueryKey(id), updated);
@@ -265,7 +251,7 @@ export function CardDetail() {
           )}
         </div>
       ) : (
-      <MemoryCardCanvas topic={topic} flow={flow} sectionTrees={sectionTrees} images={images} layout={layout} />
+        <MemoryCardCanvas topic={topic} flow={flow} sectionTrees={sectionTrees} images={images} />
       )}
     </div>
   );

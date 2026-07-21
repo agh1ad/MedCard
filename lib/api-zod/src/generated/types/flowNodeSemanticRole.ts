@@ -21,4 +21,3 @@ export const FlowNodeSemanticRole = {
   explanation: 'explanation',
   fact: 'fact',
 } as const;
-

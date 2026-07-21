@@ -18,4 +18,3 @@ export const FlowNodePresentation = {
   diagram: 'diagram',
   callout: 'callout',
 } as const;
-
