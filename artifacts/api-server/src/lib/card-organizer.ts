@@ -496,13 +496,9 @@ export async function organizeCard(
   const completion = await openai.chat.completions.create({
     model,
     service_tier: serviceTier,
-    reasoning_effort: "medium",
+    reasoning_effort: "low",
     verbosity: "low",
     n: 1,
-    max_completion_tokens: Math.min(
-      24_000,
-      Math.max(6_000, blocks.length * 240),
-    ),
     messages: [
       { role: "system", content: ORGANIZER_PROMPT },
       {
@@ -538,8 +534,22 @@ export async function organizeCard(
     });
   }
 
-  const content = completion.choices[0]?.message?.content;
-  if (!content) throw new Error("AI returned an empty organization result");
+  const choice = completion.choices[0];
+  const content = choice?.message?.content;
+  if (!content) {
+    if (choice?.message?.refusal) {
+      throw new Error(
+        `AI could not organize this source: ${choice.message.refusal}`,
+      );
+    }
+
+    const finishReason = choice?.finish_reason;
+    throw new Error(
+      finishReason === "length"
+        ? "AI used its output budget before producing the card. Please try again."
+        : `AI returned no card content${finishReason ? ` (finish reason: ${finishReason})` : ""}`,
+    );
+  }
 
   const result = validateResult(
     blocks,
