@@ -682,9 +682,8 @@ export function Generate() {
             )}
           </Button>
           <p className="text-center text-xs leading-relaxed text-muted-foreground">
-            One quality-first AI call, normally within 30 seconds. Slow requests
-            stop safely so you can retry. Source text stays auditable, AI
-            additions are marked, and image files stay private.
+            One quality-first AI call. Source text stays auditable, AI additions
+            are marked, and image files stay private.
           </p>
         </aside>
       </div>

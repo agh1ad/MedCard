@@ -303,30 +303,12 @@ function validateResult(
   ) {
     throw new Error("AI returned invalid card nodes");
   }
+  if (rawNodes.length > maxNodes) {
+    throw new Error("AI exceeded the visual node budget");
+  }
   if (!rawQuality || typeof rawQuality !== "object") {
     throw new Error("AI omitted its quality review");
   }
-
-  // A model can occasionally exceed the requested visual budget by adding
-  // optional context or grouping hubs. Never fail the user's generation (or
-  // discard source-backed information) for that recoverable condition. Keep
-  // every source-backed node and admit only the AI-added nodes that fit both
-  // budgets. If source material itself needs more nodes, the adaptive canvas
-  // is allowed to grow instead of silently dropping study content.
-  const sourceBackedNodeCount = rawNodes.filter(
-    (node) => node.origin !== "ai_added",
-  ).length;
-  const availableAiSlots = Math.max(
-    0,
-    Math.min(maxAiAddedNodes, maxNodes - sourceBackedNodeCount),
-  );
-  let acceptedAiNodes = 0;
-  const nodes = rawNodes.filter((node) => {
-    if (node.origin !== "ai_added") return true;
-    if (acceptedAiNodes >= availableAiSlots) return false;
-    acceptedAiNodes += 1;
-    return true;
-  });
 
   const quality = rawQuality as Record<string, unknown>;
   if (
@@ -345,7 +327,7 @@ function validateResult(
   const expectedBlockIds = new Set(blocks.map((block) => block.id));
   const coveredBlockIds = new Set<string>();
   const nodeById = new Map<string, AiNode>();
-  for (const node of nodes) {
+  for (const node of rawNodes) {
     if (!node.nodeId || !node.label.trim() || nodeById.has(node.nodeId)) {
       throw new Error("AI returned duplicate or empty card nodes");
     }
@@ -374,7 +356,7 @@ function validateResult(
   }
 
   // Keep model creativity from turning a recoverable cross-section link into a 500.
-  for (const node of nodes) {
+  for (const node of rawNodes) {
     const sameSectionParents = [
       ...new Set(
         node.parentNodeIds.filter((parentId) => {
@@ -396,7 +378,7 @@ function validateResult(
     ];
   }
 
-  for (const node of nodes) {
+  for (const node of rawNodes) {
     if (new Set(node.parentNodeIds).size !== node.parentNodeIds.length) {
       throw new Error("AI returned duplicate flow connections");
     }
@@ -419,12 +401,15 @@ function validateResult(
     }
   }
 
-  const aiAddedFactsCount = nodes.filter(
+  const aiAddedFactsCount = rawNodes.filter(
     (node) => node.origin === "ai_added",
   ).length;
+  if (aiAddedFactsCount > maxAiAddedNodes) {
+    throw new Error("AI exceeded the added-context budget");
+  }
 
   return {
-    nodes,
+    nodes: rawNodes,
     quality: {
       score: Number(quality.score),
       coverage: 10,
@@ -549,52 +534,28 @@ export async function organizeCard(
   rawText: string,
   topic?: string | null,
   imageManifest: Array<{ id: string; name: string; ocrText?: string }> = [],
-  signal?: AbortSignal,
 ): Promise<OrganizedCard> {
   const blocks = splitSourceBlocks(rawText);
   if (!blocks.length) throw new Error("No source information was provided");
   // Dense source lists need enough cells to preserve every explicit main-tree point.
+  const maxNodes = Math.min(48, Math.max(18, Math.ceil(blocks.length * 1.05)));
   const maxAiAddedNodes = Math.min(
     4,
     Math.max(2, Math.ceil(blocks.length / 12)),
   );
-  // Allow room for organizational hubs and conservative causal bridges in
-  // addition to the source-backed facts. The previous 1.05x formula could
-  // make the prompt's own hierarchy requirements impossible to satisfy.
-  const maxNodes = Math.min(
-    64,
-    Math.max(
-      24,
-      blocks.length +
-        Math.ceil(blocks.length * 0.25) +
-        maxAiAddedNodes +
-        4,
-    ),
-  );
 
-  // Replit's public development proxy closes long-running requests at roughly
-  // 30 seconds. gpt-4.1-mini is fast enough for this interactive structured
-  // editing pass while still supporting strict JSON-schema output.
-  const model = process.env.OPENAI_MODEL?.trim() || "gpt-4.1-mini";
-  // Flex can remain queued for several minutes. Keep it opt-in so the normal
-  // interactive card-building flow responds within the UI's time budget.
+  const model = process.env.OPENAI_MODEL ?? "gpt-5.6-sol";
   const serviceTier =
-    process.env.OPENAI_SERVICE_TIER === "flex" ? "flex" : "default";
-  const configuredTimeout = Number(process.env.OPENAI_TIMEOUT_MS);
-  const requestTimeoutMs = Number.isFinite(configuredTimeout)
-    ? Math.min(28_000, Math.max(15_000, configuredTimeout))
-    : 25_000;
-  const usesReasoningControls = model.startsWith("gpt-5");
+    process.env.OPENAI_SERVICE_TIER === "default" ? "default" : "flex";
   const completion = await openai.chat.completions.create({
     model,
     service_tier: serviceTier,
-    ...(usesReasoningControls
-      ? { reasoning_effort: "low" as const, verbosity: "low" as const }
-      : {}),
+    reasoning_effort: "medium",
+    verbosity: "low",
     n: 1,
     max_completion_tokens: Math.min(
-      8_000,
-      Math.max(2_000, blocks.length * 140),
+      24_000,
+      Math.max(6_000, blocks.length * 240),
     ),
     messages: [
       { role: "system", content: ORGANIZER_PROMPT },
@@ -617,10 +578,6 @@ export async function organizeCard(
         schema: STRUCTURE_SCHEMA,
       },
     },
-  }, {
-    timeout: requestTimeoutMs,
-    maxRetries: 0,
-    signal,
   });
 
   const usage = completion.usage;

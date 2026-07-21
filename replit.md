@@ -11,9 +11,8 @@ MedCard turns user-researched medical information into a single landscape A4 vis
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - Required env: `DATABASE_URL` — Postgres connection string
 - Required env: `OPENAI_API_KEY` — restricted OpenAI project API key
-- Optional env: `OPENAI_MODEL` — defaults to the fast, structured-output-capable `gpt-4.1-mini` so interactive requests finish within Replit's gateway window
-- Optional env: `OPENAI_SERVICE_TIER` — defaults to responsive standard processing; set to `flex` only for non-interactive lower-cost generation
-- Optional env: `OPENAI_TIMEOUT_MS` — generation deadline in milliseconds (defaults to 25000, clamped to 15000–28000 so errors arrive before Replit's gateway closes)
+- Optional env: `OPENAI_MODEL` — defaults to the quality-first `gpt-5.6-sol`
+- Optional env: `OPENAI_SERVICE_TIER` — defaults to lower-cost Flex processing
 
 ## Stack
 
@@ -48,7 +47,7 @@ MedCard turns user-researched medical information into a single landscape A4 vis
 - Central flow nodes use matching clinical-reference cells with pale semantic washes and restrained accent edges while preserving the descending budding-tree connectors and one-point-per-cell hierarchy.
 - The server rejects output that omits source blocks, invents source references, creates invalid parents, or contains hierarchy cycles.
 - Images are kept out of the AI request to reduce cost and preserve privacy; users place them on the card after generation.
-- Generation uses one responsive request with low reasoning, low verbosity, one choice, strict structured output, a capped output budget, and a safe deadline. Flex processing remains opt-in.
+- Generation uses one Flex-tier request with medium reasoning, low verbosity, one choice, strict structured output, and a capped output budget.
 - The model drafts, audits, and revises within that single call. The UI shows its coverage, hierarchy, readability, and medical-consistency scores.
 - Saved cards retain the source ledger so fidelity remains auditable. AI-added nodes are visibly marked and should be reviewed before clinical use.
 
