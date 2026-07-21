@@ -517,7 +517,13 @@ export async function organizeCard(
     Math.max(2, Math.ceil(blocks.length / 12)),
   );
 
-  const model = process.env.OPENAI_MODEL ?? "gpt-5.6-sol";
+  const configuredModel = process.env.OPENAI_MODEL ?? "gpt-5-mini";
+  // Nano is excellent for short notes, but dense multi-section cards need the
+  // stronger mini model to preserve every source block and hierarchy.
+  const model =
+    blocks.length >= 24 && configuredModel === "gpt-5-nano"
+      ? (process.env.OPENAI_DENSE_MODEL ?? "gpt-5-mini")
+      : configuredModel;
   const serviceTier =
     process.env.OPENAI_SERVICE_TIER === "default" ? "default" : "flex";
   const reasoningEffort =
