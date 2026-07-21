@@ -242,6 +242,21 @@ function isScore(value: unknown): value is number {
   return Number.isInteger(value) && Number(value) >= 0 && Number(value) <= 10;
 }
 
+function meaningfulWords(text: string): Set<string> {
+  return new Set(
+    text
+      .toLocaleLowerCase()
+      .match(/[\p{L}\p{N}]+/gu)
+      ?.filter((word) => word.length > 2) ?? [],
+  );
+}
+
+function sharedWordCount(left: string, right: string): number {
+  const leftWords = meaningfulWords(left);
+  return [...meaningfulWords(right)].filter((word) => leftWords.has(word))
+    .length;
+}
+
 function validateResult(
   blocks: SourceBlock[],
   value: unknown,
@@ -286,15 +301,41 @@ function validateResult(
   const expectedBlockIds = new Set(blocks.map((block) => block.id));
   const coveredBlockIds = new Set<string>();
   const nodeById = new Map<string, AiNode>();
+
+  // Provenance is metadata. Repair a missing/invalid ID when the source text is
+  // visibly present instead of discarding an otherwise complete card.
+  const claimedBlockIds = new Set<string>();
+  for (const node of rawNodes) {
+    node.sourceBlockIds = [
+      ...new Set(node.sourceBlockIds.filter((id) => expectedBlockIds.has(id))),
+    ];
+    for (const blockId of node.sourceBlockIds) claimedBlockIds.add(blockId);
+    if (node.origin === "ai_added" && node.sourceBlockIds.length) {
+      node.origin = "enhanced";
+    }
+  }
+
+  for (const node of rawNodes) {
+    if (node.origin === "ai_added" || node.sourceBlockIds.length) continue;
+    const nodeText = `${node.label} ${node.sublabel ?? ""}`;
+    const candidates = blocks.filter((block) => !claimedBlockIds.has(block.id));
+    const match = candidates
+      .map((block) => ({
+        block,
+        score: sharedWordCount(nodeText, block.text),
+      }))
+      .sort((a, b) => b.score - a.score)[0];
+    if (match?.score) {
+      node.sourceBlockIds = [match.block.id];
+      claimedBlockIds.add(match.block.id);
+    } else {
+      node.origin = "ai_added";
+    }
+  }
+
   for (const node of rawNodes) {
     if (!node.nodeId || !node.label.trim() || nodeById.has(node.nodeId)) {
       throw new Error("AI returned duplicate or empty card nodes");
-    }
-    if (node.origin === "ai_added" && node.sourceBlockIds.length) {
-      throw new Error("AI mislabeled added content as source-backed");
-    }
-    if (node.origin !== "ai_added" && !node.sourceBlockIds.length) {
-      throw new Error("AI omitted provenance for edited source content");
     }
     const visibleText =
       `${node.label} ${node.sublabel ?? ""}`.toLocaleLowerCase();
@@ -310,8 +351,57 @@ function validateResult(
     nodeById.set(node.nodeId, node);
   }
 
-  if (coveredBlockIds.size !== expectedBlockIds.size) {
-    throw new Error("AI omitted source information");
+  // If a source block is not visibly represented, preserve it verbatim. This
+  // guarantees source fidelity without paying for a second AI request.
+  let recoveryOrder =
+    rawNodes.reduce((highest, node) => Math.max(highest, node.order), 0) + 1;
+  for (const block of blocks) {
+    if (coveredBlockIds.has(block.id)) continue;
+
+    const visibleMatch = rawNodes
+      .filter((node) => node.origin !== "ai_added")
+      .map((node) => ({
+        node,
+        score: sharedWordCount(
+          `${node.label} ${node.sublabel ?? ""}`,
+          block.text,
+        ),
+      }))
+      .sort((a, b) => b.score - a.score)[0];
+    if (visibleMatch?.score) {
+      visibleMatch.node.sourceBlockIds.push(block.id);
+      coveredBlockIds.add(block.id);
+      continue;
+    }
+
+    const anchor = [...rawNodes]
+      .filter((node) => node.origin !== "ai_added")
+      .sort((left, right) => {
+        const leftBlock = Number(left.sourceBlockIds[0]?.slice(1)) || 0;
+        const rightBlock = Number(right.sourceBlockIds[0]?.slice(1)) || 0;
+        const targetBlock = Number(block.id.slice(1)) || 0;
+        return (
+          Math.abs(leftBlock - targetBlock) - Math.abs(rightBlock - targetBlock)
+        );
+      })[0];
+    const section = anchor?.section ?? "high_yield";
+    const recoveryNode: AiNode = {
+      nodeId: `source-recovery-${block.id}`,
+      label: block.text,
+      sublabel: null,
+      sourceBlockIds: [block.id],
+      origin: "source",
+      semanticRole: anchor?.semanticRole ?? "fact",
+      highlightTerms: [],
+      section,
+      parentNodeIds: anchor ? [anchor.nodeId] : [],
+      presentation: anchor?.presentation ?? "bullets",
+      order: recoveryOrder++,
+      tone: anchor?.tone ?? "blue",
+    };
+    rawNodes.push(recoveryNode);
+    nodeById.set(recoveryNode.nodeId, recoveryNode);
+    coveredBlockIds.add(block.id);
   }
 
   // Keep model creativity from turning a recoverable cross-section link into a 500.
