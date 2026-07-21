@@ -21,11 +21,11 @@ import type {
 
 import type {
   Card,
+  CardGenerationProgress,
   CardInput,
   CardStats,
   CardUpdate,
   GenerateCardInput,
-  GeneratedCard,
   HealthStatus,
   ListCardsParams
 } from './api.schemas';
@@ -299,11 +299,11 @@ export const getGenerateCardUrl = () => {
 }
 
 /**
- * @summary Generate a card from raw medical text using AI
+ * @summary Start background card generation from raw medical text
  */
-export const generateCard = async (generateCardInput: GenerateCardInput, options?: RequestInit): Promise<GeneratedCard> => {
+export const generateCard = async (generateCardInput: GenerateCardInput, options?: RequestInit): Promise<CardGenerationProgress> => {
 
-  return customFetch<GeneratedCard>(getGenerateCardUrl(),
+  return customFetch<CardGenerationProgress>(getGenerateCardUrl(),
   {
     ...options,
     method: 'POST',
@@ -348,7 +348,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type GenerateCardMutationError = ErrorType<unknown>
 
     /**
- * @summary Generate a card from raw medical text using AI
+ * @summary Start background card generation from raw medical text
  */
 export const useGenerateCard = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateCard>>, TError,{data: BodyType<GenerateCardInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -360,6 +360,27 @@ export const useGenerateCard = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getGenerateCardMutationOptions(options));
     }
+
+export const getGetCardGenerationUrl = (responseId: string) => {
+  return `/api/cards/generate/${responseId}`
+}
+
+/**
+ * @summary Retrieve a background card generation
+ */
+export const getCardGeneration = async (
+  responseId: string,
+  generateCardInput: GenerateCardInput,
+  options?: RequestInit,
+): Promise<CardGenerationProgress> => {
+  return customFetch<CardGenerationProgress>(getGetCardGenerationUrl(responseId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(generateCardInput)
+  }
+);}
 
 export const getGetCardStatsUrl = () => {
 
@@ -728,7 +749,6 @@ export function useListTags<TData = Awaited<ReturnType<typeof listTags>>, TError
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
 
 
 

@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import {
+  generateCard,
+  getCardGeneration,
   useCreateCard,
-  useGenerateCard,
   type CardImage,
   type CardImageSection,
+  type GenerateCardInput,
   type GeneratedCard,
 } from "@workspace/api-client-react";
 import { MemoryCardCanvas } from "@/components/card/MemoryCardCanvas";
@@ -34,6 +37,98 @@ interface ImageOcrResult {
   status: OcrStatus;
   text: string;
   progress: number;
+}
+
+interface ActiveCardGeneration {
+  id: string;
+  input: GenerateCardInput;
+}
+
+const ACTIVE_GENERATION_KEY = "medcard-active-generation-v1";
+
+function readActiveGeneration(): ActiveCardGeneration | null {
+  try {
+    const value = window.localStorage.getItem(ACTIVE_GENERATION_KEY);
+    if (!value) return null;
+    const parsed = JSON.parse(value) as Partial<ActiveCardGeneration>;
+    if (
+      typeof parsed.id !== "string" ||
+      !parsed.input ||
+      typeof parsed.input.rawText !== "string"
+    ) {
+      window.localStorage.removeItem(ACTIVE_GENERATION_KEY);
+      return null;
+    }
+    return parsed as ActiveCardGeneration;
+  } catch {
+    return null;
+  }
+}
+
+function storeActiveGeneration(value: ActiveCardGeneration | null) {
+  try {
+    if (value) {
+      window.localStorage.setItem(ACTIVE_GENERATION_KEY, JSON.stringify(value));
+    } else {
+      window.localStorage.removeItem(ACTIVE_GENERATION_KEY);
+    }
+  } catch {
+    // Generation still works when browser storage is unavailable.
+  }
+}
+
+function wait(milliseconds: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+}
+
+function isTransientStatusError(error: unknown) {
+  if (error instanceof TypeError) return true;
+  if (!error || typeof error !== "object" || !("status" in error)) return false;
+  const status = Number((error as { status: unknown }).status);
+  return [408, 429, 500, 502, 503, 504].includes(status);
+}
+
+async function retrieveGeneration(id: string, data: GenerateCardInput) {
+  for (;;) {
+    try {
+      return await getCardGeneration(id, data);
+    } catch (error) {
+      if (!isTransientStatusError(error)) throw error;
+      await wait(3_000);
+    }
+  }
+}
+
+async function organizeInBackground({
+  data,
+  jobId,
+}: {
+  data: GenerateCardInput;
+  jobId?: string;
+}): Promise<GeneratedCard> {
+  let progress = jobId
+    ? await retrieveGeneration(jobId, data)
+    : await generateCard(data);
+
+  if (progress.status !== "completed") {
+    storeActiveGeneration({ id: progress.id, input: data });
+  }
+
+  while (progress.status === "queued" || progress.status === "in_progress") {
+    await wait(2_000);
+    try {
+      progress = await retrieveGeneration(progress.id, data);
+    } catch (error) {
+      storeActiveGeneration(null);
+      throw error;
+    }
+  }
+
+  storeActiveGeneration(null);
+  if (!progress.result) {
+    throw new Error("AI completed without returning a card result");
+  }
+  return progress.result;
 }
 
 const IMAGE_SECTIONS: Array<{ value: CardImageSection; label: string }> = [
@@ -72,9 +167,39 @@ export function Generate() {
   const [images, setImages] = useState<CardImage[]>([]);
   const [imageOcr, setImageOcr] = useState<Record<string, ImageOcrResult>>({});
   const [preview, setPreview] = useState<GeneratedCard | null>(null);
+  const resumedGeneration = useRef(false);
 
-  const generateMutation = useGenerateCard();
+  const generateMutation = useMutation({ mutationFn: organizeInBackground });
   const createMutation = useCreateCard();
+
+  useEffect(() => {
+    if (resumedGeneration.current) return;
+    resumedGeneration.current = true;
+    const active = readActiveGeneration();
+    if (!active) return;
+
+    setRawText(active.input.rawText);
+    setTopic(active.input.topic ?? "");
+    generateMutation.mutate(
+      { data: active.input, jobId: active.id },
+      {
+        onSuccess: (data) => {
+          setPreview(data);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        },
+        onError: (error) => {
+          toast({
+            title: "Card organization failed",
+            description:
+              error instanceof Error
+                ? error.message
+                : "Check the AI connection and try again.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  }, [generateMutation, toast]);
 
   const addTag = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key !== "Enter" || !tagInput.trim()) return;
@@ -322,9 +447,9 @@ export function Generate() {
           </div>
           {preview.quality.aiAddedFactsCount > 0 && (
             <p className="text-xs text-emerald-900/70 lg:col-span-2">
-              Nodes marked <strong>+</strong> were added for context and
-              should be reviewed before clinical use. Your original source
-              remains preserved.
+              Nodes marked <strong>+</strong> were added for context and should
+              be reviewed before clinical use. Your original source remains
+              preserved.
             </p>
           )}
         </section>

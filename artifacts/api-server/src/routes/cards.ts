@@ -16,7 +16,10 @@ import {
 } from "@workspace/api-zod";
 import { eq, desc } from "drizzle-orm";
 import OpenAI from "openai";
-import { organizeCard } from "../lib/card-organizer";
+import {
+  getCardOrganization,
+  startCardOrganization,
+} from "../lib/card-organizer";
 
 const router = Router();
 
@@ -256,7 +259,7 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-// POST /api/cards/generate
+// POST /api/cards/generate — start one durable background AI response
 router.post("/generate", async (req: Request, res: Response): Promise<void> => {
   const parsed = GenerateCardBody.safeParse(req.body);
   if (!parsed.success) {
@@ -279,12 +282,63 @@ router.post("/generate", async (req: Request, res: Response): Promise<void> => {
   }
 
   try {
-    res.json(await organizeCard(openai, rawText, topic));
+    const progress = await startCardOrganization(openai, rawText, topic);
+    res.status(progress.status === "completed" ? 200 : 202).json(progress);
   } catch (err) {
-    req.log.error({ err }, "Error calling OpenAI");
+    req.log.error({ err }, "Error starting OpenAI card organization");
     sendGenerationError(res, err);
   }
 });
+
+// POST /api/cards/generate/:responseId — retrieve the same AI response
+router.post(
+  "/generate/:responseId",
+  async (req: Request, res: Response): Promise<void> => {
+    const rawResponseId = req.params.responseId;
+    const responseId = Array.isArray(rawResponseId)
+      ? rawResponseId[0]
+      : rawResponseId;
+    if (!responseId || !/^resp_[A-Za-z0-9_-]+$/.test(responseId)) {
+      res.status(400).json({ error: "Invalid AI generation job ID" });
+      return;
+    }
+
+    const parsed = GenerateCardBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        error: "Invalid request body",
+        details: parsed.error.issues,
+      });
+      return;
+    }
+
+    let openai: OpenAI;
+    try {
+      openai = getOpenAI();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      res.status(503).json({ error: message });
+      return;
+    }
+
+    const { rawText, topic } = parsed.data;
+    try {
+      const progress = await getCardOrganization(
+        openai,
+        responseId,
+        rawText,
+        topic,
+      );
+      res.status(progress.status === "completed" ? 200 : 202).json(progress);
+    } catch (err) {
+      req.log.error(
+        { err, responseId },
+        "Error retrieving OpenAI card organization",
+      );
+      sendGenerationError(res, err);
+    }
+  },
+);
 
 // POST /api/cards
 router.post("/", async (req: Request, res: Response): Promise<void> => {

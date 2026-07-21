@@ -84,7 +84,7 @@ paths:
     post:
       operationId: generateCard
       tags: [cards]
-      summary: Generate a card from raw medical text using AI
+      summary: Start background card generation from raw medical text
       requestBody:
         required: true
         content:
@@ -93,11 +93,48 @@ paths:
               $ref: "#/components/schemas/GenerateCardInput"
       responses:
         "200":
-          description: Generated card structure
+          description: Generation completed immediately
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GeneratedCard"
+                $ref: "#/components/schemas/CardGenerationProgress"
+        "202":
+          description: Generation continues in the background
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardGenerationProgress"
+
+  /cards/generate/{responseId}:
+    post:
+      operationId: getCardGeneration
+      tags: [cards]
+      summary: Retrieve a background card generation
+      parameters:
+        - name: responseId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateCardInput"
+      responses:
+        "200":
+          description: Completed card generation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardGenerationProgress"
+        "202":
+          description: Generation is queued or in progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardGenerationProgress"
 
   /cards/stats:
     get:
@@ -590,6 +627,19 @@ components:
             $ref: "#/components/schemas/SourceBlock"
         quality:
           $ref: "#/components/schemas/QualityReview"
+
+    CardGenerationProgress:
+      type: object
+      required: [id, status]
+      properties:
+        id:
+          type: string
+          description: Durable OpenAI background response ID
+        status:
+          type: string
+          enum: [queued, in_progress, completed]
+        result:
+          $ref: "#/components/schemas/GeneratedCard"
 
     QualityReview:
       type: object

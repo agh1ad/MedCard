@@ -190,6 +190,22 @@ export interface GeneratedCard {
   quality: QualityReview;
 }
 
+export type CardGenerationProgressStatus =
+  (typeof CardGenerationProgressStatus)[keyof typeof CardGenerationProgressStatus];
+
+export const CardGenerationProgressStatus = {
+  queued: "queued",
+  in_progress: "in_progress",
+  completed: "completed",
+} as const;
+
+export interface CardGenerationProgress {
+  /** Durable OpenAI background response ID */
+  id: string;
+  status: CardGenerationProgressStatus;
+  result?: GeneratedCard;
+}
+
 export interface CardInput {
   /** @minLength 1 */
   topic: string;

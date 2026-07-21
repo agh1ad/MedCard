@@ -1,4 +1,6 @@
 import OpenAI from "openai";
+import type { Response as OpenAIResponse } from "openai/resources/responses/responses";
+import { createHash } from "node:crypto";
 import {
   emptySectionTrees,
   type FlowNode,
@@ -74,6 +76,17 @@ export interface OrganizedCard {
   sourceBlocks: SourceBlock[];
   quality: QualityReview;
 }
+
+export type CardOrganizationProgress =
+  | {
+      id: string;
+      status: "queued" | "in_progress";
+    }
+  | {
+      id: string;
+      status: "completed";
+      result: OrganizedCard;
+    };
 
 const STRUCTURE_SCHEMA = {
   type: "object",
@@ -476,13 +489,16 @@ function composeCard(
   };
 }
 
-export async function organizeCard(
-  openai: OpenAI,
-  rawText: string,
-  topic?: string | null,
-): Promise<OrganizedCard> {
+function sourceHash(rawText: string, topic?: string | null): string {
+  return createHash("sha256")
+    .update(JSON.stringify({ rawText, topic: topic || null }))
+    .digest("hex");
+}
+
+function organizationLimits(rawText: string) {
   const blocks = splitSourceBlocks(rawText);
   if (!blocks.length) throw new Error("No source information was provided");
+
   // Dense source lists need enough cells to preserve every explicit main-tree point.
   const maxNodes = Math.min(48, Math.max(18, Math.ceil(blocks.length * 1.05)));
   const maxAiAddedNodes = Math.min(
@@ -490,62 +506,121 @@ export async function organizeCard(
     Math.max(2, Math.ceil(blocks.length / 12)),
   );
 
+  return { blocks, maxNodes, maxAiAddedNodes };
+}
+
+export async function startCardOrganization(
+  openai: OpenAI,
+  rawText: string,
+  topic?: string | null,
+): Promise<CardOrganizationProgress> {
+  const { blocks, maxNodes, maxAiAddedNodes } = organizationLimits(rawText);
   const model = process.env.OPENAI_MODEL ?? "gpt-5.6-sol";
   const serviceTier =
     process.env.OPENAI_SERVICE_TIER === "default" ? "default" : "flex";
-  const completion = await openai.chat.completions.create({
+
+  const response = await openai.responses.create({
     model,
     service_tier: serviceTier,
-    reasoning_effort: "medium",
-    verbosity: "low",
-    n: 1,
-    max_completion_tokens: Math.min(
-      24_000,
-      Math.max(6_000, blocks.length * 240),
-    ),
-    messages: [
-      { role: "system", content: ORGANIZER_PROMPT },
-      {
-        role: "user",
-        content: JSON.stringify({
-          topic: topic || null,
-          maxNodes,
-          maxAiAddedNodes,
-          blocks,
-        }),
-      },
-    ],
-    response_format: {
-      type: "json_schema",
-      json_schema: {
+    reasoning: { effort: "medium" },
+    instructions: ORGANIZER_PROMPT,
+    input: JSON.stringify({
+      topic: topic || null,
+      maxNodes,
+      maxAiAddedNodes,
+      blocks,
+    }),
+    text: {
+      verbosity: "low",
+      format: {
+        type: "json_schema",
         name: "medcard_organization",
         strict: true,
         schema: STRUCTURE_SCHEMA,
       },
     },
+    background: true,
+    store: true,
+    metadata: {
+      medcard_job: "organization_v1",
+      source_hash: sourceHash(rawText, topic),
+    },
   });
 
-  const usage = completion.usage;
+  if (response.status !== "queued" && response.status !== "in_progress") {
+    return finishCardOrganization(response, rawText, topic);
+  }
+
+  return { id: response.id, status: response.status };
+}
+
+export async function getCardOrganization(
+  openai: OpenAI,
+  responseId: string,
+  rawText: string,
+  topic?: string | null,
+): Promise<CardOrganizationProgress> {
+  const response = await openai.responses.retrieve(responseId);
+  return finishCardOrganization(response, rawText, topic);
+}
+
+function finishCardOrganization(
+  response: OpenAIResponse,
+  rawText: string,
+  topic?: string | null,
+): CardOrganizationProgress {
+  if (
+    response.metadata?.medcard_job !== "organization_v1" ||
+    response.metadata?.source_hash !== sourceHash(rawText, topic)
+  ) {
+    throw new Error("This AI generation job does not match the source text");
+  }
+
+  if (response.status === "queued" || response.status === "in_progress") {
+    return { id: response.id, status: response.status };
+  }
+
+  if (response.status === "failed") {
+    throw new Error(response.error?.message || "AI card organization failed");
+  }
+  if (response.status === "cancelled") {
+    throw new Error("AI card organization was cancelled");
+  }
+  if (response.status === "incomplete") {
+    throw new Error(
+      `AI card organization was incomplete${response.incomplete_details?.reason ? `: ${response.incomplete_details.reason}` : ""}`,
+    );
+  }
+  if (response.status !== "completed") {
+    throw new Error(`Unknown AI card organization status: ${response.status}`);
+  }
+
+  const usage = response.usage;
   if (usage) {
     console.info("MedCard AI usage", {
-      model,
-      serviceTier: completion.service_tier ?? serviceTier,
-      finishReason: completion.choices[0]?.finish_reason,
-      promptTokens: usage.prompt_tokens,
-      cachedPromptTokens: usage.prompt_tokens_details?.cached_tokens ?? 0,
-      completionTokens: usage.completion_tokens,
+      model: response.model,
+      serviceTier: response.service_tier,
+      finishReason: response.status,
+      promptTokens: usage.input_tokens,
+      cachedPromptTokens: usage.input_tokens_details?.cached_tokens ?? 0,
+      completionTokens: usage.output_tokens,
       totalTokens: usage.total_tokens,
     });
   }
 
-  const content = completion.choices[0]?.message?.content;
+  const content = response.output_text;
   if (!content) throw new Error("AI returned an empty organization result");
 
+  const { blocks, maxNodes, maxAiAddedNodes } = organizationLimits(rawText);
   const result = validateResult(
     blocks,
     JSON.parse(content),
     maxNodes,
     maxAiAddedNodes,
   );
-  return composeCard(blocks, result.nodes, result.quality);
+  return {
+    id: response.id,
+    status: "completed",
+    result: composeCard(blocks, result.nodes, result.quality),
+  };
 }
