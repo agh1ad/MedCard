@@ -4,6 +4,7 @@ import type {
   CardImageSection,
   FlowNode,
   NodeAttachment,
+  SectionContentBlock,
   SectionTrees,
   SideSection,
 } from "@workspace/api-client-react";
@@ -14,14 +15,23 @@ import {
 import {
   Activity,
   AlertTriangle,
+  ArrowDown,
+  ArrowUp,
   BookOpenCheck,
+  CheckSquare,
   Copy,
+  GitFork,
   HeartPulse,
+  ImagePlus,
   Link2,
+  ListChecks,
+  MessageSquareText,
   Move,
   Plus,
   Pill,
+  Table2,
   Trash2,
+  Type,
   Undo2,
 } from "lucide-react";
 import {
@@ -72,6 +82,23 @@ interface MemoryCardCanvasProps {
   onSelectSideSection?: (id: string) => void;
   onAddFirstSideSection?: () => void;
   onAddRootNode?: () => void;
+  onAddNodeToSection?: (sectionId: string) => void;
+  onAddSectionBlock?: (
+    sectionId: string,
+    type: SectionContentBlock["type"],
+  ) => void;
+  onUpdateSectionBlock?: (
+    sectionId: string,
+    blockId: string,
+    patch: Partial<SectionContentBlock>,
+  ) => void;
+  onDeleteSectionBlock?: (sectionId: string, blockId: string) => void;
+  onDuplicateSectionBlock?: (sectionId: string, blockId: string) => void;
+  onMoveSectionBlock?: (
+    sectionId: string,
+    blockId: string,
+    direction: -1 | 1,
+  ) => void;
 }
 
 const DIRECT_NODE_PALETTE = [
@@ -1321,6 +1348,359 @@ function SectionAttachments({
   );
 }
 
+function SectionContentBlocks({
+  sectionId,
+  blocks = [],
+  onUpdate,
+  onDelete,
+  onDuplicate,
+  onMove,
+}: {
+  sectionId: string;
+  blocks?: SectionContentBlock[];
+  onUpdate?: (
+    sectionId: string,
+    blockId: string,
+    patch: Partial<SectionContentBlock>,
+  ) => void;
+  onDelete?: (sectionId: string, blockId: string) => void;
+  onDuplicate?: (sectionId: string, blockId: string) => void;
+  onMove?: (sectionId: string, blockId: string, direction: -1 | 1) => void;
+}) {
+  if (!blocks.length) return null;
+  const editable = Boolean(onUpdate);
+  return (
+    <div className="memory-section-blocks">
+      {blocks.map((block) => {
+        const update = (patch: Partial<SectionContentBlock>) =>
+          onUpdate?.(sectionId, block.id, patch);
+        const columns = block.columns?.length
+          ? block.columns
+          : ["Column 1", "Column 2"];
+        const rows = block.rows?.length ? block.rows : [["", ""]];
+        const items = block.items?.length ? block.items : [""];
+        return (
+          <article
+            className={`memory-section-block type-${block.type}`}
+            key={block.id}
+            style={{
+              background: block.backgroundColor,
+              color: block.textColor,
+            }}
+            onDragOver={(event) => {
+              if (editable && block.type === "image") event.preventDefault();
+            }}
+            onDrop={(event) => {
+              if (!editable || block.type !== "image") return;
+              const file = [...event.dataTransfer.files].find((item) =>
+                item.type.startsWith("image/"),
+              );
+              if (!file) return;
+              event.preventDefault();
+              event.stopPropagation();
+              const reader = new FileReader();
+              reader.onload = () =>
+                update({ dataUrl: String(reader.result), title: file.name });
+              reader.readAsDataURL(file);
+            }}
+          >
+            {editable && (
+              <div className="memory-block-actions">
+                <label title="Block color">
+                  <input
+                    type="color"
+                    value={block.backgroundColor ?? "#ffffff"}
+                    aria-label="Block color"
+                    onChange={(event) =>
+                      update({ backgroundColor: event.target.value })
+                    }
+                  />
+                </label>
+                <label title="Block text color">
+                  <input
+                    type="color"
+                    value={block.textColor ?? "#26384e"}
+                    aria-label="Block text color"
+                    onChange={(event) =>
+                      update({ textColor: event.target.value })
+                    }
+                  />
+                </label>
+                <button
+                  type="button"
+                  title="Move block up"
+                  aria-label="Move block up"
+                  onClick={() => onMove?.(sectionId, block.id, -1)}
+                >
+                  <ArrowUp />
+                </button>
+                <button
+                  type="button"
+                  title="Move block down"
+                  aria-label="Move block down"
+                  onClick={() => onMove?.(sectionId, block.id, 1)}
+                >
+                  <ArrowDown />
+                </button>
+                <button
+                  type="button"
+                  title="Duplicate block"
+                  aria-label="Duplicate block"
+                  onClick={() => onDuplicate?.(sectionId, block.id)}
+                >
+                  <Copy />
+                </button>
+                <button
+                  type="button"
+                  title="Delete block"
+                  aria-label="Delete block"
+                  onClick={() => onDelete?.(sectionId, block.id)}
+                >
+                  <Trash2 />
+                </button>
+              </div>
+            )}
+
+            {(block.type === "text" || block.type === "callout") &&
+              (editable ? (
+                <>
+                  <input
+                    className="memory-block-title"
+                    value={block.title ?? ""}
+                    placeholder={
+                      block.type === "callout" ? "Callout title" : "Text title"
+                    }
+                    aria-label="Block title"
+                    onChange={(event) => update({ title: event.target.value })}
+                  />
+                  <textarea
+                    value={block.text ?? ""}
+                    placeholder="Type or paste information…"
+                    aria-label={`${block.type} content`}
+                    onChange={(event) => update({ text: event.target.value })}
+                  />
+                </>
+              ) : (
+                <>
+                  {block.title && <h3>{block.title}</h3>}
+                  <p>{block.text}</p>
+                </>
+              ))}
+
+            {block.type === "table" && (
+              <div className="memory-block-table-wrap">
+                {editable ? (
+                  <input
+                    className="memory-block-title"
+                    value={block.title ?? ""}
+                    placeholder="Table title"
+                    aria-label="Table title"
+                    onChange={(event) => update({ title: event.target.value })}
+                  />
+                ) : (
+                  block.title && <h3>{block.title}</h3>
+                )}
+                <table>
+                  <thead>
+                    <tr>
+                      {columns.map((column, columnIndex) => (
+                        <th key={`${block.id}-column-${columnIndex}`}>
+                          {editable ? (
+                            <input
+                              value={column}
+                              aria-label={`Column ${columnIndex + 1}`}
+                              onChange={(event) =>
+                                update({
+                                  columns: columns.map((value, index) =>
+                                    index === columnIndex
+                                      ? event.target.value
+                                      : value,
+                                  ),
+                                })
+                              }
+                            />
+                          ) : (
+                            column
+                          )}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((row, rowIndex) => (
+                      <tr key={`${block.id}-row-${rowIndex}`}>
+                        {columns.map((_, columnIndex) => (
+                          <td
+                            key={`${block.id}-cell-${rowIndex}-${columnIndex}`}
+                          >
+                            {editable ? (
+                              <textarea
+                                value={row[columnIndex] ?? ""}
+                                aria-label={`Row ${rowIndex + 1}, column ${columnIndex + 1}`}
+                                onChange={(event) =>
+                                  update({
+                                    rows: rows.map((currentRow, index) =>
+                                      index === rowIndex
+                                        ? columns.map((__, currentColumn) =>
+                                            currentColumn === columnIndex
+                                              ? event.target.value
+                                              : (currentRow[currentColumn] ??
+                                                ""),
+                                          )
+                                        : currentRow,
+                                    ),
+                                  })
+                                }
+                              />
+                            ) : (
+                              row[columnIndex]
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {editable && (
+                  <div className="memory-block-add-row">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        update({ rows: [...rows, columns.map(() => "")] })
+                      }
+                    >
+                      <Plus /> Row
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        update({
+                          columns: [...columns, `Column ${columns.length + 1}`],
+                          rows: rows.map((row) => [...row, ""]),
+                        })
+                      }
+                    >
+                      <Plus /> Column
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {(block.type === "flowchart" || block.type === "checklist") && (
+              <div className={`memory-block-items type-${block.type}`}>
+                {editable ? (
+                  <input
+                    className="memory-block-title"
+                    value={block.title ?? ""}
+                    placeholder={
+                      block.type === "flowchart"
+                        ? "Flowchart title"
+                        : "Checklist title"
+                    }
+                    aria-label="Block title"
+                    onChange={(event) => update({ title: event.target.value })}
+                  />
+                ) : (
+                  block.title && <h3>{block.title}</h3>
+                )}
+                <div className="memory-block-item-list">
+                  {items.map((item, itemIndex) => (
+                    <div
+                      className="memory-block-item"
+                      key={`${block.id}-${itemIndex}`}
+                    >
+                      {block.type === "checklist" && <CheckSquare />}
+                      {editable ? (
+                        <input
+                          value={item}
+                          placeholder={
+                            block.type === "flowchart"
+                              ? `Step ${itemIndex + 1}`
+                              : `Item ${itemIndex + 1}`
+                          }
+                          aria-label={`${block.type} item ${itemIndex + 1}`}
+                          onChange={(event) =>
+                            update({
+                              items: items.map((value, index) =>
+                                index === itemIndex
+                                  ? event.target.value
+                                  : value,
+                              ),
+                            })
+                          }
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              update({ items: [...items, ""] });
+                            }
+                          }}
+                        />
+                      ) : (
+                        <span>{item}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {editable && (
+                  <button
+                    type="button"
+                    className="memory-block-add-item"
+                    onClick={() => update({ items: [...items, ""] })}
+                  >
+                    <Plus /> {block.type === "flowchart" ? "Step" : "Item"}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {block.type === "image" &&
+              (block.dataUrl ? (
+                <figure>
+                  <img
+                    src={block.dataUrl}
+                    alt={block.title || "Section image"}
+                  />
+                  {editable ? (
+                    <input
+                      value={block.title ?? ""}
+                      placeholder="Image caption"
+                      aria-label="Image caption"
+                      onChange={(event) =>
+                        update({ title: event.target.value })
+                      }
+                    />
+                  ) : (
+                    block.title && <figcaption>{block.title}</figcaption>
+                  )}
+                </figure>
+              ) : editable ? (
+                <label className="memory-block-image-picker">
+                  <ImagePlus /> Choose or drop an image
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = () =>
+                        update({
+                          dataUrl: String(reader.result),
+                          title: file.name,
+                        });
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                </label>
+              ) : null)}
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
 export function MemoryCardCanvas({
   topic,
   flow,
@@ -1344,6 +1724,12 @@ export function MemoryCardCanvas({
   onSelectSideSection,
   onAddFirstSideSection,
   onAddRootNode,
+  onAddNodeToSection,
+  onAddSectionBlock,
+  onUpdateSectionBlock,
+  onDeleteSectionBlock,
+  onDuplicateSectionBlock,
+  onMoveSectionBlock,
 }: MemoryCardCanvasProps) {
   const cardRef = useRef<HTMLElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
@@ -1352,7 +1738,8 @@ export function MemoryCardCanvas({
     countNodes(flow) +
     (sideSections !== undefined
       ? sideSections.reduce(
-          (total, section) => total + countNodes(section.nodes),
+          (total, section) =>
+            total + countNodes(section.nodes) + (section.blocks?.length ?? 0),
           0,
         )
       : Object.values(sectionTrees).reduce(
@@ -1372,6 +1759,7 @@ export function MemoryCardCanvas({
           title: section.title,
           nodes: section.nodes,
           attachments: section.attachments,
+          blocks: section.blocks,
           Icon: SECTION_CONFIG[index % SECTION_CONFIG.length].icon,
           accent: SECTION_CONFIG[index % SECTION_CONFIG.length].accent,
           roleOverride: undefined as SemanticRole | undefined,
@@ -1383,6 +1771,7 @@ export function MemoryCardCanvas({
           title,
           nodes: sectionTrees[key] ?? [],
           attachments: undefined,
+          blocks: undefined,
           Icon,
           accent,
           roleOverride: SECTION_ROLES[key],
@@ -1489,6 +1878,7 @@ export function MemoryCardCanvas({
                 title,
                 nodes,
                 attachments,
+                blocks,
                 Icon,
                 accent,
                 roleOverride,
@@ -1551,6 +1941,67 @@ export function MemoryCardCanvas({
                             <option key={name}>{name}</option>
                           ))}
                         </select>
+                        <span
+                          className="memory-section-block-tools"
+                          aria-label="Add content to section"
+                        >
+                          <button
+                            type="button"
+                            title="Add node group"
+                            aria-label="Add node to section"
+                            onClick={() => onAddNodeToSection?.(id)}
+                          >
+                            <Plus />
+                          </button>
+                          <button
+                            type="button"
+                            title="Add text block"
+                            aria-label="Add text block"
+                            onClick={() => onAddSectionBlock?.(id, "text")}
+                          >
+                            <Type />
+                          </button>
+                          <button
+                            type="button"
+                            title="Add callout"
+                            aria-label="Add callout"
+                            onClick={() => onAddSectionBlock?.(id, "callout")}
+                          >
+                            <MessageSquareText />
+                          </button>
+                          <button
+                            type="button"
+                            title="Add table"
+                            aria-label="Add table"
+                            onClick={() => onAddSectionBlock?.(id, "table")}
+                          >
+                            <Table2 />
+                          </button>
+                          <button
+                            type="button"
+                            title="Add flowchart"
+                            aria-label="Add flowchart"
+                            onClick={() => onAddSectionBlock?.(id, "flowchart")}
+                          >
+                            <GitFork />
+                          </button>
+                          <button
+                            type="button"
+                            title="Add checklist"
+                            aria-label="Add checklist"
+                            onClick={() => onAddSectionBlock?.(id, "checklist")}
+                          >
+                            <ListChecks />
+                          </button>
+                          <button
+                            type="button"
+                            title="Add image block"
+                            aria-label="Add image block"
+                            onClick={() => onAddSectionBlock?.(id, "image")}
+                          >
+                            <ImagePlus />
+                          </button>
+                        </span>
                         <button
                           type="button"
                           title="Delete section"
@@ -1575,6 +2026,14 @@ export function MemoryCardCanvas({
                         />
                       ))}
                     </div>
+                    <SectionContentBlocks
+                      sectionId={id}
+                      blocks={blocks}
+                      onUpdate={onUpdateSectionBlock}
+                      onDelete={onDeleteSectionBlock}
+                      onDuplicate={onDuplicateSectionBlock}
+                      onMove={onMoveSectionBlock}
+                    />
                     <SectionImages images={sectionImages} />
                     <SectionAttachments
                       sectionId={id}

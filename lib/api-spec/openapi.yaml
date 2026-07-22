@@ -536,6 +536,35 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/NodeAttachment"
+        blocks:
+          type: array
+          items:
+            $ref: "#/components/schemas/SectionContentBlock"
+
+    SectionContentBlock:
+      type: object
+      required: [id, type]
+      properties:
+        id: { type: string }
+        type:
+          type: string
+          enum: [text, callout, table, flowchart, checklist, image]
+        title: { type: string }
+        text: { type: string }
+        columns:
+          type: array
+          items: { type: string }
+        rows:
+          type: array
+          items:
+            type: array
+            items: { type: string }
+        items:
+          type: array
+          items: { type: string }
+        dataUrl: { type: string }
+        backgroundColor: { type: string }
+        textColor: { type: string }
 
     SourceBlock:
       type: object

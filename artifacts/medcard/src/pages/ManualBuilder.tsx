@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import {
   useCreateCard,
   type CanvasElement,
   type FlowNode,
   type NodeAttachment,
+  type SectionContentBlock,
   type SectionTrees,
   type SideSection,
 } from "@workspace/api-client-react";
@@ -33,6 +34,7 @@ import {
   Palette,
   PenLine,
   Plus,
+  Redo2,
   Save,
   SlidersHorizontal,
   Circle,
@@ -42,6 +44,7 @@ import {
   Type,
   Trash2,
   Undo2,
+  Wand2,
   X,
 } from "lucide-react";
 
@@ -75,6 +78,51 @@ type CardDraft = {
   sideSections?: SideSection[];
   canvasElements: CanvasElement[];
 };
+
+type EditorSnapshot = Pick<
+  CardDraft,
+  "flow" | "sideSections" | "canvasElements"
+>;
+
+const CARD_TEMPLATES = {
+  disease: {
+    root: "Definition & mechanism",
+    children: ["Causes", "Pathophysiology", "Clinical picture"],
+    sections: [
+      "Risk factors",
+      "Diagnosis",
+      "Investigations",
+      "Treatment",
+      "Complications",
+    ],
+  },
+  drug: {
+    root: "Drug class & mechanism",
+    children: ["Indications", "Pharmacology"],
+    sections: [
+      "Dosing",
+      "Adverse effects",
+      "Contraindications",
+      "Interactions",
+      "Monitoring",
+    ],
+  },
+  anatomy: {
+    root: "Structure & location",
+    children: ["Relations", "Blood supply", "Innervation"],
+    sections: ["Function", "Clinical relevance", "Imaging", "High yield"],
+  },
+  differential: {
+    root: "Presenting problem",
+    children: ["Most likely", "Must not miss", "Common alternatives"],
+    sections: [
+      "Key discriminators",
+      "Investigations",
+      "Initial management",
+      "Red flags",
+    ],
+  },
+} as const;
 
 const DRAFT_KEY = "medcard-manual-draft-v1";
 const PALETTE = [
@@ -272,6 +320,9 @@ export function ManualBuilder() {
   const [showBulk, setShowBulk] = useState(true);
   const [showStructurePanel, setShowStructurePanel] = useState(false);
   const createMutation = useCreateCard();
+  const historyRef = useRef<EditorSnapshot[]>([]);
+  const historyIndexRef = useRef(-1);
+  const restoringHistoryRef = useRef(false);
 
   const activeSideSection = sideSections.find(
     (section) => section.id === activeSection,
@@ -288,6 +339,94 @@ export function ManualBuilder() {
   const selectedCanvasElement = canvasElements.find(
     (element) => element.id === selectedCanvasId,
   );
+
+  const restoreHistory = (direction: -1 | 1) => {
+    const nextIndex = historyIndexRef.current + direction;
+    const snapshot = historyRef.current[nextIndex];
+    if (!snapshot) return;
+    historyIndexRef.current = nextIndex;
+    restoringHistoryRef.current = true;
+    setFlow(snapshot.flow);
+    setSideSections(snapshot.sideSections ?? []);
+    setCanvasElements(snapshot.canvasElements);
+    setSelectedId(null);
+    setSelectedCanvasId(null);
+  };
+
+  const cleanLayout = () => {
+    const resetPositions = (nodes: FlowNode[]): FlowNode[] =>
+      nodes.map((node) => ({
+        ...node,
+        position: undefined,
+        children: resetPositions(node.children ?? []),
+      }));
+    setFlow((current) => resetPositions(current));
+    setSideSections((current) =>
+      current.map((section) => ({
+        ...section,
+        nodes: resetPositions(section.nodes),
+      })),
+    );
+    toast({
+      title: "Layout polished",
+      description:
+        "Manual offsets were cleared and automatic spacing restored.",
+    });
+  };
+
+  const runQualityCheck = () => {
+    const nodes = [
+      ...flattenNodes(flow),
+      ...sideSections.flatMap((section) => flattenNodes(section.nodes)),
+    ];
+    const blankNodes = nodes.filter(
+      (node) => !node.label.trim() || node.label === "New node",
+    ).length;
+    const blankSections = sideSections.filter(
+      (section) => !section.title.trim(),
+    ).length;
+    const incompleteBlocks = sideSections
+      .flatMap((section) => section.blocks ?? [])
+      .filter((block) => {
+        if (block.type === "image") return !block.dataUrl;
+        if (block.type === "table")
+          return !(block.rows ?? []).flat().some((cell) => cell.trim());
+        if (block.type === "flowchart" || block.type === "checklist")
+          return !(block.items ?? []).some((item) => item.trim());
+        return !block.text?.trim();
+      }).length;
+    const issues = blankNodes + blankSections + incompleteBlocks;
+    toast({
+      title: issues
+        ? `${issues} item${issues === 1 ? "" : "s"} to finish`
+        : "Card looks ready",
+      description: issues
+        ? `${blankNodes} placeholder nodes, ${blankSections} unnamed sections, ${incompleteBlocks} incomplete content blocks.`
+        : "No empty nodes, sections, or mixed-content blocks were found.",
+      variant: issues ? "destructive" : "default",
+    });
+  };
+
+  const applyCardTemplate = (key: keyof typeof CARD_TEMPLATES) => {
+    const template = CARD_TEMPLATES[key];
+    const hasContent =
+      flow.length || sideSections.length || canvasElements.length;
+    if (hasContent && !confirm("Replace the current card with this template?"))
+      return;
+    const root = makeNode(template.root);
+    root.children = template.children.map((label) => makeNode(label));
+    setFlow([root]);
+    setSideSections(
+      template.sections.map((title) => ({
+        id: `section-${crypto.randomUUID()}`,
+        title,
+        nodes: [],
+      })),
+    );
+    setCanvasElements([]);
+    setActiveSection("main");
+    setSelectedId(root.id);
+  };
 
   const updateCanvasElement = (id: string, patch: Partial<CanvasElement>) =>
     setCanvasElements((current) =>
@@ -344,7 +483,9 @@ export function ManualBuilder() {
     const section = sideSections.find((item) => item.id === id);
     if (
       section &&
-      (section.nodes.length || section.attachments?.length) &&
+      (section.nodes.length ||
+        section.attachments?.length ||
+        section.blocks?.length) &&
       !confirm(`Delete “${section.title}” and everything inside it?`)
     )
       return;
@@ -489,6 +630,100 @@ export function ManualBuilder() {
       ),
     );
 
+  const addSectionBlock = (
+    sectionId: string,
+    type: SectionContentBlock["type"],
+  ) => {
+    const defaults: Partial<SectionContentBlock> =
+      type === "table"
+        ? { title: "", columns: ["Column 1", "Column 2"], rows: [["", ""]] }
+        : type === "flowchart" || type === "checklist"
+          ? { title: "", items: [""] }
+          : type === "image"
+            ? {}
+            : { title: "", text: "" };
+    const block: SectionContentBlock = {
+      id: `block-${crypto.randomUUID()}`,
+      type,
+      ...defaults,
+    };
+    setSideSections((current) =>
+      current.map((section) =>
+        section.id === sectionId
+          ? { ...section, blocks: [...(section.blocks ?? []), block] }
+          : section,
+      ),
+    );
+    setActiveSection(sectionId);
+    setSelectedId(null);
+  };
+
+  const updateSectionBlock = (
+    sectionId: string,
+    blockId: string,
+    patch: Partial<SectionContentBlock>,
+  ) =>
+    setSideSections((current) =>
+      current.map((section) =>
+        section.id === sectionId
+          ? {
+              ...section,
+              blocks: (section.blocks ?? []).map((block) =>
+                block.id === blockId ? { ...block, ...patch } : block,
+              ),
+            }
+          : section,
+      ),
+    );
+
+  const deleteSectionBlock = (sectionId: string, blockId: string) =>
+    setSideSections((current) =>
+      current.map((section) =>
+        section.id === sectionId
+          ? {
+              ...section,
+              blocks: (section.blocks ?? []).filter(
+                (block) => block.id !== blockId,
+              ),
+            }
+          : section,
+      ),
+    );
+
+  const duplicateSectionBlock = (sectionId: string, blockId: string) =>
+    setSideSections((current) =>
+      current.map((section) => {
+        if (section.id !== sectionId) return section;
+        const blocks = section.blocks ?? [];
+        const index = blocks.findIndex((block) => block.id === blockId);
+        if (index < 0) return section;
+        const copy = {
+          ...structuredClone(blocks[index]),
+          id: `block-${crypto.randomUUID()}`,
+        };
+        const next = [...blocks];
+        next.splice(index + 1, 0, copy);
+        return { ...section, blocks: next };
+      }),
+    );
+
+  const moveSectionBlock = (
+    sectionId: string,
+    blockId: string,
+    direction: -1 | 1,
+  ) =>
+    setSideSections((current) =>
+      current.map((section) => {
+        if (section.id !== sectionId) return section;
+        const blocks = [...(section.blocks ?? [])];
+        const from = blocks.findIndex((block) => block.id === blockId);
+        const to = from + direction;
+        if (from < 0 || to < 0 || to >= blocks.length) return section;
+        [blocks[from], blocks[to]] = [blocks[to], blocks[from]];
+        return { ...section, blocks };
+      }),
+    );
+
   const startAttachmentDrag = (
     event: React.DragEvent<HTMLElement>,
     type: NodeAttachment["type"],
@@ -496,6 +731,28 @@ export function ManualBuilder() {
     event.dataTransfer.setData("application/x-medcard-attachment", type);
     event.dataTransfer.effectAllowed = "copy";
   };
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (restoringHistoryRef.current) {
+        restoringHistoryRef.current = false;
+        return;
+      }
+      const snapshot: EditorSnapshot = {
+        flow,
+        sideSections,
+        canvasElements,
+      };
+      const signature = JSON.stringify(snapshot);
+      const current = historyRef.current[historyIndexRef.current];
+      if (current && JSON.stringify(current) === signature) return;
+      const next = historyRef.current.slice(0, historyIndexRef.current + 1);
+      next.push(snapshot);
+      historyRef.current = next.slice(-80);
+      historyIndexRef.current = historyRef.current.length - 1;
+    }, 220);
+    return () => window.clearTimeout(timer);
+  }, [flow, sideSections, canvasElements]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -518,14 +775,24 @@ export function ManualBuilder() {
   }, [activeNodes, selectedId]);
 
   useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
+    const handleKeyboard = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") {
+        event.preventDefault();
+        restoreHistory(event.shiftKey ? 1 : -1);
+        return;
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "y") {
+        event.preventDefault();
+        restoreHistory(1);
+        return;
+      }
       if (event.key !== "Escape") return;
       setConnectionSourceId(null);
       setSelectedCanvasId(null);
       setSelectedId(null);
     };
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
+    window.addEventListener("keydown", handleKeyboard);
+    return () => window.removeEventListener("keydown", handleKeyboard);
   }, []);
 
   const addCanvasElement = (
@@ -574,6 +841,34 @@ export function ManualBuilder() {
     reader.readAsDataURL(file);
     event.target.value = "";
   };
+
+  useEffect(() => {
+    const handleImagePaste = (event: ClipboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (
+        target?.matches("input, textarea, [contenteditable='true']") &&
+        event.clipboardData?.getData("text")
+      )
+        return;
+      const image = [...(event.clipboardData?.items ?? [])].find((item) =>
+        item.type.startsWith("image/"),
+      );
+      const file = image?.getAsFile();
+      if (!file) return;
+      event.preventDefault();
+      const reader = new FileReader();
+      reader.onload = () =>
+        addCanvasElement("image", {
+          dataUrl: String(reader.result),
+          content: "Pasted image",
+          width: 20,
+          height: 20,
+        });
+      reader.readAsDataURL(file);
+    };
+    window.addEventListener("paste", handleImagePaste);
+    return () => window.removeEventListener("paste", handleImagePaste);
+  });
 
   const updateSelected = (update: (node: FlowNode) => FlowNode) => {
     if (!selectedId) return;
@@ -642,19 +937,35 @@ export function ManualBuilder() {
     }
     if (
       !flow.length &&
-      !sideSections.some((section) => section.nodes.length) &&
+      !sideSections.some(
+        (section) =>
+          section.nodes.length ||
+          section.blocks?.length ||
+          section.attachments?.length,
+      ) &&
       !canvasElements.length
     ) {
-      toast({ title: "Add at least one node", variant: "destructive" });
+      toast({ title: "Add something to the card", variant: "destructive" });
       return;
     }
     const sourceText = [
       nodesToText(flow),
-      ...sideSections.map((section) =>
-        section.nodes.length
-          ? `\n${section.title}\n${nodesToText(section.nodes)}`
-          : "",
-      ),
+      ...sideSections.map((section) => {
+        const blockText = (section.blocks ?? [])
+          .flatMap((block) => [
+            block.title,
+            block.text,
+            ...(block.columns ?? []),
+            ...(block.rows ?? []).flat(),
+            ...(block.items ?? []),
+          ])
+          .filter(Boolean)
+          .join("\n");
+        const content = [nodesToText(section.nodes), blockText]
+          .filter(Boolean)
+          .join("\n");
+        return content ? `\n${section.title}\n${content}` : "";
+      }),
     ]
       .filter(Boolean)
       .join("\n");
@@ -1016,7 +1327,10 @@ export function ManualBuilder() {
               <span>
                 {flattenNodes(flow).length +
                   sideSections.reduce(
-                    (sum, section) => sum + flattenNodes(section.nodes).length,
+                    (sum, section) =>
+                      sum +
+                      flattenNodes(section.nodes).length +
+                      (section.blocks?.length ?? 0),
                     0,
                   )}{" "}
                 nodes
@@ -1114,15 +1428,71 @@ export function ManualBuilder() {
             </button>
             <button
               type="button"
-              onClick={() =>
-                setCanvasElements((current) => current.slice(0, -1))
-              }
-              disabled={!canvasElements.length}
-              title="Undo last page item"
+              onClick={() => restoreHistory(-1)}
+              title="Undo (Cmd/Ctrl+Z)"
             >
               <Undo2 />
               <span>Undo</span>
             </button>
+            <button
+              type="button"
+              onClick={() => restoreHistory(1)}
+              title="Redo (Cmd/Ctrl+Shift+Z)"
+            >
+              <Redo2 />
+              <span>Redo</span>
+            </button>
+            <button
+              type="button"
+              onClick={cleanLayout}
+              title="Restore automatic spacing"
+            >
+              <Wand2 />
+              <span>Polish</span>
+            </button>
+            <button
+              type="button"
+              onClick={runQualityCheck}
+              title="Find unfinished content"
+            >
+              <Check />
+              <span>Check</span>
+            </button>
+            <select
+              className="preview-template-select"
+              value=""
+              aria-label="Start with a medical card template"
+              onChange={(event) => {
+                if (event.target.value)
+                  applyCardTemplate(
+                    event.target.value as keyof typeof CARD_TEMPLATES,
+                  );
+              }}
+            >
+              <option value="">Template…</option>
+              <option value="disease">Disease</option>
+              <option value="drug">Drug</option>
+              <option value="anatomy">Anatomy</option>
+              <option value="differential">Differential</option>
+            </select>
+            <details className="preview-outline-import">
+              <summary title="Paste an outline and build nodes">
+                <Braces /> Outline
+              </summary>
+              <div>
+                <textarea
+                  value={outline}
+                  onChange={(event) => setOutline(event.target.value)}
+                  placeholder={
+                    "Mechanism\n  Cause\n  Effect\nTreatment -> Response"
+                  }
+                  aria-label="Quick outline"
+                />
+                <button type="button" onClick={importOutline}>
+                  Build nodes
+                </button>
+              </div>
+            </details>
             <input
               type="color"
               value={freeformColor}
@@ -1261,6 +1631,23 @@ export function ManualBuilder() {
               setFlow((current) => [...current, node]);
               setSelectedId(node.id);
             }}
+            onAddNodeToSection={(sectionId) => {
+              const node = makeNode();
+              setSideSections((current) =>
+                current.map((section) =>
+                  section.id === sectionId
+                    ? { ...section, nodes: [...section.nodes, node] }
+                    : section,
+                ),
+              );
+              setActiveSection(sectionId);
+              setSelectedId(node.id);
+            }}
+            onAddSectionBlock={addSectionBlock}
+            onUpdateSectionBlock={updateSectionBlock}
+            onDeleteSectionBlock={deleteSectionBlock}
+            onDuplicateSectionBlock={duplicateSectionBlock}
+            onMoveSectionBlock={moveSectionBlock}
           />
         </aside>
       </div>

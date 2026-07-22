@@ -117,11 +117,27 @@ export const SectionTreesSchema = z.object({
 
 export type SectionTrees = z.infer<typeof SectionTreesSchema>;
 
+export const SectionContentBlockSchema = z.object({
+  id: z.string(),
+  type: z.enum(["text", "callout", "table", "flowchart", "checklist", "image"]),
+  title: z.string().optional(),
+  text: z.string().optional(),
+  columns: z.array(z.string()).optional(),
+  rows: z.array(z.array(z.string())).optional(),
+  items: z.array(z.string()).optional(),
+  dataUrl: z.string().optional(),
+  backgroundColor: z.string().optional(),
+  textColor: z.string().optional(),
+});
+
+export type SectionContentBlock = z.infer<typeof SectionContentBlockSchema>;
+
 export const SideSectionSchema = z.object({
   id: z.string(),
   title: z.string(),
   nodes: z.array(FlowNodeSchema),
   attachments: z.array(NodeAttachmentSchema).optional(),
+  blocks: z.array(SectionContentBlockSchema).optional(),
 });
 
 export type SideSection = z.infer<typeof SideSectionSchema>;

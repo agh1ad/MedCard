@@ -114,11 +114,28 @@ export interface SectionTrees {
   complications: FlowNode[];
 }
 
+export type SectionContentBlockType =
+  "text" | "callout" | "table" | "flowchart" | "checklist" | "image";
+
+export interface SectionContentBlock {
+  id: string;
+  type: SectionContentBlockType;
+  title?: string;
+  text?: string;
+  columns?: string[];
+  rows?: string[][];
+  items?: string[];
+  dataUrl?: string;
+  backgroundColor?: string;
+  textColor?: string;
+}
+
 export interface SideSection {
   id: string;
   title: string;
   nodes: FlowNode[];
   attachments?: NodeAttachment[];
+  blocks?: SectionContentBlock[];
 }
 
 export type CardImageSection =
