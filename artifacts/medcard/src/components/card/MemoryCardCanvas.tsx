@@ -1847,6 +1847,10 @@ export function MemoryCardCanvas({
       setRegionScale(card, "sidebar", 14);
       setRegionScale(card, "main", 14);
       card.dataset.fitted = "adaptive";
+      if (isCompletelyBlank) {
+        card.style.minHeight = "690px";
+        return;
+      }
       let frame = 0;
       const adaptHeight = () => {
         cancelAnimationFrame(frame);
@@ -1914,7 +1918,15 @@ export function MemoryCardCanvas({
         .querySelectorAll("img")
         .forEach((image) => image.removeEventListener("load", fitCard));
     };
-  }, [topic, flow, sectionTrees, sideSections, images, directNodeEditing]);
+  }, [
+    topic,
+    flow,
+    sectionTrees,
+    sideSections,
+    images,
+    directNodeEditing,
+    isCompletelyBlank,
+  ]);
 
   return (
     <DirectNodeContext.Provider value={directNodeEditing ?? null}>
