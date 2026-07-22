@@ -1243,7 +1243,9 @@ export function ManualBuilder() {
             }}
             onAttachToSection={attachToSection}
             onRemoveSectionAttachment={removeSectionAttachment}
-            selectedSectionId={activeSection === "main" ? null : activeSection}
+            selectedSectionId={
+              activeSection === "main" || selectedId ? null : activeSection
+            }
             onRenameSideSection={renameSideSection}
             onDeleteSideSection={deleteSideSection}
             onAddSideSectionAfter={addSideSectionAfter}

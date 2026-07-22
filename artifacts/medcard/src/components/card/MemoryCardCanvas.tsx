@@ -43,8 +43,8 @@ export interface DirectNodeEditing {
   onDelete: (id: string) => void;
   onConnectionClick: (id: string) => void;
   onAttach: (id: string, attachment: NodeAttachment) => void;
-  onDuplicate: (node: FlowNode) => void;
-  isSideNode: (id: string) => boolean;
+  onDuplicate?: (node: FlowNode) => void;
+  isSideNode?: (id: string) => boolean;
 }
 
 const DirectNodeContext = createContext<DirectNodeEditing | null>(null);
@@ -461,7 +461,7 @@ function DirectNodeActions({ node }: { node: FlowNode }) {
             }
           />
         </label>
-        {editor.isSideNode(node.id) && (
+        {editor.isSideNode?.(node.id) && (
           <select
             value={node.presentation ?? "bullets"}
             aria-label="Node layout"
@@ -479,14 +479,16 @@ function DirectNodeActions({ node }: { node: FlowNode }) {
             <option value="diagram">Diagram</option>
           </select>
         )}
-        <button
-          type="button"
-          title="Duplicate node"
-          aria-label="Duplicate node"
-          onClick={() => editor.onDuplicate(node)}
-        >
-          <Copy />
-        </button>
+        {editor.onDuplicate && (
+          <button
+            type="button"
+            title="Duplicate node"
+            aria-label="Duplicate node"
+            onClick={() => editor.onDuplicate?.(node)}
+          >
+            <Copy />
+          </button>
+        )}
         {node.position && (
           <button
             type="button"
