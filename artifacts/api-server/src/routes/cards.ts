@@ -4,6 +4,8 @@ import {
   cardsTable,
   convertFlatFlowToTree,
   emptySectionTrees,
+  FlowNodeSchema,
+  SideSectionSchema,
 } from "@workspace/db";
 import {
   ListCardsQueryParams,
@@ -72,6 +74,7 @@ function normalizeCard(card: typeof cardsTable.$inferSelect) {
     sectionTrees: card.sectionTrees ?? emptySectionTrees(),
     images: card.images ?? [],
     canvasElements: card.canvasElements ?? [],
+    sideSections: card.sideSections ?? [],
   };
 }
 
@@ -344,17 +347,24 @@ router.post(
 // POST /api/cards
 router.post("/", async (req: Request, res: Response): Promise<void> => {
   const parsed = CreateCardBody.safeParse(req.body);
-  if (!parsed.success) {
-    res
-      .status(400)
-      .json({ error: "Invalid request body", details: parsed.error.issues });
+  const parsedFlow = FlowNodeSchema.array().safeParse(req.body?.flow);
+  const parsedSideSections = SideSectionSchema.array().safeParse(
+    req.body?.sideSections ?? [],
+  );
+  if (!parsed.success || !parsedFlow.success || !parsedSideSections.success) {
+    res.status(400).json({
+      error: "Invalid request body",
+      details:
+        (!parsed.success && parsed.error.issues) ||
+        (!parsedFlow.success && parsedFlow.error.issues) ||
+        (!parsedSideSections.success && parsedSideSections.error.issues),
+    });
     return;
   }
 
   try {
     const {
       topic,
-      flow,
       sidebar,
       sectionTrees,
       sourceBlocks,
@@ -369,7 +379,7 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
       .insert(cardsTable)
       .values({
         topic,
-        flow: flow as (typeof cardsTable.$inferInsert)["flow"],
+        flow: parsedFlow.data,
         sidebar: sidebar as (typeof cardsTable.$inferInsert)["sidebar"],
         rawText,
         tags: tags ?? [],
@@ -378,6 +388,7 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
         sourceBlocks,
         images,
         canvasElements: canvasElements ?? [],
+        sideSections: parsedSideSections.data,
         notebookId: notebookId ?? null,
       })
       .returning();
@@ -463,10 +474,27 @@ router.patch("/:id", async (req: Request, res: Response): Promise<void> => {
   }
 
   const parsedBody = UpdateCardBody.safeParse(req.body);
-  if (!parsedBody.success) {
+  const parsedFlow =
+    req.body?.flow === undefined
+      ? undefined
+      : FlowNodeSchema.array().safeParse(req.body.flow);
+  const parsedSideSections =
+    req.body?.sideSections === undefined
+      ? undefined
+      : SideSectionSchema.array().safeParse(req.body.sideSections);
+  if (
+    !parsedBody.success ||
+    (parsedFlow && !parsedFlow.success) ||
+    (parsedSideSections && !parsedSideSections.success)
+  ) {
     res.status(400).json({
       error: "Invalid request body",
-      details: parsedBody.error.issues,
+      details:
+        (!parsedBody.success && parsedBody.error.issues) ||
+        (parsedFlow && !parsedFlow.success && parsedFlow.error.issues) ||
+        (parsedSideSections &&
+          !parsedSideSections.success &&
+          parsedSideSections.error.issues),
     });
     return;
   }
@@ -479,9 +507,8 @@ router.patch("/:id", async (req: Request, res: Response): Promise<void> => {
         ...(parsedBody.data.topic !== undefined && {
           topic: parsedBody.data.topic,
         }),
-        ...(parsedBody.data.flow !== undefined && {
-          flow: parsedBody.data
-            .flow as (typeof cardsTable.$inferInsert)["flow"],
+        ...(parsedFlow?.success && {
+          flow: parsedFlow.data,
         }),
         ...(parsedBody.data.sidebar !== undefined && {
           sidebar: parsedBody.data
@@ -499,6 +526,9 @@ router.patch("/:id", async (req: Request, res: Response): Promise<void> => {
         }),
         ...(parsedBody.data.canvasElements !== undefined && {
           canvasElements: parsedBody.data.canvasElements,
+        }),
+        ...(parsedSideSections?.success && {
+          sideSections: parsedSideSections.data,
         }),
         ...(parsedBody.data.tags !== undefined && {
           tags: parsedBody.data.tags,

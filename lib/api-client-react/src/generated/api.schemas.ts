@@ -83,6 +83,20 @@ export interface FlowNode {
   backgroundColor?: string;
   /** User-selected node text color */
   textColor?: string;
+  /** Optional user-controlled visual offset in pixels */
+  position?: { x: number; y: number };
+  attachments?: NodeAttachment[];
+}
+
+export type NodeAttachmentType = "image" | "note" | "rectangle" | "ellipse";
+
+export interface NodeAttachment {
+  id: string;
+  type: NodeAttachmentType;
+  content?: string;
+  dataUrl?: string;
+  backgroundColor?: string;
+  textColor?: string;
 }
 
 export interface SourceBlock {
@@ -98,6 +112,13 @@ export interface SectionTrees {
   diagnosis: FlowNode[];
   treatment: FlowNode[];
   complications: FlowNode[];
+}
+
+export interface SideSection {
+  id: string;
+  title: string;
+  nodes: FlowNode[];
+  attachments?: NodeAttachment[];
 }
 
 export type CardImageSection =
@@ -165,6 +186,7 @@ export interface Card {
   sourceBlocks: SourceBlock[];
   images: CardImage[];
   canvasElements?: CanvasElement[];
+  sideSections?: SideSection[];
   tags: string[];
   /** Original raw input text */
   rawText: string;
@@ -238,6 +260,7 @@ export interface CardInput {
   sourceBlocks: SourceBlock[];
   images: CardImage[];
   canvasElements?: CanvasElement[];
+  sideSections?: SideSection[];
   rawText: string;
   tags: string[];
   /** @nullable */
@@ -253,6 +276,7 @@ export interface CardUpdate {
   sourceBlocks?: SourceBlock[];
   images?: CardImage[];
   canvasElements?: CanvasElement[];
+  sideSections?: SideSection[];
   tags?: string[];
   /** @nullable */
   notebookId?: number | null;

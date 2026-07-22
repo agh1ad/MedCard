@@ -35,7 +35,27 @@ export type FlowNode = z.infer<typeof FlowNodeSchemaBase> & {
   tone?: "ink" | "blue" | "green" | "pink" | "violet" | "amber";
   backgroundColor?: string;
   textColor?: string;
+  position?: { x: number; y: number };
+  attachments?: NodeAttachment[];
 };
+
+export type NodeAttachment = {
+  id: string;
+  type: "image" | "note" | "rectangle" | "ellipse";
+  content?: string;
+  dataUrl?: string;
+  backgroundColor?: string;
+  textColor?: string;
+};
+
+export const NodeAttachmentSchema: z.ZodType<NodeAttachment> = z.object({
+  id: z.string(),
+  type: z.enum(["image", "note", "rectangle", "ellipse"]),
+  content: z.string().optional(),
+  dataUrl: z.string().optional(),
+  backgroundColor: z.string().optional(),
+  textColor: z.string().optional(),
+});
 
 export const FlowNodeSchema: z.ZodType<FlowNode> = FlowNodeSchemaBase.extend({
   children: z.lazy(() => z.array(FlowNodeSchema)).optional(),
@@ -65,6 +85,8 @@ export const FlowNodeSchema: z.ZodType<FlowNode> = FlowNodeSchemaBase.extend({
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/)
     .optional(),
+  position: z.object({ x: z.number(), y: z.number() }).optional(),
+  attachments: z.array(NodeAttachmentSchema).optional(),
 });
 
 export const SidebarSectionsSchema = z.object({
@@ -94,6 +116,15 @@ export const SectionTreesSchema = z.object({
 });
 
 export type SectionTrees = z.infer<typeof SectionTreesSchema>;
+
+export const SideSectionSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  nodes: z.array(FlowNodeSchema),
+  attachments: z.array(NodeAttachmentSchema).optional(),
+});
+
+export type SideSection = z.infer<typeof SideSectionSchema>;
 
 export const CardImageSchema = z.object({
   id: z.string(),
@@ -169,6 +200,10 @@ export const cardsTable = pgTable("cards", {
   canvasElements: jsonb("canvas_elements")
     .notNull()
     .$type<CanvasElement[]>()
+    .default([]),
+  sideSections: jsonb("side_sections")
+    .notNull()
+    .$type<SideSection[]>()
     .default([]),
   notebookId: integer("notebook_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

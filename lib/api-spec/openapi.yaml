@@ -497,6 +497,45 @@ components:
           type: string
           pattern: "^#[0-9a-fA-F]{6}$"
           description: User-selected node text color
+        position:
+          type: object
+          required: [x, y]
+          properties:
+            x: { type: number }
+            y: { type: number }
+          description: Optional user-controlled visual offset in pixels
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/NodeAttachment"
+
+    NodeAttachment:
+      type: object
+      required: [id, type]
+      properties:
+        id: { type: string }
+        type:
+          type: string
+          enum: [image, note, rectangle, ellipse]
+        content: { type: string }
+        dataUrl: { type: string }
+        backgroundColor: { type: string }
+        textColor: { type: string }
+
+    SideSection:
+      type: object
+      required: [id, title, nodes]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlowNode"
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/NodeAttachment"
 
     SourceBlock:
       type: object
@@ -571,7 +610,6 @@ components:
               complications,
             ]
 
-    SidebarSections:
     CanvasElement:
       type: object
       required: [id, type, x, y, width, height]
@@ -672,6 +710,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CanvasElement"
+        sideSections:
+          type: array
+          items:
+            $ref: "#/components/schemas/SideSection"
         tags:
           type: array
           items:
@@ -796,6 +838,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CanvasElement"
+        sideSections:
+          type: array
+          items:
+            $ref: "#/components/schemas/SideSection"
         rawText:
           type: string
         tags:
@@ -831,6 +877,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CanvasElement"
+        sideSections:
+          type: array
+          items:
+            $ref: "#/components/schemas/SideSection"
         tags:
           type: array
           items:

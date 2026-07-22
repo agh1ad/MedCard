@@ -4,7 +4,9 @@ import {
   useCreateCard,
   type CanvasElement,
   type FlowNode,
+  type NodeAttachment,
   type SectionTrees,
+  type SideSection,
 } from "@workspace/api-client-react";
 import { MemoryCardCanvas } from "@/components/card/MemoryCardCanvas";
 import { Badge } from "@/components/ui/badge";
@@ -52,7 +54,7 @@ const EMPTY_TREES: SectionTrees = {
   complications: [],
 };
 
-const SECTIONS = [
+const LEGACY_SECTIONS = [
   ["main", "Main flow"],
   ["high_yield", "High yield"],
   ["risk_factors", "Risk factors"],
@@ -62,15 +64,15 @@ const SECTIONS = [
   ["complications", "Complications"],
 ] as const;
 
-type SectionKey = (typeof SECTIONS)[number][0];
-const SIDE_SECTIONS = SECTIONS.slice(1) as ReadonlyArray<
+const LEGACY_SIDE_SECTIONS = LEGACY_SECTIONS.slice(1) as ReadonlyArray<
   readonly [keyof SectionTrees, string]
 >;
 type CardDraft = {
   topic: string;
   tags: string[];
   flow: FlowNode[];
-  sectionTrees: SectionTrees;
+  sectionTrees?: SectionTrees;
+  sideSections?: SideSection[];
   canvasElements: CanvasElement[];
 };
 
@@ -232,7 +234,7 @@ function loadDraft(): CardDraft {
     topic: "",
     tags: [],
     flow: [],
-    sectionTrees: EMPTY_TREES,
+    sideSections: [],
     canvasElements: [],
   };
 }
@@ -245,7 +247,14 @@ export function ManualBuilder() {
   const [tags, setTags] = useState(initial.tags);
   const [tagInput, setTagInput] = useState("");
   const [flow, setFlow] = useState(initial.flow);
-  const [sectionTrees, setSectionTrees] = useState(initial.sectionTrees);
+  const [sideSections, setSideSections] = useState<SideSection[]>(() => {
+    if (initial.sideSections?.length) return initial.sideSections;
+    return LEGACY_SIDE_SECTIONS.flatMap(([key, title]) =>
+      initial.sectionTrees?.[key]?.length
+        ? [{ id: `legacy-${key}`, title, nodes: initial.sectionTrees[key] }]
+        : [],
+    );
+  });
   const [canvasElements, setCanvasElements] = useState(
     initial.canvasElements ?? [],
   );
@@ -254,7 +263,7 @@ export function ManualBuilder() {
   >("select");
   const [freeformColor, setFreeformColor] = useState("#d53b36");
   const [selectedCanvasId, setSelectedCanvasId] = useState<string | null>(null);
-  const [activeSection, setActiveSection] = useState<SectionKey>("main");
+  const [activeSection, setActiveSection] = useState<string>("main");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [connectionSourceId, setConnectionSourceId] = useState<string | null>(
     null,
@@ -264,8 +273,11 @@ export function ManualBuilder() {
   const [showStructurePanel, setShowStructurePanel] = useState(false);
   const createMutation = useCreateCard();
 
+  const activeSideSection = sideSections.find(
+    (section) => section.id === activeSection,
+  );
   const activeNodes =
-    activeSection === "main" ? flow : sectionTrees[activeSection];
+    activeSection === "main" ? flow : (activeSideSection?.nodes ?? []);
   const selectedNode = selectedId
     ? findNode(activeNodes, selectedId)
     : undefined;
@@ -286,13 +298,51 @@ export function ManualBuilder() {
 
   const setActiveNodes = (nodes: FlowNode[]) => {
     if (activeSection === "main") setFlow(nodes);
-    else setSectionTrees((current) => ({ ...current, [activeSection]: nodes }));
+    else
+      setSideSections((current) =>
+        current.map((section) =>
+          section.id === activeSection ? { ...section, nodes } : section,
+        ),
+      );
   };
 
-  const sectionForNode = (id: string): SectionKey | null => {
+  const addSideSection = (title?: string) => {
+    const section: SideSection = {
+      id: `section-${crypto.randomUUID()}`,
+      title: title || `New section ${sideSections.length + 1}`,
+      nodes: [],
+    };
+    setSideSections((current) => [...current, section]);
+    setActiveSection(section.id);
+    setSelectedId(null);
+  };
+
+  const renameSideSection = (id: string, title: string) =>
+    setSideSections((current) =>
+      current.map((section) =>
+        section.id === id ? { ...section, title } : section,
+      ),
+    );
+
+  const deleteSideSection = (id: string) => {
+    const section = sideSections.find((item) => item.id === id);
+    if (
+      section &&
+      (section.nodes.length || section.attachments?.length) &&
+      !confirm(`Delete “${section.title}” and everything inside it?`)
+    )
+      return;
+    setSideSections((current) =>
+      current.filter((section) => section.id !== id),
+    );
+    if (activeSection === id) setActiveSection("main");
+    setSelectedId(null);
+  };
+
+  const sectionForNode = (id: string): string | null => {
     if (findNode(flow, id)) return "main";
-    for (const [key] of SIDE_SECTIONS) {
-      if (findNode(sectionTrees[key], id)) return key;
+    for (const section of sideSections) {
+      if (findNode(section.nodes, id)) return section.id;
     }
     return null;
   };
@@ -308,16 +358,12 @@ export function ManualBuilder() {
     setFlow((current) =>
       mapNode(current, id, (node) => ({ ...node, ...patch })),
     );
-    setSectionTrees((current) => {
-      const next = { ...current };
-      for (const [key] of SIDE_SECTIONS) {
-        next[key] = mapNode(current[key], id, (node) => ({
-          ...node,
-          ...patch,
-        }));
-      }
-      return next;
-    });
+    setSideSections((current) =>
+      current.map((section) => ({
+        ...section,
+        nodes: mapNode(section.nodes, id, (node) => ({ ...node, ...patch })),
+      })),
+    );
   };
 
   const addChildAnywhere = (parentId: string) => {
@@ -325,9 +371,9 @@ export function ManualBuilder() {
     updateNodeAnywhere(parentId, {
       children: [
         ...(findNode(flow, parentId)?.children ??
-          SIDE_SECTIONS.map(
-            ([key]) => findNode(sectionTrees[key], parentId)?.children,
-          ).find(Boolean) ??
+          sideSections
+            .map((section) => findNode(section.nodes, parentId)?.children)
+            .find(Boolean) ??
           []),
         child,
       ],
@@ -338,24 +384,23 @@ export function ManualBuilder() {
   const addSiblingAnywhere = (nodeId: string) => {
     const sibling = makeNode();
     setFlow((current) => insertAfter(current, nodeId, sibling));
-    setSectionTrees((current) => {
-      const next = { ...current };
-      for (const [key] of SIDE_SECTIONS) {
-        next[key] = insertAfter(current[key], nodeId, sibling);
-      }
-      return next;
-    });
+    setSideSections((current) =>
+      current.map((section) => ({
+        ...section,
+        nodes: insertAfter(section.nodes, nodeId, sibling),
+      })),
+    );
     setSelectedId(sibling.id);
   };
 
   const deleteNodeAnywhere = (id: string) => {
     setFlow((current) => removeNode(current, id));
-    setSectionTrees((current) => {
-      const next = { ...current };
-      for (const [key] of SIDE_SECTIONS)
-        next[key] = removeNode(current[key], id);
-      return next;
-    });
+    setSideSections((current) =>
+      current.map((section) => ({
+        ...section,
+        nodes: removeNode(section.nodes, id),
+      })),
+    );
     setSelectedId(null);
     if (connectionSourceId === id) setConnectionSourceId(null);
   };
@@ -380,9 +425,7 @@ export function ManualBuilder() {
     }
     const target =
       findNode(flow, id) ??
-      SIDE_SECTIONS.map(([key]) => findNode(sectionTrees[key], id)).find(
-        Boolean,
-      );
+      sideSections.map((section) => findNode(section.nodes, id)).find(Boolean);
     updateNodeAnywhere(id, {
       additionalParentIds: [
         ...new Set([
@@ -395,6 +438,49 @@ export function ManualBuilder() {
     selectNodeAnywhere(id);
   };
 
+  const attachToNode = (id: string, attachment: NodeAttachment) => {
+    const node =
+      findNode(flow, id) ??
+      sideSections.map((section) => findNode(section.nodes, id)).find(Boolean);
+    updateNodeAnywhere(id, {
+      attachments: [...(node?.attachments ?? []), attachment],
+    });
+  };
+
+  const attachToSection = (id: string, attachment: NodeAttachment) =>
+    setSideSections((current) =>
+      current.map((section) =>
+        section.id === id
+          ? {
+              ...section,
+              attachments: [...(section.attachments ?? []), attachment],
+            }
+          : section,
+      ),
+    );
+
+  const removeSectionAttachment = (sectionId: string, attachmentId: string) =>
+    setSideSections((current) =>
+      current.map((section) =>
+        section.id === sectionId
+          ? {
+              ...section,
+              attachments: (section.attachments ?? []).filter(
+                (attachment) => attachment.id !== attachmentId,
+              ),
+            }
+          : section,
+      ),
+    );
+
+  const startAttachmentDrag = (
+    event: React.DragEvent<HTMLElement>,
+    type: NodeAttachment["type"],
+  ) => {
+    event.dataTransfer.setData("application/x-medcard-attachment", type);
+    event.dataTransfer.effectAllowed = "copy";
+  };
+
   useEffect(() => {
     const timer = window.setTimeout(() => {
       localStorage.setItem(
@@ -403,17 +489,28 @@ export function ManualBuilder() {
           topic,
           tags,
           flow,
-          sectionTrees,
+          sideSections,
           canvasElements,
         } satisfies CardDraft),
       );
     }, 250);
     return () => window.clearTimeout(timer);
-  }, [topic, tags, flow, sectionTrees, canvasElements]);
+  }, [topic, tags, flow, sideSections, canvasElements]);
 
   useEffect(() => {
     if (selectedId && !findNode(activeNodes, selectedId)) setSelectedId(null);
   }, [activeNodes, selectedId]);
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setConnectionSourceId(null);
+      setSelectedCanvasId(null);
+      setSelectedId(null);
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, []);
 
   const addCanvasElement = (
     type: CanvasElement["type"],
@@ -512,7 +609,7 @@ export function ManualBuilder() {
     if (
       activeNodes.length &&
       !confirm(
-        `Replace the current ${SECTIONS.find(([key]) => key === activeSection)?.[1]}?`,
+        `Replace the current ${activeSection === "main" ? "Main flow" : (activeSideSection?.title ?? "section")}?`,
       )
     )
       return;
@@ -529,7 +626,7 @@ export function ManualBuilder() {
     }
     if (
       !flow.length &&
-      !Object.values(sectionTrees).some((nodes) => nodes.length) &&
+      !sideSections.some((section) => section.nodes.length) &&
       !canvasElements.length
     ) {
       toast({ title: "Add at least one node", variant: "destructive" });
@@ -537,9 +634,9 @@ export function ManualBuilder() {
     }
     const sourceText = [
       nodesToText(flow),
-      ...SIDE_SECTIONS.map(([key, label]) =>
-        sectionTrees[key as keyof SectionTrees].length
-          ? `\n${label}\n${nodesToText(sectionTrees[key as keyof SectionTrees])}`
+      ...sideSections.map((section) =>
+        section.nodes.length
+          ? `\n${section.title}\n${nodesToText(section.nodes)}`
           : "",
       ),
     ]
@@ -552,16 +649,17 @@ export function ManualBuilder() {
           tags,
           rawText: sourceText,
           flow,
-          sectionTrees,
+          sectionTrees: EMPTY_TREES,
+          sideSections,
           sourceBlocks: [],
           images: [],
           canvasElements,
           sidebar: {
-            high_yield: sectionTrees.high_yield.map((node) => node.label),
-            risk_factors: sectionTrees.risk_factors.map((node) => node.label),
-            diagnosis: sectionTrees.diagnosis.map((node) => node.label),
-            treatment: sectionTrees.treatment.map((node) => node.label),
-            complications: sectionTrees.complications.map((node) => node.label),
+            high_yield: [],
+            risk_factors: [],
+            diagnosis: [],
+            treatment: [],
+            complications: [],
           },
         },
       },
@@ -657,27 +755,31 @@ export function ManualBuilder() {
               role="tablist"
               aria-label="Card sections"
             >
-              {SECTIONS.map(([key, label]) => {
-                const count = flattenNodes(
-                  key === "main" ? flow : sectionTrees[key],
-                ).length;
+              {[
+                { id: "main", title: "Main flow", nodes: flow },
+                ...sideSections,
+              ].map((section) => {
+                const count = flattenNodes(section.nodes).length;
                 return (
                   <button
                     type="button"
                     role="tab"
-                    aria-selected={activeSection === key}
-                    className={activeSection === key ? "is-active" : ""}
+                    aria-selected={activeSection === section.id}
+                    className={activeSection === section.id ? "is-active" : ""}
                     onClick={() => {
-                      setActiveSection(key);
+                      setActiveSection(section.id);
                       setSelectedId(null);
                     }}
-                    key={key}
+                    key={section.id}
                   >
-                    {label}
+                    {section.title}
                     {count > 0 && <span>{count}</span>}
                   </button>
                 );
               })}
+              <button type="button" onClick={() => addSideSection()}>
+                <Plus /> Section
+              </button>
             </div>
 
             <div className="manual-fast-tools">
@@ -712,7 +814,11 @@ export function ManualBuilder() {
 
             <div className="manual-tree-heading">
               <div>
-                <h2>{SECTIONS.find(([key]) => key === activeSection)?.[1]}</h2>
+                <h2>
+                  {activeSection === "main"
+                    ? "Main flow"
+                    : activeSideSection?.title}
+                </h2>
                 <p>Enter = sibling · Tab = child</p>
               </div>
               <Button variant="outline" size="sm" onClick={() => addRoot()}>
@@ -893,8 +999,8 @@ export function ManualBuilder() {
               <strong>Live preview</strong>
               <span>
                 {flattenNodes(flow).length +
-                  Object.values(sectionTrees).reduce(
-                    (sum, nodes) => sum + flattenNodes(nodes).length,
+                  sideSections.reduce(
+                    (sum, section) => sum + flattenNodes(section.nodes).length,
                     0,
                   )}{" "}
                 nodes
@@ -904,26 +1010,88 @@ export function ManualBuilder() {
               <Keyboard /> Keyboard-first
             </span>
           </div>
+          <p className="sr-only" role="status" aria-live="polite">
+            {connectionSourceId
+              ? "Connection started. Select another node in this section."
+              : selectedId
+                ? "Node selected. Use the plus below for a child or the plus at the side for a sibling."
+                : "Interactive card preview ready."}
+          </p>
           <div
             className="direct-node-toolbar"
             aria-label="Interactive node tools"
           >
             <div className="direct-section-tabs">
-              {SECTIONS.map(([key, label]) => (
+              {[{ id: "main", title: "Main flow" }, ...sideSections].map(
+                (section) => (
+                  <button
+                    type="button"
+                    key={section.id}
+                    className={activeSection === section.id ? "is-active" : ""}
+                    onClick={() => {
+                      setActiveSection(section.id);
+                      setSelectedId(null);
+                      setConnectionSourceId(null);
+                    }}
+                  >
+                    {section.title}
+                  </button>
+                ),
+              )}
+              <button
+                type="button"
+                className="add-section"
+                onClick={() => addSideSection()}
+              >
+                <Plus /> Add section
+              </button>
+              <select
+                className="quick-section-select"
+                aria-label="Quick add common section"
+                value=""
+                onChange={(event) => {
+                  if (event.target.value) addSideSection(event.target.value);
+                }}
+              >
+                <option value="">Quick section…</option>
+                <option>High yield</option>
+                <option>Risk factors</option>
+                <option>Associations</option>
+                <option>Diagnosis</option>
+                <option>Treatment</option>
+                <option>Complications</option>
+                <option>Clinical features</option>
+                <option>Pathophysiology</option>
+                <option>Investigations</option>
+                <option>Differential diagnosis</option>
+                <option>Prognosis</option>
+              </select>
+            </div>
+            {activeSideSection && (
+              <div className="direct-section-editor">
+                <label>
+                  Section name
+                  <input
+                    value={activeSideSection.title}
+                    onChange={(event) =>
+                      renameSideSection(
+                        activeSideSection.id,
+                        event.target.value,
+                      )
+                    }
+                    aria-label="Section name"
+                  />
+                </label>
                 <button
                   type="button"
-                  key={key}
-                  className={activeSection === key ? "is-active" : ""}
-                  onClick={() => {
-                    setActiveSection(key);
-                    setSelectedId(null);
-                    setConnectionSourceId(null);
-                  }}
+                  onClick={() => deleteSideSection(activeSideSection.id)}
+                  aria-label="Delete section"
+                  title="Delete this section"
                 >
-                  {label}
+                  <Trash2 />
                 </button>
-              ))}
-            </div>
+              </div>
+            )}
             <div className="direct-node-actions-bar">
               <Button size="sm" onClick={() => addRoot()}>
                 <Plus className="mr-1 h-4 w-4" /> Add node
@@ -1027,6 +1195,20 @@ export function ManualBuilder() {
                     <X />
                   </button>
                 )}
+                {selectedNode.position && (
+                  <button
+                    type="button"
+                    title="Return node to automatic layout"
+                    aria-label="Reset node position"
+                    onClick={() =>
+                      updateNodeAnywhere(selectedNode.id, {
+                        position: undefined,
+                      })
+                    }
+                  >
+                    <Undo2 />
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -1050,8 +1232,10 @@ export function ManualBuilder() {
             </button>
             <button
               type="button"
+              draggable
+              onDragStart={(event) => startAttachmentDrag(event, "note")}
               onClick={() => addCanvasElement("note")}
-              title="Add sticky note"
+              title="Click for page note, or drag into a node/section"
             >
               <StickyNote />
               <span>Note</span>
@@ -1063,16 +1247,20 @@ export function ManualBuilder() {
             </label>
             <button
               type="button"
+              draggable
+              onDragStart={(event) => startAttachmentDrag(event, "rectangle")}
               onClick={() => addCanvasElement("rectangle")}
-              title="Add rectangle"
+              title="Click for page box, or drag into a node/section"
             >
               <Square />
               <span>Box</span>
             </button>
             <button
               type="button"
+              draggable
+              onDragStart={(event) => startAttachmentDrag(event, "ellipse")}
               onClick={() => addCanvasElement("ellipse")}
-              title="Add ellipse"
+              title="Click for page circle, or drag into a node/section"
             >
               <Circle />
               <span>Circle</span>
@@ -1211,7 +1399,8 @@ export function ManualBuilder() {
           <MemoryCardCanvas
             topic={topic}
             flow={flow}
-            sectionTrees={sectionTrees}
+            sectionTrees={EMPTY_TREES}
+            sideSections={sideSections}
             canvasElements={canvasElements}
             onCanvasElementsChange={setCanvasElements}
             freeformTool={freeformTool}
@@ -1227,7 +1416,10 @@ export function ManualBuilder() {
               onAddSibling: addSiblingAnywhere,
               onDelete: deleteNodeAnywhere,
               onConnectionClick: handleConnectionClick,
+              onAttach: attachToNode,
             }}
+            onAttachToSection={attachToSection}
+            onRemoveSectionAttachment={removeSectionAttachment}
           />
         </aside>
       </div>

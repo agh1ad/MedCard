@@ -3,7 +3,9 @@ import type {
   CardImage,
   CardImageSection,
   FlowNode,
+  NodeAttachment,
   SectionTrees,
+  SideSection,
 } from "@workspace/api-client-react";
 import {
   FreeformCanvasLayer,
@@ -15,6 +17,7 @@ import {
   BookOpenCheck,
   HeartPulse,
   Link2,
+  Move,
   Plus,
   Pill,
   Trash2,
@@ -37,6 +40,7 @@ export interface DirectNodeEditing {
   onAddSibling: (id: string) => void;
   onDelete: (id: string) => void;
   onConnectionClick: (id: string) => void;
+  onAttach: (id: string, attachment: NodeAttachment) => void;
 }
 
 const DirectNodeContext = createContext<DirectNodeEditing | null>(null);
@@ -54,6 +58,9 @@ interface MemoryCardCanvasProps {
   selectedCanvasId?: string | null;
   onSelectCanvasElement?: (id: string | null) => void;
   directNodeEditing?: DirectNodeEditing;
+  sideSections?: SideSection[];
+  onAttachToSection?: (id: string, attachment: NodeAttachment) => void;
+  onRemoveSectionAttachment?: (sectionId: string, attachmentId: string) => void;
 }
 
 const SECTION_CONFIG: Array<{
@@ -213,19 +220,25 @@ function MemoryNodeCell({
   const editor = useContext(DirectNodeContext);
   const isSelected = editor?.selectedId === node.id;
   const isConnectionSource = editor?.connectionSourceId === node.id;
+  const visualStyle = {
+    ...(node.backgroundColor || node.textColor
+      ? {
+          background: node.backgroundColor,
+          color: node.textColor,
+          borderColor: node.backgroundColor,
+        }
+      : {}),
+    ...(node.position
+      ? {
+          transform: `translate3d(${node.position.x}px, ${node.position.y}px, 0)`,
+        }
+      : {}),
+  };
 
   return (
     <div
       className={`memory-node role-${semanticRole} origin-${node.origin ?? "source"} ${editor ? "is-direct-editable" : ""} ${isSelected ? "is-direct-selected" : ""} ${isConnectionSource ? "is-connection-source" : ""}`}
-      style={
-        node.backgroundColor || node.textColor
-          ? {
-              background: node.backgroundColor,
-              color: node.textColor,
-              borderColor: node.backgroundColor,
-            }
-          : undefined
-      }
+      style={visualStyle}
       onClick={(event) => {
         if (!editor) return;
         event.stopPropagation();
@@ -239,6 +252,16 @@ function MemoryNodeCell({
         }
       }}
       title={node.origin === "ai_added" ? "Added by AI for context" : undefined}
+      tabIndex={editor ? 0 : undefined}
+      aria-label={editor ? `Node: ${node.label}` : undefined}
+      onDragOver={(event) => editor && event.preventDefault()}
+      onDrop={(event) => {
+        if (!editor) return;
+        event.preventDefault();
+        attachFromDrop(event.dataTransfer, (attachment) =>
+          editor.onAttach(node.id, attachment),
+        );
+      }}
     >
       {editor ? (
         <>
@@ -274,6 +297,7 @@ function MemoryNodeCell({
             />
           )}
           <DirectNodeActions node={node} />
+          <NodeAttachments node={node} />
         </>
       ) : (
         <>
@@ -290,6 +314,7 @@ function MemoryNodeCell({
               />
             </small>
           )}
+          <NodeAttachments node={node} />
         </>
       )}
     </div>
@@ -299,10 +324,40 @@ function MemoryNodeCell({
 function DirectNodeActions({ node }: { node: FlowNode }) {
   const editor = useContext(DirectNodeContext);
   if (!editor || editor.selectedId !== node.id) return null;
+  const beginMove = (event: React.PointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const handle = event.currentTarget;
+    const container = handle.closest<HTMLElement>(
+      ".memory-node, .memory-bullets li, .memory-side-callout, .memory-side-table tr, .memory-side-table-wrap h3",
+    );
+    if (!container) return;
+    handle.setPointerCapture(event.pointerId);
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const origin = node.position ?? { x: 0, y: 0 };
+    const move = (moveEvent: PointerEvent) => {
+      container.style.transform = `translate3d(${origin.x + moveEvent.clientX - startX}px, ${origin.y + moveEvent.clientY - startY}px, 0)`;
+    };
+    const end = (endEvent: PointerEvent) => {
+      handle.removeEventListener("pointermove", move);
+      handle.removeEventListener("pointerup", end);
+      editor.onChange(node.id, {
+        position: {
+          x: Math.round(origin.x + endEvent.clientX - startX),
+          y: Math.round(origin.y + endEvent.clientY - startY),
+        },
+      });
+    };
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", end);
+  };
   return (
-    <span className="memory-direct-actions">
+    <>
       <button
         type="button"
+        className="memory-add-handle add-child"
+        aria-label="Add child below"
         title="Add child below"
         onClick={(event) => {
           event.stopPropagation();
@@ -313,39 +368,129 @@ function DirectNodeActions({ node }: { node: FlowNode }) {
       </button>
       <button
         type="button"
+        className="memory-add-handle add-sibling"
+        aria-label="Add sibling beside"
         title="Add sibling beside"
         onClick={(event) => {
           event.stopPropagation();
           editor.onAddSibling(node.id);
         }}
       >
-        <span aria-hidden="true">+↔</span>
+        <Plus />
       </button>
-      <button
-        type="button"
-        className={editor.connectionSourceId === node.id ? "is-active" : ""}
-        title={
-          editor.connectionSourceId
-            ? "Connect to this node"
-            : "Start connection"
-        }
-        onClick={(event) => {
-          event.stopPropagation();
-          editor.onConnectionClick(node.id);
-        }}
-      >
-        <Link2 />
-      </button>
-      <button
-        type="button"
-        title="Delete node"
-        onClick={(event) => {
-          event.stopPropagation();
-          editor.onDelete(node.id);
-        }}
-      >
-        <Trash2 />
-      </button>
+      <span className="memory-direct-actions">
+        <button
+          type="button"
+          title="Move node"
+          aria-label="Move node"
+          onPointerDown={beginMove}
+        >
+          <Move />
+        </button>
+        <button
+          type="button"
+          className={editor.connectionSourceId === node.id ? "is-active" : ""}
+          title={
+            editor.connectionSourceId
+              ? "Connect to this node"
+              : "Start connection"
+          }
+          onClick={(event) => {
+            event.stopPropagation();
+            editor.onConnectionClick(node.id);
+          }}
+        >
+          <Link2 />
+        </button>
+        <button
+          type="button"
+          title="Delete node"
+          onClick={(event) => {
+            event.stopPropagation();
+            editor.onDelete(node.id);
+          }}
+        >
+          <Trash2 />
+        </button>
+      </span>
+    </>
+  );
+}
+
+function attachFromDrop(
+  transfer: DataTransfer,
+  onAttachment: (attachment: NodeAttachment) => void,
+) {
+  const file = Array.from(transfer.files).find((item) =>
+    item.type.startsWith("image/"),
+  );
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = () =>
+      onAttachment({
+        id: `attachment-${crypto.randomUUID()}`,
+        type: "image",
+        content: file.name,
+        dataUrl: String(reader.result),
+      });
+    reader.readAsDataURL(file);
+    return;
+  }
+  const type = transfer.getData("application/x-medcard-attachment") as
+    NodeAttachment["type"] | "";
+  if (!type) return;
+  onAttachment({
+    id: `attachment-${crypto.randomUUID()}`,
+    type,
+    content: type === "note" ? "Quick note" : undefined,
+    backgroundColor: type === "note" ? "#fff3a8" : "#dbeafe",
+    textColor: "#26384e",
+  });
+}
+
+function NodeAttachments({ node }: { node: FlowNode }) {
+  const editor = useContext(DirectNodeContext);
+  const attachments = node.attachments ?? [];
+  if (!attachments.length) return null;
+  return (
+    <span className="memory-node-attachments">
+      {attachments.map((attachment) => (
+        <span className="node-attachment-wrap" key={attachment.id}>
+          {attachment.type === "image" && attachment.dataUrl ? (
+            <img
+              src={attachment.dataUrl}
+              alt={attachment.content ?? "Node attachment"}
+            />
+          ) : (
+            <span
+              className={`node-attachment type-${attachment.type}`}
+              style={{
+                background: attachment.backgroundColor,
+                color: attachment.textColor,
+              }}
+            >
+              {attachment.content ?? ""}
+            </span>
+          )}
+          {editor && editor.selectedId === node.id && (
+            <button
+              type="button"
+              aria-label={`Remove ${attachment.type} attachment`}
+              title="Remove attachment"
+              onClick={(event) => {
+                event.stopPropagation();
+                editor.onChange(node.id, {
+                  attachments: attachments.filter(
+                    (item) => item.id !== attachment.id,
+                  ),
+                });
+              }}
+            >
+              <Trash2 />
+            </button>
+          )}
+        </span>
+      ))}
     </span>
   );
 }
@@ -605,16 +750,30 @@ function MemoryBulletList({
           <li
             className={`role-${semanticRole} origin-${node.origin ?? "source"} ${editor ? "is-direct-editable" : ""} ${isSelected ? "is-direct-selected" : ""} ${editor?.connectionSourceId === node.id ? "is-connection-source" : ""}`}
             style={
-              node.backgroundColor || node.textColor
+              node.backgroundColor || node.textColor || node.position
                 ? {
                     background: node.backgroundColor,
                     color: node.textColor,
                     borderRadius: "0.35em",
                     padding: node.backgroundColor ? "0.18em 0.32em" : undefined,
+                    transform: node.position
+                      ? `translate3d(${node.position.x}px, ${node.position.y}px, 0)`
+                      : undefined,
                   }
                 : undefined
             }
             key={node.id}
+            tabIndex={editor ? 0 : undefined}
+            aria-label={editor ? `Node: ${node.label}` : undefined}
+            onDragOver={(event) => editor && event.preventDefault()}
+            onDrop={(event) => {
+              if (!editor) return;
+              event.preventDefault();
+              event.stopPropagation();
+              attachFromDrop(event.dataTransfer, (attachment) =>
+                editor.onAttach(node.id, attachment),
+              );
+            }}
             onClick={(event) => {
               if (!editor) return;
               event.stopPropagation();
@@ -686,6 +845,7 @@ function MemoryBulletList({
                 )
               )}
               <DirectNodeActions node={node} />
+              <NodeAttachments node={node} />
             </div>
             {!editor && hasDetailList && (
               <ul
@@ -744,6 +904,13 @@ function MemorySideTable({
       {root.children?.length ? (
         <h3
           className={editor?.selectedId === root.id ? "is-direct-selected" : ""}
+          style={
+            root.position
+              ? {
+                  transform: `translate3d(${root.position.x}px, ${root.position.y}px, 0)`,
+                }
+              : undefined
+          }
           onClick={() => {
             if (!editor) return;
             if (
@@ -752,6 +919,14 @@ function MemorySideTable({
             )
               editor.onConnectionClick(root.id);
             else editor.onSelect(root.id);
+          }}
+          onDragOver={(event) => editor && event.preventDefault()}
+          onDrop={(event) => {
+            if (!editor) return;
+            event.preventDefault();
+            attachFromDrop(event.dataTransfer, (attachment) =>
+              editor.onAttach(root.id, attachment),
+            );
           }}
         >
           {editor ? (
@@ -767,6 +942,7 @@ function MemorySideTable({
             <HighlightedText text={root.label} terms={root.highlightTerms} />
           )}
           <DirectNodeActions node={root} />
+          <NodeAttachments node={root} />
         </h3>
       ) : null}
       <table className="memory-side-table">
@@ -783,6 +959,13 @@ function MemorySideTable({
               className={
                 editor?.selectedId === row.id ? "is-direct-selected" : ""
               }
+              style={
+                row.position
+                  ? {
+                      transform: `translate3d(${row.position.x}px, ${row.position.y}px, 0)`,
+                    }
+                  : undefined
+              }
               onClick={() => {
                 if (!editor) return;
                 if (
@@ -791,6 +974,14 @@ function MemorySideTable({
                 )
                   editor.onConnectionClick(row.id);
                 else editor.onSelect(row.id);
+              }}
+              onDragOver={(event) => editor && event.preventDefault()}
+              onDrop={(event) => {
+                if (!editor) return;
+                event.preventDefault();
+                attachFromDrop(event.dataTransfer, (attachment) =>
+                  editor.onAttach(row.id, attachment),
+                );
               }}
             >
               <td>
@@ -811,6 +1002,7 @@ function MemorySideTable({
                   )}
                 </strong>
                 <DirectNodeActions node={row} />
+                <NodeAttachments node={row} />
               </td>
               <td>
                 {editor ? (
@@ -855,8 +1047,14 @@ function MemorySideCallout({
     <div
       className={`memory-side-callout ${editor ? "is-direct-editable" : ""} ${editor?.selectedId === root.id ? "is-direct-selected" : ""}`}
       style={
-        root.backgroundColor || root.textColor
-          ? { background: root.backgroundColor, color: root.textColor }
+        root.backgroundColor || root.textColor || root.position
+          ? {
+              background: root.backgroundColor,
+              color: root.textColor,
+              transform: root.position
+                ? `translate3d(${root.position.x}px, ${root.position.y}px, 0)`
+                : undefined,
+            }
           : undefined
       }
       onClick={() => {
@@ -864,6 +1062,14 @@ function MemorySideCallout({
         if (editor.connectionSourceId && editor.connectionSourceId !== root.id)
           editor.onConnectionClick(root.id);
         else editor.onSelect(root.id);
+      }}
+      onDragOver={(event) => editor && event.preventDefault()}
+      onDrop={(event) => {
+        if (!editor) return;
+        event.preventDefault();
+        attachFromDrop(event.dataTransfer, (attachment) =>
+          editor.onAttach(root.id, attachment),
+        );
       }}
     >
       <strong>
@@ -896,6 +1102,7 @@ function MemorySideCallout({
         )
       )}
       <DirectNodeActions node={root} />
+      <NodeAttachments node={root} />
       <MemoryBulletList nodes={root.children ?? []} nodeLabels={nodeLabels} />
     </div>
   );
@@ -946,6 +1153,52 @@ function SectionImages({ images }: { images: CardImage[] }) {
   );
 }
 
+function SectionAttachments({
+  sectionId,
+  attachments = [],
+  onRemove,
+}: {
+  sectionId: string;
+  attachments?: NodeAttachment[];
+  onRemove?: (sectionId: string, attachmentId: string) => void;
+}) {
+  if (!attachments.length) return null;
+  return (
+    <div className="memory-section-attachments">
+      {attachments.map((attachment) => (
+        <div className="section-attachment-wrap" key={attachment.id}>
+          {attachment.type === "image" && attachment.dataUrl ? (
+            <img
+              src={attachment.dataUrl}
+              alt={attachment.content ?? "Section attachment"}
+            />
+          ) : (
+            <div
+              className={`section-attachment type-${attachment.type}`}
+              style={{
+                background: attachment.backgroundColor,
+                color: attachment.textColor,
+              }}
+            >
+              {attachment.content ?? ""}
+            </div>
+          )}
+          {onRemove && (
+            <button
+              type="button"
+              aria-label={`Remove ${attachment.type} from ${sectionId}`}
+              title="Remove section attachment"
+              onClick={() => onRemove(sectionId, attachment.id)}
+            >
+              <Trash2 />
+            </button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function MemoryCardCanvas({
   topic,
   flow,
@@ -959,28 +1212,88 @@ export function MemoryCardCanvas({
   selectedCanvasId,
   onSelectCanvasElement,
   directNodeEditing,
+  sideSections,
+  onAttachToSection,
+  onRemoveSectionAttachment,
 }: MemoryCardCanvasProps) {
   const cardRef = useRef<HTMLElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   const totalNodes =
     countNodes(flow) +
-    Object.values(sectionTrees).reduce(
-      (total, nodes) => total + countNodes(nodes),
-      0,
-    );
+    (sideSections?.length
+      ? sideSections.reduce(
+          (total, section) => total + countNodes(section.nodes),
+          0,
+        )
+      : Object.values(sectionTrees).reduce(
+          (total, nodes) => total + countNodes(nodes),
+          0,
+        ));
   const imagesFor = (section: CardImageSection) =>
     images.filter((image) => image.section === section);
   const visibleSections = SECTION_CONFIG.filter(
     ({ key }) =>
       (sectionTrees[key]?.length ?? 0) > 0 || imagesFor(key).length > 0,
   );
+  const renderedSections = sideSections?.length
+    ? sideSections.map((section, index) => ({
+        id: section.id,
+        title: section.title,
+        nodes: section.nodes,
+        attachments: section.attachments,
+        Icon: SECTION_CONFIG[index % SECTION_CONFIG.length].icon,
+        accent: SECTION_CONFIG[index % SECTION_CONFIG.length].accent,
+        roleOverride: undefined as SemanticRole | undefined,
+        images: [] as CardImage[],
+      }))
+    : visibleSections.map(({ key, title, icon: Icon, accent }) => ({
+        id: key,
+        title,
+        nodes: sectionTrees[key] ?? [],
+        attachments: undefined,
+        Icon,
+        accent,
+        roleOverride: SECTION_ROLES[key],
+        images: imagesFor(key),
+      }));
 
   useLayoutEffect(() => {
     const card = cardRef.current;
     const sidebar = sidebarRef.current;
     const main = mainRef.current;
     if (!card || !sidebar || !main) return;
+    if (directNodeEditing) {
+      setRegionScale(card, "sidebar", 14);
+      setRegionScale(card, "main", 14);
+      card.dataset.fitted = "adaptive";
+      let frame = 0;
+      const adaptHeight = () => {
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => {
+          const contentHeight = Math.max(
+            sidebar.scrollHeight,
+            main.scrollHeight,
+            540,
+          );
+          card.style.minHeight = `${contentHeight + 150}px`;
+        });
+      };
+      const adaptiveObserver = new ResizeObserver(adaptHeight);
+      adaptiveObserver.observe(sidebar);
+      adaptiveObserver.observe(main);
+      card.querySelectorAll("img").forEach((image) => {
+        if (!image.complete) image.addEventListener("load", adaptHeight);
+      });
+      adaptHeight();
+      return () => {
+        cancelAnimationFrame(frame);
+        adaptiveObserver.disconnect();
+        card
+          .querySelectorAll("img")
+          .forEach((image) => image.removeEventListener("load", adaptHeight));
+      };
+    }
 
     let animationFrame = 0;
     const fitCard = () => {
@@ -1021,14 +1334,14 @@ export function MemoryCardCanvas({
         .querySelectorAll("img")
         .forEach((image) => image.removeEventListener("load", fitCard));
     };
-  }, [topic, flow, sectionTrees, images]);
+  }, [topic, flow, sectionTrees, sideSections, images, directNodeEditing]);
 
   return (
     <DirectNodeContext.Provider value={directNodeEditing ?? null}>
       <div id="print-area" className={`memory-card-shell ${className}`}>
         <article
           id="memory-card-print"
-          className={`memory-card ${directNodeEditing ? "is-direct-editing" : ""}`}
+          className={`memory-card ${directNodeEditing ? "is-direct-editing is-adaptive" : ""}`}
           ref={cardRef}
         >
           <div className="memory-card-title">
@@ -1038,39 +1351,65 @@ export function MemoryCardCanvas({
           </div>
 
           <aside className="memory-sidebar" ref={sidebarRef}>
-            {visibleSections.map(({ key, title, icon: Icon, accent }) => {
-              const nodes = sectionTrees[key] ?? [];
-              const sectionImages = imagesFor(key);
-              const nodeCount = countNodes(nodes);
-              const nodeLabels = collectNodeLabels(nodes);
-              const usesWidePresentation = nodes.some(
-                (node) =>
-                  node.presentation === "table" ||
-                  node.presentation === "diagram",
-              );
-              return (
-                <section
-                  className={`memory-section accent-${accent} ${nodeCount > 3 || usesWidePresentation ? "is-wide" : ""} ${nodeCount > 6 ? "is-dense" : ""}`}
-                  key={key}
-                >
-                  <header>
-                    <Icon />
-                    <h2>{title}</h2>
-                  </header>
-                  <div className="memory-side-groups">
-                    {nodes.map((root) => (
-                      <MemorySideGroup
-                        key={root.id}
-                        nodeLabels={nodeLabels}
-                        roleOverride={SECTION_ROLES[key]}
-                        root={root}
-                      />
-                    ))}
-                  </div>
-                  <SectionImages images={sectionImages} />
-                </section>
-              );
-            })}
+            {renderedSections.map(
+              ({
+                id,
+                title,
+                nodes,
+                attachments,
+                Icon,
+                accent,
+                roleOverride,
+                images: sectionImages,
+              }) => {
+                const nodeCount = countNodes(nodes);
+                const nodeLabels = collectNodeLabels(nodes);
+                const usesWidePresentation = nodes.some(
+                  (node) =>
+                    node.presentation === "table" ||
+                    node.presentation === "diagram",
+                );
+                return (
+                  <section
+                    className={`memory-section accent-${accent} ${nodeCount > 3 || usesWidePresentation ? "is-wide" : ""} ${nodeCount > 6 ? "is-dense" : ""}`}
+                    key={id}
+                    tabIndex={directNodeEditing ? 0 : undefined}
+                    aria-label={`${title} section`}
+                    onDragOver={(event) =>
+                      onAttachToSection && event.preventDefault()
+                    }
+                    onDrop={(event) => {
+                      if (!onAttachToSection) return;
+                      event.preventDefault();
+                      attachFromDrop(event.dataTransfer, (attachment) =>
+                        onAttachToSection(id, attachment),
+                      );
+                    }}
+                  >
+                    <header>
+                      <Icon />
+                      <h2>{title}</h2>
+                    </header>
+                    <div className="memory-side-groups">
+                      {nodes.map((root) => (
+                        <MemorySideGroup
+                          key={root.id}
+                          nodeLabels={nodeLabels}
+                          roleOverride={roleOverride}
+                          root={root}
+                        />
+                      ))}
+                    </div>
+                    <SectionImages images={sectionImages} />
+                    <SectionAttachments
+                      sectionId={id}
+                      attachments={attachments}
+                      onRemove={onRemoveSectionAttachment}
+                    />
+                  </section>
+                );
+              },
+            )}
           </aside>
 
           <main className="memory-main" ref={mainRef}>

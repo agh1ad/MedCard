@@ -629,6 +629,66 @@
   background: #2378c9;
   box-shadow: none;
 }
+.direct-section-tabs button.add-section {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  color: #1768b7;
+  border-style: dashed;
+  background: #edf6ff;
+}
+.direct-section-tabs button.add-section svg {
+  width: 0.65rem;
+}
+.direct-section-tabs .quick-section-select {
+  height: 1.7rem;
+  flex: 0 0 auto;
+  border: 1px dashed #9fc3e8;
+  border-radius: 999px;
+  padding: 0 0.55rem;
+  color: #1768b7;
+  background: #fff;
+  font-size: 0.55rem;
+  font-weight: 750;
+}
+.direct-section-editor {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.direct-section-editor label {
+  display: flex;
+  min-width: 220px;
+  flex: 1;
+  align-items: center;
+  gap: 0.4rem;
+  color: #66768b;
+  font-size: 0.54rem;
+  font-weight: 750;
+}
+.direct-section-editor input {
+  height: 1.8rem;
+  flex: 1;
+  border: 1px solid #d8e1eb;
+  border-radius: 0.38rem;
+  padding: 0 0.5rem;
+  color: #253b55;
+  background: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+.direct-section-editor > button {
+  display: grid;
+  width: 1.8rem;
+  height: 1.8rem;
+  place-items: center;
+  border-radius: 0.38rem;
+  color: #b43d49;
+  background: #fff0f0;
+}
+.direct-section-editor > button svg {
+  width: 0.75rem;
+}
 .direct-node-actions-bar {
   display: flex;
   align-items: center;
@@ -1902,6 +1962,31 @@
   font-family: "Plus Jakarta Sans", sans-serif;
 }
 
+.memory-card.is-adaptive {
+  grid-template-rows: auto minmax(540px, auto) auto;
+  min-height: 690px;
+  aspect-ratio: auto;
+  overflow: visible;
+  transition: min-height 180ms ease;
+  contain: layout style;
+}
+.memory-card.is-adaptive .memory-card-title {
+  min-height: 92px;
+}
+.memory-card.is-adaptive .memory-sidebar,
+.memory-card.is-adaptive .memory-main {
+  min-height: 540px;
+  overflow: visible;
+}
+.memory-card.is-adaptive .memory-sidebar {
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-flow: row;
+}
+.memory-card.is-adaptive .memory-section {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
 .memory-card-title {
   grid-column: 1 / -1;
   grid-row: 1;
@@ -2350,6 +2435,49 @@
   background: #fff;
   box-shadow: 0 3px 10px rgba(25, 50, 80, 0.2);
 }
+.memory-add-handle {
+  position: absolute;
+  z-index: 42;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  color: #fff;
+  background: #2878e3;
+  box-shadow: 0 2px 7px rgba(26, 66, 105, 0.28);
+  cursor: pointer;
+}
+.memory-add-handle:hover,
+.memory-add-handle:focus-visible {
+  transform: scale(1.12);
+  background: #1768b7;
+  outline: 2px solid rgba(40, 120, 227, 0.28);
+  outline-offset: 2px;
+}
+.memory-add-handle svg {
+  width: 12px;
+  height: 12px;
+}
+.memory-add-handle.add-child {
+  left: 50%;
+  bottom: -28px;
+  transform: translateX(-50%);
+}
+.memory-add-handle.add-child:hover,
+.memory-add-handle.add-child:focus-visible {
+  transform: translateX(-50%) scale(1.12);
+}
+.memory-add-handle.add-sibling {
+  top: 50%;
+  right: -30px;
+  transform: translateY(-50%);
+}
+.memory-add-handle.add-sibling:hover,
+.memory-add-handle.add-sibling:focus-visible {
+  transform: translateY(-50%) scale(1.12);
+}
 .memory-direct-actions button {
   display: grid;
   width: 19px;
@@ -2371,6 +2499,118 @@
 .memory-direct-actions svg {
   width: 10px;
   height: 10px;
+}
+.memory-node-attachments {
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 5px;
+}
+.node-attachment-wrap {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+}
+.node-attachment-wrap > button {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  display: grid;
+  width: 17px;
+  height: 17px;
+  place-items: center;
+  border-radius: 999px;
+  color: #fff;
+  background: #d84b55;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+.node-attachment-wrap > button svg {
+  width: 9px;
+}
+.memory-node-attachments img {
+  width: auto;
+  max-width: 72px;
+  height: 44px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+.node-attachment {
+  display: grid;
+  min-width: 28px;
+  min-height: 22px;
+  place-items: center;
+  border: 1px solid rgba(30, 55, 80, 0.18);
+  border-radius: 4px;
+  padding: 3px 5px;
+  font-size: 0.68em;
+}
+.node-attachment.type-ellipse {
+  border-radius: 999px;
+}
+.memory-section-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+.section-attachment-wrap {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+}
+.section-attachment-wrap > button {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border-radius: 999px;
+  color: #fff;
+  background: #d84b55;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+.section-attachment-wrap > button svg {
+  width: 9px;
+}
+.memory-section-attachments img {
+  max-width: 130px;
+  max-height: 90px;
+  object-fit: contain;
+  border-radius: 5px;
+}
+.section-attachment {
+  display: grid;
+  min-width: 58px;
+  min-height: 36px;
+  place-items: center;
+  border: 1px solid rgba(30, 55, 80, 0.18);
+  border-radius: 5px;
+  padding: 5px;
+  font-size: 0.72em;
+}
+.section-attachment.type-ellipse {
+  border-radius: 999px;
+}
+.memory-card.is-direct-editing .memory-node,
+.memory-card.is-direct-editing .memory-bullets li,
+.memory-card.is-direct-editing .memory-side-callout,
+.memory-card.is-direct-editing .memory-side-table tr {
+  transition:
+    box-shadow 120ms ease,
+    outline-color 120ms ease;
+}
+.memory-card.is-direct-editing .is-direct-selected {
+  will-change: transform;
+}
+.memory-card.is-direct-editing .memory-section:focus-visible,
+.memory-card.is-direct-editing .memory-node:focus-visible,
+.memory-card.is-direct-editing .memory-bullets li:focus-visible {
+  outline: 3px solid #2878e3;
+  outline-offset: 3px;
 }
 .memory-bullets li.is-direct-editable {
   cursor: text;
@@ -2595,6 +2835,17 @@
     margin-inline: -1rem;
     width: calc(100% + 2rem);
     border-radius: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .memory-card.is-adaptive,
+  .memory-card.is-direct-editing .memory-node,
+  .memory-card.is-direct-editing .memory-bullets li,
+  .memory-add-handle,
+  .freeform-item {
+    scroll-behavior: auto;
+    transition: none !important;
   }
 }
 

@@ -11,6 +11,7 @@ import {
   type CardImageSection,
   type FlowNode,
   type SectionTrees,
+  type SideSection,
 } from "@workspace/api-client-react";
 import { FlowTree, flattenFlowToText } from "@/components/card/FlowTree";
 import { MemoryCardCanvas } from "@/components/card/MemoryCardCanvas";
@@ -88,6 +89,7 @@ export function CardDetail() {
   const [topic, setTopic] = useState("");
   const [flow, setFlow] = useState<FlowNode[]>([]);
   const [sectionTrees, setSectionTrees] = useState<SectionTrees>(EMPTY_TREES);
+  const [sideSections, setSideSections] = useState<SideSection[]>([]);
   const [images, setImages] = useState<CardImage[]>([]);
   const [canvasElements, setCanvasElements] = useState<CanvasElement[]>([]);
   const [canvasTool, setCanvasTool] = useState<"select" | "draw" | "highlight">(
@@ -107,6 +109,7 @@ export function CardDetail() {
     setTopic(card.topic);
     setFlow(card.flow ?? []);
     setSectionTrees(card.sectionTrees ?? EMPTY_TREES);
+    setSideSections(card.sideSections ?? []);
     setImages(card.images ?? []);
     setCanvasElements(card.canvasElements ?? []);
     setTags(card.tags ?? []);
@@ -117,6 +120,7 @@ export function CardDetail() {
     setTopic(card.topic);
     setFlow(card.flow ?? []);
     setSectionTrees(card.sectionTrees ?? EMPTY_TREES);
+    setSideSections(card.sideSections ?? []);
     setImages(card.images ?? []);
     setCanvasElements(card.canvasElements ?? []);
     setTags(card.tags ?? []);
@@ -135,6 +139,7 @@ export function CardDetail() {
           topic: topic.trim(),
           flow,
           sectionTrees,
+          sideSections,
           images,
           canvasElements,
           tags,
@@ -169,8 +174,15 @@ export function CardDetail() {
           `\n## ${SECTION_LABELS[key]}\n${flattenFlowToText(sectionTrees[key])}`,
       )
       .join("\n");
+    const customSectionText = sideSections
+      .filter((section) => section.nodes.length)
+      .map(
+        (section) =>
+          `\n## ${section.title}\n${flattenFlowToText(section.nodes)}`,
+      )
+      .join("\n");
     await navigator.clipboard.writeText(
-      `# ${topic}\n\n## Main flow\n${flattenFlowToText(flow)}${sectionText}`,
+      `# ${topic}\n\n## Main flow\n${flattenFlowToText(flow)}${sectionText}${customSectionText}`,
     );
     toast({ title: "Card copied as text" });
   };
@@ -559,6 +571,7 @@ export function CardDetail() {
                 topic={topic}
                 flow={flow}
                 sectionTrees={sectionTrees}
+                sideSections={sideSections}
                 images={images}
                 canvasElements={canvasElements}
                 onCanvasElementsChange={setCanvasElements}
@@ -575,6 +588,7 @@ export function CardDetail() {
           topic={topic}
           flow={flow}
           sectionTrees={sectionTrees}
+          sideSections={sideSections}
           images={images}
           canvasElements={canvasElements}
         />
