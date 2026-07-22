@@ -20,18 +20,13 @@ import {
   BookOpenCheck,
   CheckSquare,
   Copy,
-  GitFork,
   HeartPulse,
   ImagePlus,
   Link2,
-  ListChecks,
-  MessageSquareText,
   Plus,
   Pill,
   SlidersHorizontal,
-  Table2,
   Trash2,
-  Type,
   X,
 } from "lucide-react";
 import {
@@ -86,11 +81,6 @@ interface MemoryCardCanvasProps {
   onSelectSectionBlock?: (sectionId: string, blockId: string) => void;
   onAddFirstSideSection?: () => void;
   onAddRootNode?: () => void;
-  onAddNodeToSection?: (sectionId: string) => void;
-  onAddSectionBlock?: (
-    sectionId: string,
-    type: SectionContentBlock["type"],
-  ) => void;
   onUpdateSectionBlock?: (
     sectionId: string,
     blockId: string,
@@ -104,20 +94,6 @@ interface MemoryCardCanvasProps {
     direction: -1 | 1,
   ) => void;
 }
-
-const QUICK_SECTION_NAMES = [
-  "High yield",
-  "Risk factors",
-  "Associations",
-  "Diagnosis",
-  "Treatment",
-  "Complications",
-  "Clinical features",
-  "Pathophysiology",
-  "Investigations",
-  "Differential diagnosis",
-  "Prognosis",
-] as const;
 
 const SECTION_CONFIG: Array<{
   key: keyof SectionTrees;
@@ -1648,8 +1624,6 @@ export function MemoryCardCanvas({
   onSelectSectionBlock,
   onAddFirstSideSection,
   onAddRootNode,
-  onAddNodeToSection,
-  onAddSectionBlock,
   onUpdateSectionBlock,
   onDeleteSectionBlock,
   onDuplicateSectionBlock,
@@ -1869,132 +1843,6 @@ export function MemoryCardCanvas({
                       >
                         <X />
                       </button>
-                    )}
-                    {custom && selectedSectionId === id && (
-                      <details
-                        className="memory-section-popover"
-                        aria-label={`Edit ${title} section`}
-                        onClick={(event) => event.stopPropagation()}
-                      >
-                        <summary>
-                          <SlidersHorizontal />
-                          <span>Section tools</span>
-                        </summary>
-                        <div
-                          className="memory-section-popover-panel"
-                          role="toolbar"
-                        >
-                          <select
-                            value=""
-                            aria-label="Use a common section name"
-                            onChange={(event) => {
-                              if (event.target.value)
-                                onRenameSideSection?.(id, event.target.value);
-                            }}
-                          >
-                            <option value="">Quick name…</option>
-                            {QUICK_SECTION_NAMES.map((name) => (
-                              <option key={name}>{name}</option>
-                            ))}
-                          </select>
-                          <span
-                            className="memory-section-block-tools"
-                            aria-label="Add content to section"
-                          >
-                            <button
-                              type="button"
-                              title="Add node group"
-                              aria-label="Add node to section"
-                              onClick={(event) => {
-                                onAddNodeToSection?.(id);
-                                event.currentTarget
-                                  .closest("details")
-                                  ?.removeAttribute("open");
-                              }}
-                            >
-                              <Plus />
-                            </button>
-                            <button
-                              type="button"
-                              title="Add text block"
-                              aria-label="Add text block"
-                              onClick={(event) => {
-                                onAddSectionBlock?.(id, "text");
-                                event.currentTarget
-                                  .closest("details")
-                                  ?.removeAttribute("open");
-                              }}
-                            >
-                              <Type />
-                            </button>
-                            <button
-                              type="button"
-                              title="Add callout"
-                              aria-label="Add callout"
-                              onClick={(event) => {
-                                onAddSectionBlock?.(id, "callout");
-                                event.currentTarget
-                                  .closest("details")
-                                  ?.removeAttribute("open");
-                              }}
-                            >
-                              <MessageSquareText />
-                            </button>
-                            <button
-                              type="button"
-                              title="Add table"
-                              aria-label="Add table"
-                              onClick={(event) => {
-                                onAddSectionBlock?.(id, "table");
-                                event.currentTarget
-                                  .closest("details")
-                                  ?.removeAttribute("open");
-                              }}
-                            >
-                              <Table2 />
-                            </button>
-                            <button
-                              type="button"
-                              title="Add flowchart"
-                              aria-label="Add flowchart"
-                              onClick={(event) => {
-                                onAddSectionBlock?.(id, "flowchart");
-                                event.currentTarget
-                                  .closest("details")
-                                  ?.removeAttribute("open");
-                              }}
-                            >
-                              <GitFork />
-                            </button>
-                            <button
-                              type="button"
-                              title="Add checklist"
-                              aria-label="Add checklist"
-                              onClick={(event) => {
-                                onAddSectionBlock?.(id, "checklist");
-                                event.currentTarget
-                                  .closest("details")
-                                  ?.removeAttribute("open");
-                              }}
-                            >
-                              <ListChecks />
-                            </button>
-                            <button
-                              type="button"
-                              title="Add image block"
-                              aria-label="Add image block"
-                              onClick={(event) => {
-                                onAddSectionBlock?.(id, "image");
-                                event.currentTarget
-                                  .closest("details")
-                                  ?.removeAttribute("open");
-                              }}
-                            >
-                              <ImagePlus />
-                            </button>
-                          </span>
-                        </div>
-                      </details>
                     )}
                     <header>
                       <Icon />

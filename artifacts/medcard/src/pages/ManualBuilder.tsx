@@ -28,7 +28,9 @@ import {
   ImagePlus,
   Keyboard,
   Link2,
+  ListChecks,
   Loader2,
+  MessageSquareText,
   Minus,
   Move,
   MousePointer2,
@@ -42,12 +44,27 @@ import {
   Square,
   Sparkles,
   StickyNote,
+  Table2,
   Type,
   Trash2,
   Undo2,
   Wand2,
   X,
 } from "lucide-react";
+
+const QUICK_SECTION_NAMES = [
+  "High yield",
+  "Risk factors",
+  "Associations",
+  "Diagnosis",
+  "Treatment",
+  "Complications",
+  "Clinical features",
+  "Pathophysiology",
+  "Investigations",
+  "Differential diagnosis",
+  "Prognosis",
+] as const;
 
 const EMPTY_TREES: SectionTrees = {
   high_yield: [],
@@ -628,6 +645,21 @@ export function ManualBuilder() {
           : section,
       ),
     );
+
+  const addNodeToSection = (sectionId: string) => {
+    const node = makeNode();
+    setSideSections((current) =>
+      current.map((section) =>
+        section.id === sectionId
+          ? { ...section, nodes: [...section.nodes, node] }
+          : section,
+      ),
+    );
+    setActiveSection(sectionId);
+    setSelectedBlock(null);
+    setSelectedCanvasId(null);
+    setSelectedId(node.id);
+  };
 
   const addSectionBlock = (
     sectionId: string,
@@ -1764,6 +1796,124 @@ export function ManualBuilder() {
               </small>
             </div>
           )}
+          {!selectedNode && activeSideSection && (
+            <div
+              className="manual-context-ribbon is-section-ribbon"
+              role="toolbar"
+              aria-label={`Edit ${activeSideSection.title} section`}
+            >
+              <div className="context-ribbon-identity">
+                <SlidersHorizontal />
+                <span>Section</span>
+                <strong>{activeSideSection.title || "Untitled"}</strong>
+              </div>
+              <label className="context-ribbon-layout">
+                Quick name
+                <select
+                  value=""
+                  aria-label="Use a common section name"
+                  onChange={(event) => {
+                    if (event.target.value)
+                      renameSideSection(
+                        activeSideSection.id,
+                        event.target.value,
+                      );
+                  }}
+                >
+                  <option value="">Choose…</option>
+                  {QUICK_SECTION_NAMES.map((name) => (
+                    <option key={name}>{name}</option>
+                  ))}
+                </select>
+              </label>
+              <div className="context-ribbon-group section-insert-group">
+                <span>Add content</span>
+                <div className="context-ribbon-actions">
+                  <button
+                    type="button"
+                    title="Add a node group"
+                    onClick={() => addNodeToSection(activeSideSection.id)}
+                  >
+                    <Plus /> <span>Node</span>
+                  </button>
+                  <button
+                    type="button"
+                    title="Add text"
+                    onClick={() =>
+                      addSectionBlock(activeSideSection.id, "text")
+                    }
+                  >
+                    <Type /> <span>Text</span>
+                  </button>
+                  <button
+                    type="button"
+                    title="Add a callout"
+                    onClick={() =>
+                      addSectionBlock(activeSideSection.id, "callout")
+                    }
+                  >
+                    <MessageSquareText /> <span>Callout</span>
+                  </button>
+                  <button
+                    type="button"
+                    title="Add a table"
+                    onClick={() =>
+                      addSectionBlock(activeSideSection.id, "table")
+                    }
+                  >
+                    <Table2 /> <span>Table</span>
+                  </button>
+                  <button
+                    type="button"
+                    title="Add a flowchart"
+                    onClick={() =>
+                      addSectionBlock(activeSideSection.id, "flowchart")
+                    }
+                  >
+                    <GitBranch /> <span>Flow</span>
+                  </button>
+                  <button
+                    type="button"
+                    title="Add a checklist"
+                    onClick={() =>
+                      addSectionBlock(activeSideSection.id, "checklist")
+                    }
+                  >
+                    <ListChecks /> <span>Checklist</span>
+                  </button>
+                  <button
+                    type="button"
+                    title="Add an image block"
+                    onClick={() =>
+                      addSectionBlock(activeSideSection.id, "image")
+                    }
+                  >
+                    <ImagePlus /> <span>Image</span>
+                  </button>
+                </div>
+              </div>
+              <div className="context-ribbon-actions">
+                <button
+                  type="button"
+                  title="Add another section below"
+                  onClick={() => addSideSectionAfter(activeSideSection.id)}
+                >
+                  <CirclePlus /> <span>Section</span>
+                </button>
+                <button
+                  type="button"
+                  className="is-danger"
+                  title="Delete section (Delete key)"
+                  onClick={() => deleteSideSection(activeSideSection.id)}
+                >
+                  <Trash2 /> <span>Delete</span>
+                </button>
+              </div>
+              <small>
+                Type the title on the card · Delete removes the section
+              </small>
+            </div>
+          )}
           <MemoryCardCanvas
             topic={topic}
             flow={flow}
@@ -1824,19 +1974,6 @@ export function ManualBuilder() {
               setFlow((current) => [...current, node]);
               setSelectedId(node.id);
             }}
-            onAddNodeToSection={(sectionId) => {
-              const node = makeNode();
-              setSideSections((current) =>
-                current.map((section) =>
-                  section.id === sectionId
-                    ? { ...section, nodes: [...section.nodes, node] }
-                    : section,
-                ),
-              );
-              setActiveSection(sectionId);
-              setSelectedId(node.id);
-            }}
-            onAddSectionBlock={addSectionBlock}
             onUpdateSectionBlock={updateSectionBlock}
             onDeleteSectionBlock={deleteSectionBlock}
             onDuplicateSectionBlock={duplicateSectionBlock}
