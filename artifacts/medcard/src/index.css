@@ -1985,6 +1985,7 @@
 .memory-card.is-adaptive .memory-section {
   grid-column: 1 / -1;
   width: 100%;
+  margin-bottom: 22px;
 }
 
 .memory-card-title {
@@ -2047,6 +2048,7 @@
 .memory-section {
   --section-accent: #177d72;
   --section-wash: #f4f7f7;
+  position: relative;
   min-width: 0;
   padding: var(--memory-section-pad) calc(var(--memory-section-pad) + 2px)
     calc(var(--memory-section-pad) + 2px);
@@ -2426,14 +2428,178 @@
 .memory-direct-actions {
   position: absolute;
   z-index: 40;
-  top: -24px;
-  right: -4px;
+  top: 50%;
+  right: auto;
+  left: -25px;
   display: flex;
   gap: 2px;
   padding: 2px;
   border-radius: 999px;
   background: #fff;
   box-shadow: 0 3px 10px rgba(25, 50, 80, 0.2);
+  transform: translateY(-50%);
+}
+.memory-node-popover,
+.memory-section-popover {
+  position: absolute;
+  z-index: 70;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  display: flex;
+  max-width: min(560px, 88vw);
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #cbd9e8;
+  border-radius: 10px;
+  padding: 6px;
+  color: #40566f;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 9px 28px rgba(24, 52, 82, 0.2);
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.memory-node-popover::after,
+.memory-section-popover::after {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  border-right: 1px solid #cbd9e8;
+  border-bottom: 1px solid #cbd9e8;
+  background: #fff;
+  content: "";
+  transform: translate(-50%, -5px) rotate(45deg);
+}
+.memory-node-popover-title {
+  font-size: 9px;
+  font-weight: 850;
+}
+.memory-node-popover-palette {
+  display: flex;
+  gap: 3px;
+}
+.memory-node-popover-palette button,
+.memory-node-popover > button,
+.memory-section-popover > button {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(24, 52, 82, 0.13);
+  border-radius: 6px;
+  background: #f4f7fa;
+  cursor: pointer;
+}
+.memory-node-popover-palette button {
+  font-size: 8px;
+  font-weight: 850;
+}
+.memory-node-popover label,
+.memory-section-popover label {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 8px;
+  font-weight: 800;
+}
+.memory-node-popover input[type="color"] {
+  width: 25px;
+  height: 25px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.memory-node-popover select,
+.memory-section-popover select,
+.memory-section-popover input {
+  height: 27px;
+  border: 1px solid #cfdae6;
+  border-radius: 6px;
+  padding: 0 7px;
+  color: #304962;
+  background: #fff;
+  font-size: 9px;
+  font-weight: 700;
+}
+.memory-node-popover svg,
+.memory-section-popover svg {
+  width: 12px;
+  height: 12px;
+}
+.memory-section-popover {
+  min-width: min(360px, 82vw);
+}
+.memory-section-popover label {
+  flex: 1;
+}
+.memory-section-popover input {
+  min-width: 0;
+  flex: 1;
+}
+.memory-section-popover select {
+  max-width: 104px;
+}
+.memory-section-popover > button {
+  color: #b43d49;
+  background: #fff0f0;
+}
+.memory-section-insert {
+  position: absolute;
+  z-index: 45;
+  right: 0;
+  bottom: -27px;
+  left: 0;
+  display: flex;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px dashed #8bb9e7;
+  border-radius: 7px;
+  color: #1768b7;
+  background: #eef7ff;
+  font-size: 9px;
+  font-weight: 800;
+  opacity: 0;
+  cursor: pointer;
+  transition:
+    opacity 100ms ease,
+    background 100ms ease;
+}
+.memory-section:hover > .memory-section-insert,
+.memory-section-insert:focus-visible {
+  opacity: 1;
+}
+.memory-section-insert:hover {
+  background: #dceeff;
+}
+.memory-section-insert svg,
+.memory-empty-insert svg {
+  width: 12px;
+  height: 12px;
+}
+.memory-empty-insert {
+  display: flex;
+  min-height: 72px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px dashed #9fc3e8;
+  border-radius: 8px;
+  color: #1768b7;
+  background: rgba(238, 247, 255, 0.72);
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.memory-empty-insert:hover,
+.memory-empty-insert:focus-visible {
+  border-color: #2878e3;
+  background: #e2f1ff;
+  outline: 2px solid rgba(40, 120, 227, 0.18);
 }
 .memory-add-handle {
   position: absolute;

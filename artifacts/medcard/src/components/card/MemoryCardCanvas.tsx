@@ -15,12 +15,14 @@ import {
   Activity,
   AlertTriangle,
   BookOpenCheck,
+  Copy,
   HeartPulse,
   Link2,
   Move,
   Plus,
   Pill,
   Trash2,
+  Undo2,
 } from "lucide-react";
 import {
   createContext,
@@ -41,6 +43,8 @@ export interface DirectNodeEditing {
   onDelete: (id: string) => void;
   onConnectionClick: (id: string) => void;
   onAttach: (id: string, attachment: NodeAttachment) => void;
+  onDuplicate: (node: FlowNode) => void;
+  isSideNode: (id: string) => boolean;
 }
 
 const DirectNodeContext = createContext<DirectNodeEditing | null>(null);
@@ -61,7 +65,39 @@ interface MemoryCardCanvasProps {
   sideSections?: SideSection[];
   onAttachToSection?: (id: string, attachment: NodeAttachment) => void;
   onRemoveSectionAttachment?: (sectionId: string, attachmentId: string) => void;
+  selectedSectionId?: string | null;
+  onRenameSideSection?: (id: string, title: string) => void;
+  onDeleteSideSection?: (id: string) => void;
+  onAddSideSectionAfter?: (id: string) => void;
+  onSelectSideSection?: (id: string) => void;
+  onAddFirstSideSection?: () => void;
+  onAddRootNode?: () => void;
 }
+
+const DIRECT_NODE_PALETTE = [
+  ["#ffffff", "#172033"],
+  ["#dff4ff", "#12344d"],
+  ["#dcfce7", "#14532d"],
+  ["#fef3c7", "#713f12"],
+  ["#fce7f3", "#831843"],
+  ["#ede9fe", "#4c1d95"],
+  ["#fee2e2", "#7f1d1d"],
+  ["#16324f", "#ffffff"],
+] as const;
+
+const QUICK_SECTION_NAMES = [
+  "High yield",
+  "Risk factors",
+  "Associations",
+  "Diagnosis",
+  "Treatment",
+  "Complications",
+  "Clinical features",
+  "Pathophysiology",
+  "Investigations",
+  "Differential diagnosis",
+  "Prognosis",
+] as const;
 
 const SECTION_CONFIG: Array<{
   key: keyof SectionTrees;
@@ -378,6 +414,90 @@ function DirectNodeActions({ node }: { node: FlowNode }) {
       >
         <Plus />
       </button>
+      <span
+        className="memory-node-popover"
+        role="toolbar"
+        aria-label={`Edit ${node.label}`}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <span className="memory-node-popover-title">Edit node</span>
+        <span
+          className="memory-node-popover-palette"
+          aria-label="Node color presets"
+        >
+          {DIRECT_NODE_PALETTE.map(([backgroundColor, textColor]) => (
+            <button
+              type="button"
+              key={backgroundColor}
+              title={`Use ${backgroundColor}`}
+              style={{ background: backgroundColor, color: textColor }}
+              onClick={() =>
+                editor.onChange(node.id, { backgroundColor, textColor })
+              }
+            >
+              Aa
+            </button>
+          ))}
+        </span>
+        <label>
+          Fill
+          <input
+            type="color"
+            value={node.backgroundColor ?? "#ffffff"}
+            aria-label="Node fill color"
+            onChange={(event) =>
+              editor.onChange(node.id, { backgroundColor: event.target.value })
+            }
+          />
+        </label>
+        <label>
+          Text
+          <input
+            type="color"
+            value={node.textColor ?? "#172033"}
+            aria-label="Node text color"
+            onChange={(event) =>
+              editor.onChange(node.id, { textColor: event.target.value })
+            }
+          />
+        </label>
+        {editor.isSideNode(node.id) && (
+          <select
+            value={node.presentation ?? "bullets"}
+            aria-label="Node layout"
+            onChange={(event) =>
+              editor.onChange(node.id, {
+                presentation: event.target.value as NonNullable<
+                  FlowNode["presentation"]
+                >,
+              })
+            }
+          >
+            <option value="bullets">Bullets</option>
+            <option value="callout">Callout</option>
+            <option value="table">Table</option>
+            <option value="diagram">Diagram</option>
+          </select>
+        )}
+        <button
+          type="button"
+          title="Duplicate node"
+          aria-label="Duplicate node"
+          onClick={() => editor.onDuplicate(node)}
+        >
+          <Copy />
+        </button>
+        {node.position && (
+          <button
+            type="button"
+            title="Return to automatic layout"
+            aria-label="Reset node position"
+            onClick={() => editor.onChange(node.id, { position: undefined })}
+          >
+            <Undo2 />
+          </button>
+        )}
+      </span>
       <span className="memory-direct-actions">
         <button
           type="button"
@@ -1215,13 +1335,20 @@ export function MemoryCardCanvas({
   sideSections,
   onAttachToSection,
   onRemoveSectionAttachment,
+  selectedSectionId,
+  onRenameSideSection,
+  onDeleteSideSection,
+  onAddSideSectionAfter,
+  onSelectSideSection,
+  onAddFirstSideSection,
+  onAddRootNode,
 }: MemoryCardCanvasProps) {
   const cardRef = useRef<HTMLElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   const totalNodes =
     countNodes(flow) +
-    (sideSections?.length
+    (sideSections !== undefined
       ? sideSections.reduce(
           (total, section) => total + countNodes(section.nodes),
           0,
@@ -1236,27 +1363,30 @@ export function MemoryCardCanvas({
     ({ key }) =>
       (sectionTrees[key]?.length ?? 0) > 0 || imagesFor(key).length > 0,
   );
-  const renderedSections = sideSections?.length
-    ? sideSections.map((section, index) => ({
-        id: section.id,
-        title: section.title,
-        nodes: section.nodes,
-        attachments: section.attachments,
-        Icon: SECTION_CONFIG[index % SECTION_CONFIG.length].icon,
-        accent: SECTION_CONFIG[index % SECTION_CONFIG.length].accent,
-        roleOverride: undefined as SemanticRole | undefined,
-        images: [] as CardImage[],
-      }))
-    : visibleSections.map(({ key, title, icon: Icon, accent }) => ({
-        id: key,
-        title,
-        nodes: sectionTrees[key] ?? [],
-        attachments: undefined,
-        Icon,
-        accent,
-        roleOverride: SECTION_ROLES[key],
-        images: imagesFor(key),
-      }));
+  const renderedSections =
+    sideSections !== undefined
+      ? sideSections.map((section, index) => ({
+          id: section.id,
+          title: section.title,
+          nodes: section.nodes,
+          attachments: section.attachments,
+          Icon: SECTION_CONFIG[index % SECTION_CONFIG.length].icon,
+          accent: SECTION_CONFIG[index % SECTION_CONFIG.length].accent,
+          roleOverride: undefined as SemanticRole | undefined,
+          images: [] as CardImage[],
+          custom: true,
+        }))
+      : visibleSections.map(({ key, title, icon: Icon, accent }) => ({
+          id: key,
+          title,
+          nodes: sectionTrees[key] ?? [],
+          attachments: undefined,
+          Icon,
+          accent,
+          roleOverride: SECTION_ROLES[key],
+          images: imagesFor(key),
+          custom: false,
+        }));
 
   useLayoutEffect(() => {
     const card = cardRef.current;
@@ -1361,6 +1491,7 @@ export function MemoryCardCanvas({
                 accent,
                 roleOverride,
                 images: sectionImages,
+                custom,
               }) => {
                 const nodeCount = countNodes(nodes);
                 const nodeLabels = collectNodeLabels(nodes);
@@ -1375,6 +1506,7 @@ export function MemoryCardCanvas({
                     key={id}
                     tabIndex={directNodeEditing ? 0 : undefined}
                     aria-label={`${title} section`}
+                    onClick={() => custom && onSelectSideSection?.(id)}
                     onDragOver={(event) =>
                       onAttachToSection && event.preventDefault()
                     }
@@ -1386,6 +1518,47 @@ export function MemoryCardCanvas({
                       );
                     }}
                   >
+                    {custom && selectedSectionId === id && (
+                      <div
+                        className="memory-section-popover"
+                        role="toolbar"
+                        aria-label={`Edit ${title} section`}
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <label>
+                          Section name
+                          <input
+                            value={title}
+                            autoFocus
+                            aria-label="Section name"
+                            onChange={(event) =>
+                              onRenameSideSection?.(id, event.target.value)
+                            }
+                          />
+                        </label>
+                        <select
+                          value=""
+                          aria-label="Use a common section name"
+                          onChange={(event) => {
+                            if (event.target.value)
+                              onRenameSideSection?.(id, event.target.value);
+                          }}
+                        >
+                          <option value="">Quick name…</option>
+                          {QUICK_SECTION_NAMES.map((name) => (
+                            <option key={name}>{name}</option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          title="Delete section"
+                          aria-label={`Delete ${title} section`}
+                          onClick={() => onDeleteSideSection?.(id)}
+                        >
+                          <Trash2 />
+                        </button>
+                      </div>
+                    )}
                     <header>
                       <Icon />
                       <h2>{title}</h2>
@@ -1406,9 +1579,33 @@ export function MemoryCardCanvas({
                       attachments={attachments}
                       onRemove={onRemoveSectionAttachment}
                     />
+                    {custom && onAddSideSectionAfter && (
+                      <button
+                        type="button"
+                        className="memory-section-insert"
+                        aria-label={`Add a section below ${title}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onAddSideSectionAfter(id);
+                        }}
+                      >
+                        <Plus />
+                        <span>Add section here</span>
+                      </button>
+                    )}
                   </section>
                 );
               },
+            )}
+            {sideSections !== undefined && sideSections.length === 0 && (
+              <button
+                type="button"
+                className="memory-empty-insert"
+                onClick={onAddFirstSideSection}
+              >
+                <Plus />
+                <span>Add first side section</span>
+              </button>
             )}
           </aside>
 
@@ -1416,9 +1613,14 @@ export function MemoryCardCanvas({
             {flow.length ? (
               <MemoryFlowGraph nodes={flow} />
             ) : (
-              <div className="memory-empty">
-                No central mechanism was identified.
-              </div>
+              <button
+                type="button"
+                className="memory-empty memory-empty-insert"
+                onClick={onAddRootNode}
+              >
+                <Plus />
+                <span>Add first node</span>
+              </button>
             )}
             <SectionImages images={imagesFor("main")} />
           </main>

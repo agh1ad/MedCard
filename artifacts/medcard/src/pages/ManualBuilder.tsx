@@ -317,6 +317,22 @@ export function ManualBuilder() {
     setSelectedId(null);
   };
 
+  const addSideSectionAfter = (afterId: string) => {
+    const section: SideSection = {
+      id: `section-${crypto.randomUUID()}`,
+      title: `New section ${sideSections.length + 1}`,
+      nodes: [],
+    };
+    setSideSections((current) => {
+      const index = current.findIndex((item) => item.id === afterId);
+      const next = [...current];
+      next.splice(index < 0 ? current.length : index + 1, 0, section);
+      return next;
+    });
+    setActiveSection(section.id);
+    setSelectedId(null);
+  };
+
   const renameSideSection = (id: string, title: string) =>
     setSideSections((current) =>
       current.map((section) =>
@@ -1017,201 +1033,6 @@ export function ManualBuilder() {
                 ? "Node selected. Use the plus below for a child or the plus at the side for a sibling."
                 : "Interactive card preview ready."}
           </p>
-          <div
-            className="direct-node-toolbar"
-            aria-label="Interactive node tools"
-          >
-            <div className="direct-section-tabs">
-              {[{ id: "main", title: "Main flow" }, ...sideSections].map(
-                (section) => (
-                  <button
-                    type="button"
-                    key={section.id}
-                    className={activeSection === section.id ? "is-active" : ""}
-                    onClick={() => {
-                      setActiveSection(section.id);
-                      setSelectedId(null);
-                      setConnectionSourceId(null);
-                    }}
-                  >
-                    {section.title}
-                  </button>
-                ),
-              )}
-              <button
-                type="button"
-                className="add-section"
-                onClick={() => addSideSection()}
-              >
-                <Plus /> Add section
-              </button>
-              <select
-                className="quick-section-select"
-                aria-label="Quick add common section"
-                value=""
-                onChange={(event) => {
-                  if (event.target.value) addSideSection(event.target.value);
-                }}
-              >
-                <option value="">Quick section…</option>
-                <option>High yield</option>
-                <option>Risk factors</option>
-                <option>Associations</option>
-                <option>Diagnosis</option>
-                <option>Treatment</option>
-                <option>Complications</option>
-                <option>Clinical features</option>
-                <option>Pathophysiology</option>
-                <option>Investigations</option>
-                <option>Differential diagnosis</option>
-                <option>Prognosis</option>
-              </select>
-            </div>
-            {activeSideSection && (
-              <div className="direct-section-editor">
-                <label>
-                  Section name
-                  <input
-                    value={activeSideSection.title}
-                    onChange={(event) =>
-                      renameSideSection(
-                        activeSideSection.id,
-                        event.target.value,
-                      )
-                    }
-                    aria-label="Section name"
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={() => deleteSideSection(activeSideSection.id)}
-                  aria-label="Delete section"
-                  title="Delete this section"
-                >
-                  <Trash2 />
-                </button>
-              </div>
-            )}
-            <div className="direct-node-actions-bar">
-              <Button size="sm" onClick={() => addRoot()}>
-                <Plus className="mr-1 h-4 w-4" /> Add node
-              </Button>
-              {connectionSourceId && (
-                <button
-                  type="button"
-                  onClick={() => setConnectionSourceId(null)}
-                >
-                  <Link2 /> Choose the target node <X />
-                </button>
-              )}
-              <small>
-                Click a node to type, add a child, connect, or delete.
-              </small>
-            </div>
-            {selectedNode && (
-              <div className="direct-node-format-bar">
-                <span className="direct-format-label">Selected node</span>
-                <div
-                  className="direct-format-palette"
-                  aria-label="Quick node colors"
-                >
-                  {PALETTE.map(([background, textColor]) => (
-                    <button
-                      type="button"
-                      key={background}
-                      title={`${background} / ${textColor}`}
-                      style={{ background, color: textColor }}
-                      onClick={() =>
-                        updateNodeAnywhere(selectedNode.id, {
-                          backgroundColor: background,
-                          textColor,
-                        })
-                      }
-                    >
-                      Aa
-                    </button>
-                  ))}
-                </div>
-                <label title="Custom node background">
-                  Fill
-                  <input
-                    type="color"
-                    value={selectedNode.backgroundColor ?? "#ffffff"}
-                    onChange={(event) =>
-                      updateNodeAnywhere(selectedNode.id, {
-                        backgroundColor: event.target.value,
-                      })
-                    }
-                  />
-                </label>
-                <label title="Custom node text color">
-                  Text
-                  <input
-                    type="color"
-                    value={selectedNode.textColor ?? "#172033"}
-                    onChange={(event) =>
-                      updateNodeAnywhere(selectedNode.id, {
-                        textColor: event.target.value,
-                      })
-                    }
-                  />
-                </label>
-                {activeSection !== "main" && (
-                  <select
-                    aria-label="Side node layout"
-                    value={selectedNode.presentation ?? "bullets"}
-                    onChange={(event) =>
-                      updateNodeAnywhere(selectedNode.id, {
-                        presentation: event.target.value as NonNullable<
-                          FlowNode["presentation"]
-                        >,
-                      })
-                    }
-                  >
-                    <option value="bullets">Bullets</option>
-                    <option value="callout">Callout</option>
-                    <option value="table">Table</option>
-                    <option value="diagram">Diagram</option>
-                  </select>
-                )}
-                <button
-                  type="button"
-                  title="Duplicate node"
-                  onClick={() => duplicate(selectedNode)}
-                >
-                  <Copy />
-                </button>
-                {(selectedNode.additionalParentIds?.length ?? 0) > 0 && (
-                  <button
-                    type="button"
-                    title="Clear extra connections"
-                    onClick={() =>
-                      updateNodeAnywhere(selectedNode.id, {
-                        additionalParentIds: [],
-                      })
-                    }
-                  >
-                    <Link2 />
-                    <X />
-                  </button>
-                )}
-                {selectedNode.position && (
-                  <button
-                    type="button"
-                    title="Return node to automatic layout"
-                    aria-label="Reset node position"
-                    onClick={() =>
-                      updateNodeAnywhere(selectedNode.id, {
-                        position: undefined,
-                      })
-                    }
-                  >
-                    <Undo2 />
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
           <div className="freeform-toolbar" aria-label="Freeform page tools">
             <button
               type="button"
@@ -1417,9 +1238,27 @@ export function ManualBuilder() {
               onDelete: deleteNodeAnywhere,
               onConnectionClick: handleConnectionClick,
               onAttach: attachToNode,
+              onDuplicate: duplicate,
+              isSideNode: (id) => sectionForNode(id) !== "main",
             }}
             onAttachToSection={attachToSection}
             onRemoveSectionAttachment={removeSectionAttachment}
+            selectedSectionId={activeSection === "main" ? null : activeSection}
+            onRenameSideSection={renameSideSection}
+            onDeleteSideSection={deleteSideSection}
+            onAddSideSectionAfter={addSideSectionAfter}
+            onSelectSideSection={(id) => {
+              setActiveSection(id);
+              setSelectedId(null);
+              setSelectedCanvasId(null);
+            }}
+            onAddFirstSideSection={() => addSideSection()}
+            onAddRootNode={() => {
+              const node = makeNode();
+              setActiveSection("main");
+              setFlow((current) => [...current, node]);
+              setSelectedId(node.id);
+            }}
           />
         </aside>
       </div>
