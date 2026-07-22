@@ -5,6 +5,7 @@ import {
   FilePlus2,
   Files,
   Menu,
+  PencilRuler,
   PanelLeftClose,
   PanelLeftOpen,
   Sparkles,
@@ -21,16 +22,22 @@ export function AppLayout({ children }: { children: ReactNode }) {
     setMobileOpen(false);
   }, [location]);
 
-  const isLibrary = location === "/" || location.startsWith("/folders/") || location.startsWith("/notebooks/");
+  const isLibrary =
+    location === "/" ||
+    location.startsWith("/folders/") ||
+    location.startsWith("/notebooks/");
   const isGenerate = location === "/generate";
+  const isManual = location === "/manual";
   const isCard = location.startsWith("/cards/");
   const pageTitle = isLibrary
     ? "Documents"
     : isGenerate
       ? "New MedCard"
-      : isCard
-        ? "Study card"
-        : "MedCard";
+      : isManual
+        ? "Manual builder"
+        : isCard
+          ? "Study card"
+          : "MedCard";
 
   return (
     <div
@@ -52,7 +59,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
         aria-label="Primary navigation"
       >
         <div className="medcard-sidebar-header">
-          <Link href="/" className="medcard-brand" aria-label="MedCard documents">
+          <Link
+            href="/"
+            className="medcard-brand"
+            aria-label="MedCard documents"
+          >
             <span className="medcard-brand-mark">
               <Stethoscope aria-hidden="true" />
             </span>
@@ -96,6 +107,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <Sparkles aria-hidden="true" />
             <span>AI card builder</span>
           </Link>
+          <Link
+            href="/manual"
+            className={`medcard-nav-item ${isManual ? "is-active" : ""}`}
+            aria-current={isManual ? "page" : undefined}
+            title="Build manually"
+          >
+            <PencilRuler aria-hidden="true" />
+            <span>Manual builder</span>
+          </Link>
         </nav>
 
         <div className="medcard-sidebar-note">
@@ -109,7 +129,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <button
           type="button"
           className="medcard-sidebar-toggle"
-          aria-label={sidebarCollapsed ? "Expand navigation" : "Collapse navigation"}
+          aria-label={
+            sidebarCollapsed ? "Expand navigation" : "Collapse navigation"
+          }
           onClick={() => setSidebarCollapsed((value) => !value)}
           title={sidebarCollapsed ? "Expand navigation" : "Collapse navigation"}
         >
@@ -130,7 +152,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <Menu />
             </button>
             {isCard && (
-              <Link href="/" className="medcard-breadcrumb-back" aria-label="Back to documents">
+              <Link
+                href="/"
+                className="medcard-breadcrumb-back"
+                aria-label="Back to documents"
+              >
                 <ChevronLeft />
                 <span>Documents</span>
               </Link>
@@ -138,7 +164,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             {isCard && <span className="medcard-breadcrumb-separator">/</span>}
             <h1>{pageTitle}</h1>
           </div>
-          {!isGenerate && (
+          {!isGenerate && !isManual && (
             <Link href="/generate" className="medcard-topbar-new">
               <FilePlus2 aria-hidden="true" />
               <span>New</span>

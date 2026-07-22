@@ -38,4 +38,14 @@ export interface FlowNode {
   highlightTerms?: string[];
   /** Visual-memory color assigned to this node */
   tone?: FlowNodeTone;
+  /**
+     * User-selected node background color
+     * @pattern ^#[0-9a-fA-F]{6}$
+     */
+  backgroundColor?: string;
+  /**
+     * User-selected node text color
+     * @pattern ^#[0-9a-fA-F]{6}$
+     */
+  textColor?: string;
 }

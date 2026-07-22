@@ -1,4 +1,11 @@
-import { pgTable, serial, text, timestamp, jsonb, integer } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  jsonb,
+  integer,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -26,6 +33,8 @@ export type FlowNode = z.infer<typeof FlowNodeSchemaBase> & {
     | "fact";
   highlightTerms?: string[];
   tone?: "ink" | "blue" | "green" | "pink" | "violet" | "amber";
+  backgroundColor?: string;
+  textColor?: string;
 };
 
 export const FlowNodeSchema: z.ZodType<FlowNode> = FlowNodeSchemaBase.extend({
@@ -48,6 +57,14 @@ export const FlowNodeSchema: z.ZodType<FlowNode> = FlowNodeSchemaBase.extend({
     .optional(),
   highlightTerms: z.array(z.string()).optional(),
   tone: z.enum(["ink", "blue", "green", "pink", "violet", "amber"]).optional(),
+  backgroundColor: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .optional(),
+  textColor: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .optional(),
 });
 
 export const SidebarSectionsSchema = z.object({
@@ -98,6 +115,32 @@ export const CardImageSchema = z.object({
 
 export type CardImage = z.infer<typeof CardImageSchema>;
 
+export const CanvasElementSchema = z.object({
+  id: z.string(),
+  type: z.enum([
+    "text",
+    "note",
+    "image",
+    "rectangle",
+    "ellipse",
+    "line",
+    "drawing",
+  ]),
+  x: z.number(),
+  y: z.number(),
+  width: z.number(),
+  height: z.number(),
+  content: z.string().optional(),
+  dataUrl: z.string().optional(),
+  backgroundColor: z.string().optional(),
+  textColor: z.string().optional(),
+  strokeColor: z.string().optional(),
+  strokeWidth: z.number().optional(),
+  points: z.array(z.object({ x: z.number(), y: z.number() })).optional(),
+});
+
+export type CanvasElement = z.infer<typeof CanvasElementSchema>;
+
 export const emptySectionTrees = (): SectionTrees => ({
   high_yield: [],
   risk_factors: [],
@@ -123,6 +166,10 @@ export const cardsTable = pgTable("cards", {
     .$type<SectionTrees>()
     .default(emptySectionTrees()),
   images: jsonb("images").notNull().$type<CardImage[]>().default([]),
+  canvasElements: jsonb("canvas_elements")
+    .notNull()
+    .$type<CanvasElement[]>()
+    .default([]),
   notebookId: integer("notebook_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

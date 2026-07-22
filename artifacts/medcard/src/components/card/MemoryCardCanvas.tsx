@@ -1,9 +1,14 @@
 import type {
+  CanvasElement,
   CardImage,
   CardImageSection,
   FlowNode,
   SectionTrees,
 } from "@workspace/api-client-react";
+import {
+  FreeformCanvasLayer,
+  type FreeformTool,
+} from "@/components/card/FreeformCanvasLayer";
 import {
   Activity,
   AlertTriangle,
@@ -20,6 +25,12 @@ interface MemoryCardCanvasProps {
   sectionTrees: SectionTrees;
   images?: CardImage[];
   className?: string;
+  canvasElements?: CanvasElement[];
+  onCanvasElementsChange?: (elements: CanvasElement[]) => void;
+  freeformTool?: FreeformTool;
+  freeformColor?: string;
+  selectedCanvasId?: string | null;
+  onSelectCanvasElement?: (id: string | null) => void;
 }
 
 const SECTION_CONFIG: Array<{
@@ -180,13 +191,22 @@ function MemoryNodeCell({
   return (
     <div
       className={`memory-node role-${semanticRole} origin-${node.origin ?? "source"}`}
+      style={
+        node.backgroundColor || node.textColor
+          ? {
+              background: node.backgroundColor,
+              color: node.textColor,
+              borderColor: node.backgroundColor,
+            }
+          : undefined
+      }
       title={node.origin === "ai_added" ? "Added by AI for context" : undefined}
     >
       <span>
         <HighlightedText text={node.label} terms={node.highlightTerms} />
       </span>
       {node.sublabel && (
-        <small>
+        <small style={node.textColor ? { color: node.textColor } : undefined}>
           <HighlightedText text={node.sublabel} terms={node.highlightTerms} />
         </small>
       )}
@@ -446,6 +466,16 @@ function MemoryBulletList({
         return (
           <li
             className={`role-${semanticRole} origin-${node.origin ?? "source"}`}
+            style={
+              node.backgroundColor || node.textColor
+                ? {
+                    background: node.backgroundColor,
+                    color: node.textColor,
+                    borderRadius: "0.35em",
+                    padding: node.backgroundColor ? "0.18em 0.32em" : undefined,
+                  }
+                : undefined
+            }
             key={node.id}
             title={
               node.origin === "ai_added" ? "Added by AI for context" : undefined
@@ -459,7 +489,10 @@ function MemoryBulletList({
                 />
               </strong>
               {detailParts.length === 1 && (
-                <span className="memory-bullet-detail">
+                <span
+                  className="memory-bullet-detail"
+                  style={node.textColor ? { color: node.textColor } : undefined}
+                >
                   <HighlightedText
                     text={detailParts[0]}
                     terms={node.highlightTerms}
@@ -468,7 +501,10 @@ function MemoryBulletList({
               )}
             </div>
             {hasDetailList && (
-              <ul className="memory-bullet-detail-list">
+              <ul
+                className="memory-bullet-detail-list"
+                style={node.textColor ? { color: node.textColor } : undefined}
+              >
                 {detailParts.map((part, index) => (
                   <li key={`${node.id}-detail-${index}`}>
                     <HighlightedText text={part} terms={node.highlightTerms} />
@@ -477,7 +513,10 @@ function MemoryBulletList({
               </ul>
             )}
             {linkedFrom.length > 0 && (
-              <span className="memory-bullet-links">
+              <span
+                className="memory-bullet-links"
+                style={node.textColor ? { color: node.textColor } : undefined}
+              >
                 Linked from: {linkedFrom.join(" + ")}
               </span>
             )}
@@ -493,7 +532,10 @@ function MemoryBulletList({
   );
 }
 
-function collectNodeLabels(nodes: FlowNode[], labels = new Map<string, string>()) {
+function collectNodeLabels(
+  nodes: FlowNode[],
+  labels = new Map<string, string>(),
+) {
   for (const node of nodes) {
     labels.set(node.id, node.label);
     collectNodeLabels(node.children ?? [], labels);
@@ -528,7 +570,10 @@ function MemorySideTable({
             <tr key={row.id}>
               <td>
                 <strong>
-                  <HighlightedText text={row.label} terms={row.highlightTerms} />
+                  <HighlightedText
+                    text={row.label}
+                    terms={row.highlightTerms}
+                  />
                 </strong>
               </td>
               <td>
@@ -559,19 +604,23 @@ function MemorySideCallout({
   nodeLabels: Map<string, string>;
 }) {
   return (
-    <div className="memory-side-callout">
+    <div
+      className="memory-side-callout"
+      style={
+        root.backgroundColor || root.textColor
+          ? { background: root.backgroundColor, color: root.textColor }
+          : undefined
+      }
+    >
       <strong>
         <HighlightedText text={root.label} terms={root.highlightTerms} />
       </strong>
       {root.sublabel && (
-        <p>
+        <p style={root.textColor ? { color: root.textColor } : undefined}>
           <HighlightedText text={root.sublabel} terms={root.highlightTerms} />
         </p>
       )}
-      <MemoryBulletList
-        nodes={root.children ?? []}
-        nodeLabels={nodeLabels}
-      />
+      <MemoryBulletList nodes={root.children ?? []} nodeLabels={nodeLabels} />
     </div>
   );
 }
@@ -627,6 +676,12 @@ export function MemoryCardCanvas({
   sectionTrees,
   images = [],
   className = "",
+  canvasElements = [],
+  onCanvasElementsChange,
+  freeformTool,
+  freeformColor,
+  selectedCanvasId,
+  onSelectCanvasElement,
 }: MemoryCardCanvasProps) {
   const cardRef = useRef<HTMLElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
@@ -707,7 +762,9 @@ export function MemoryCardCanvas({
             const nodeCount = countNodes(nodes);
             const nodeLabels = collectNodeLabels(nodes);
             const usesWidePresentation = nodes.some(
-              (node) => node.presentation === "table" || node.presentation === "diagram",
+              (node) =>
+                node.presentation === "table" ||
+                node.presentation === "diagram",
             );
             return (
               <section
@@ -749,6 +806,14 @@ export function MemoryCardCanvas({
           <span>SOURCE-TRACEABLE VISUAL CARD</span>
           <span>{totalNodes} information blocks</span>
         </footer>
+        <FreeformCanvasLayer
+          elements={canvasElements}
+          onChange={onCanvasElementsChange}
+          tool={freeformTool}
+          strokeColor={freeformColor}
+          selectedId={selectedCanvasId}
+          onSelect={onSelectCanvasElement}
+        />
       </article>
     </div>
   );

@@ -469,7 +469,16 @@ components:
           description: Whether the wording is original, AI-enhanced, or newly added by AI
         semanticRole:
           type: string
-          enum: [core, manifestation, diagnosis, treatment, complication, explanation, fact]
+          enum:
+            [
+              core,
+              manifestation,
+              diagnosis,
+              treatment,
+              complication,
+              explanation,
+              fact,
+            ]
           description: Meaning-based color role for visual memorization
         highlightTerms:
           type: array
@@ -480,6 +489,14 @@ components:
           type: string
           enum: [ink, blue, green, pink, violet, amber]
           description: Visual-memory color assigned to this node
+        backgroundColor:
+          type: string
+          pattern: "^#[0-9a-fA-F]{6}$"
+          description: User-selected node background color
+        textColor:
+          type: string
+          pattern: "^#[0-9a-fA-F]{6}$"
+          description: User-selected node text color
 
     SourceBlock:
       type: object
@@ -493,7 +510,15 @@ components:
 
     SectionTrees:
       type: object
-      required: [high_yield, risk_factors, associations, diagnosis, treatment, complications]
+      required:
+        [
+          high_yield,
+          risk_factors,
+          associations,
+          diagnosis,
+          treatment,
+          complications,
+        ]
       properties:
         high_yield:
           type: array
@@ -535,7 +560,44 @@ components:
           type: string
         section:
           type: string
-          enum: [main, high_yield, risk_factors, associations, diagnosis, treatment, complications]
+          enum:
+            [
+              main,
+              high_yield,
+              risk_factors,
+              associations,
+              diagnosis,
+              treatment,
+              complications,
+            ]
+
+    SidebarSections:
+    CanvasElement:
+      type: object
+      required: [id, type, x, y, width, height]
+      properties:
+        id: { type: string }
+        type:
+          type: string
+          enum: [text, note, image, rectangle, ellipse, line, drawing]
+        x: { type: number }
+        y: { type: number }
+        width: { type: number }
+        height: { type: number }
+        content: { type: string }
+        dataUrl: { type: string }
+        backgroundColor: { type: string }
+        textColor: { type: string }
+        strokeColor: { type: string }
+        strokeWidth: { type: number }
+        points:
+          type: array
+          items:
+            type: object
+            required: [x, y]
+            properties:
+              x: { type: number }
+              y: { type: number }
 
     SidebarSections:
       type: object
@@ -569,7 +631,20 @@ components:
 
     Card:
       type: object
-      required: [id, topic, flow, sidebar, sectionTrees, sourceBlocks, images, tags, rawText, createdAt, updatedAt]
+      required:
+        [
+          id,
+          topic,
+          flow,
+          sidebar,
+          sectionTrees,
+          sourceBlocks,
+          images,
+          tags,
+          rawText,
+          createdAt,
+          updatedAt,
+        ]
       properties:
         id:
           type: integer
@@ -593,6 +668,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CardImage"
+        canvasElements:
+          type: array
+          items:
+            $ref: "#/components/schemas/CanvasElement"
         tags:
           type: array
           items:
@@ -643,7 +722,16 @@ components:
 
     QualityReview:
       type: object
-      required: [score, coverage, hierarchy, readability, medicalConsistency, aiAddedFactsCount, summary]
+      required:
+        [
+          score,
+          coverage,
+          hierarchy,
+          readability,
+          medicalConsistency,
+          aiAddedFactsCount,
+          summary,
+        ]
       properties:
         score:
           type: integer
@@ -673,7 +761,17 @@ components:
 
     CardInput:
       type: object
-      required: [topic, flow, sidebar, sectionTrees, sourceBlocks, images, rawText, tags]
+      required:
+        [
+          topic,
+          flow,
+          sidebar,
+          sectionTrees,
+          sourceBlocks,
+          images,
+          rawText,
+          tags,
+        ]
       properties:
         topic:
           type: string
@@ -694,6 +792,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CardImage"
+        canvasElements:
+          type: array
+          items:
+            $ref: "#/components/schemas/CanvasElement"
         rawText:
           type: string
         tags:
@@ -725,6 +827,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CardImage"
+        canvasElements:
+          type: array
+          items:
+            $ref: "#/components/schemas/CanvasElement"
         tags:
           type: array
           items:

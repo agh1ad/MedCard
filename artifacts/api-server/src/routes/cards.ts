@@ -71,6 +71,7 @@ function normalizeCard(card: typeof cardsTable.$inferSelect) {
     sourceBlocks: card.sourceBlocks ?? [],
     sectionTrees: card.sectionTrees ?? emptySectionTrees(),
     images: card.images ?? [],
+    canvasElements: card.canvasElements ?? [],
   };
 }
 
@@ -358,6 +359,7 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
       sectionTrees,
       sourceBlocks,
       images,
+      canvasElements,
       rawText,
       tags,
       notebookId,
@@ -375,6 +377,7 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
           sectionTrees as (typeof cardsTable.$inferInsert)["sectionTrees"],
         sourceBlocks,
         images,
+        canvasElements: canvasElements ?? [],
         notebookId: notebookId ?? null,
       })
       .returning();
@@ -493,6 +496,9 @@ router.patch("/:id", async (req: Request, res: Response): Promise<void> => {
         }),
         ...(parsedBody.data.images !== undefined && {
           images: parsedBody.data.images,
+        }),
+        ...(parsedBody.data.canvasElements !== undefined && {
+          canvasElements: parsedBody.data.canvasElements,
         }),
         ...(parsedBody.data.tags !== undefined && {
           tags: parsedBody.data.tags,

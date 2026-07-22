@@ -12,44 +12,43 @@ export interface HealthStatus {
 /**
  * Whether the wording is original, AI-enhanced, or newly added by AI
  */
-export type FlowNodeOrigin = typeof FlowNodeOrigin[keyof typeof FlowNodeOrigin];
-
+export type FlowNodeOrigin =
+  (typeof FlowNodeOrigin)[keyof typeof FlowNodeOrigin];
 
 export const FlowNodeOrigin = {
-  source: 'source',
-  enhanced: 'enhanced',
-  ai_added: 'ai_added',
+  source: "source",
+  enhanced: "enhanced",
+  ai_added: "ai_added",
 } as const;
 
 /**
  * Meaning-based color role for visual memorization
  */
-export type FlowNodeSemanticRole = typeof FlowNodeSemanticRole[keyof typeof FlowNodeSemanticRole];
-
+export type FlowNodeSemanticRole =
+  (typeof FlowNodeSemanticRole)[keyof typeof FlowNodeSemanticRole];
 
 export const FlowNodeSemanticRole = {
-  core: 'core',
-  manifestation: 'manifestation',
-  diagnosis: 'diagnosis',
-  treatment: 'treatment',
-  complication: 'complication',
-  explanation: 'explanation',
-  fact: 'fact',
+  core: "core",
+  manifestation: "manifestation",
+  diagnosis: "diagnosis",
+  treatment: "treatment",
+  complication: "complication",
+  explanation: "explanation",
+  fact: "fact",
 } as const;
 
 /**
  * Visual-memory color assigned to this node
  */
-export type FlowNodeTone = typeof FlowNodeTone[keyof typeof FlowNodeTone];
-
+export type FlowNodeTone = (typeof FlowNodeTone)[keyof typeof FlowNodeTone];
 
 export const FlowNodeTone = {
-  ink: 'ink',
-  blue: 'blue',
-  green: 'green',
-  pink: 'pink',
-  violet: 'violet',
-  amber: 'amber',
+  ink: "ink",
+  blue: "blue",
+  green: "green",
+  pink: "pink",
+  violet: "violet",
+  amber: "amber",
 } as const;
 
 export interface FlowNode {
@@ -58,16 +57,16 @@ export interface FlowNode {
   /** The text content of this node */
   label: string;
   /**
-     * Optional secondary detail shown below the label
-     * @nullable
-     */
+   * Optional secondary detail shown below the label
+   * @nullable
+   */
   sublabel?: string | null;
   /** Child nodes branching from this node (shown side by side) */
   children?: FlowNode[];
   /** Additional incoming directed connections, including convergence and feedback loops */
   additionalParentIds?: string[];
   /** AI-selected presentation for a side-note root group */
-  presentation?: 'bullets' | 'table' | 'diagram' | 'callout';
+  presentation?: "bullets" | "table" | "diagram" | "callout";
   /** Immutable source block represented by this node */
   sourceBlockId?: string;
   /** Original source blocks preserved by this node */
@@ -80,6 +79,10 @@ export interface FlowNode {
   highlightTerms?: string[];
   /** Visual-memory color assigned to this node */
   tone?: FlowNodeTone;
+  /** User-selected node background color */
+  backgroundColor?: string;
+  /** User-selected node text color */
+  textColor?: string;
 }
 
 export interface SourceBlock {
@@ -97,17 +100,17 @@ export interface SectionTrees {
   complications: FlowNode[];
 }
 
-export type CardImageSection = typeof CardImageSection[keyof typeof CardImageSection];
-
+export type CardImageSection =
+  (typeof CardImageSection)[keyof typeof CardImageSection];
 
 export const CardImageSection = {
-  main: 'main',
-  high_yield: 'high_yield',
-  risk_factors: 'risk_factors',
-  associations: 'associations',
-  diagnosis: 'diagnosis',
-  treatment: 'treatment',
-  complications: 'complications',
+  main: "main",
+  high_yield: "high_yield",
+  risk_factors: "risk_factors",
+  associations: "associations",
+  diagnosis: "diagnosis",
+  treatment: "treatment",
+  complications: "complications",
 } as const;
 
 export interface CardImage {
@@ -117,6 +120,25 @@ export interface CardImage {
   dataUrl: string;
   caption?: string;
   section: CardImageSection;
+}
+
+export type CanvasElementType =
+  "text" | "note" | "image" | "rectangle" | "ellipse" | "line" | "drawing";
+
+export interface CanvasElement {
+  id: string;
+  type: CanvasElementType;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  content?: string;
+  dataUrl?: string;
+  backgroundColor?: string;
+  textColor?: string;
+  strokeColor?: string;
+  strokeWidth?: number;
+  points?: Array<{ x: number; y: number }>;
 }
 
 export interface SidebarSections {
@@ -142,6 +164,7 @@ export interface Card {
   sectionTrees: SectionTrees;
   sourceBlocks: SourceBlock[];
   images: CardImage[];
+  canvasElements?: CanvasElement[];
   tags: string[];
   /** Original raw input text */
   rawText: string;
@@ -153,29 +176,29 @@ export interface Card {
 
 export interface QualityReview {
   /**
-     * @minimum 0
-     * @maximum 10
-     */
+   * @minimum 0
+   * @maximum 10
+   */
   score: number;
   /**
-     * @minimum 0
-     * @maximum 10
-     */
+   * @minimum 0
+   * @maximum 10
+   */
   coverage: number;
   /**
-     * @minimum 0
-     * @maximum 10
-     */
+   * @minimum 0
+   * @maximum 10
+   */
   hierarchy: number;
   /**
-     * @minimum 0
-     * @maximum 10
-     */
+   * @minimum 0
+   * @maximum 10
+   */
   readability: number;
   /**
-     * @minimum 0
-     * @maximum 10
-     */
+   * @minimum 0
+   * @maximum 10
+   */
   medicalConsistency: number;
   /** @minimum 0 */
   aiAddedFactsCount: number;
@@ -214,6 +237,7 @@ export interface CardInput {
   sectionTrees: SectionTrees;
   sourceBlocks: SourceBlock[];
   images: CardImage[];
+  canvasElements?: CanvasElement[];
   rawText: string;
   tags: string[];
   /** @nullable */
@@ -228,6 +252,7 @@ export interface CardUpdate {
   sectionTrees?: SectionTrees;
   sourceBlocks?: SourceBlock[];
   images?: CardImage[];
+  canvasElements?: CanvasElement[];
   tags?: string[];
   /** @nullable */
   notebookId?: number | null;
@@ -235,14 +260,14 @@ export interface CardUpdate {
 
 export interface GenerateCardInput {
   /**
-     * Raw medical information to restructure
-     * @minLength 1
-     */
+   * Raw medical information to restructure
+   * @minLength 1
+   */
   rawText: string;
   /**
-     * Optional topic hint
-     * @nullable
-     */
+   * Optional topic hint
+   * @nullable
+   */
   topic?: string | null;
 }
 
@@ -260,16 +285,16 @@ export interface CardStats {
 }
 
 export type ListCardsParams = {
-/**
- * Search by topic or content
- */
-search?: string;
-/**
- * Filter by tag
- */
-tag?: string;
-/**
- * Filter by notebook
- */
-notebookId?: number;
+  /**
+   * Search by topic or content
+   */
+  search?: string;
+  /**
+   * Filter by tag
+   */
+  tag?: string;
+  /**
+   * Filter by notebook
+   */
+  notebookId?: number;
 };

@@ -14,6 +14,14 @@ function newNode(label = ""): FlowNode {
   return { id: genId(), label, sublabel: null, children: [] };
 }
 
+function flattenNodes(nodes: FlowNode[], result: FlowNode[] = []): FlowNode[] {
+  for (const node of nodes) {
+    result.push(node);
+    flattenNodes(node.children ?? [], result);
+  }
+  return result;
+}
+
 function updateNodeInTree(
   tree: FlowNode[],
   id: string,
@@ -81,8 +89,9 @@ export function flattenFlowToText(nodes: FlowNode[], depth = 0): string {
     .map((n) => {
       const indent = "  ".repeat(depth);
       const line = `${indent}→ ${n.label}${n.sublabel ? ` (${n.sublabel})` : ""}`;
-      const childrenText =
-        n.children?.length ? "\n" + flattenFlowToText(n.children, depth + 1) : "";
+      const childrenText = n.children?.length
+        ? "\n" + flattenFlowToText(n.children, depth + 1)
+        : "";
       return line + childrenText;
     })
     .join("\n");
@@ -92,23 +101,35 @@ export function flattenFlowToText(nodes: FlowNode[], depth = 0): string {
 
 interface NodeProps {
   node: FlowNode;
+  allNodes: FlowNode[];
   isEditing: boolean;
   onTreeChange: (fn: (t: FlowNode[]) => FlowNode[]) => void;
 }
 
-function TreeNode({ node, isEditing, onTreeChange }: NodeProps) {
+function TreeNode({ node, allNodes, isEditing, onTreeChange }: NodeProps) {
   const children = node.children ?? [];
   const n = children.length;
   const hasChildren = n > 0;
 
   const setLabel = (label: string) =>
-    onTreeChange((t) => updateNodeInTree(t, node.id, (nd) => ({ ...nd, label })));
+    onTreeChange((t) =>
+      updateNodeInTree(t, node.id, (nd) => ({ ...nd, label })),
+    );
 
   const setSublabel = (sublabel: string) =>
     onTreeChange((t) =>
       updateNodeInTree(t, node.id, (nd) => ({
         ...nd,
         sublabel: sublabel || null,
+      })),
+    );
+
+  const setColors = (backgroundColor: string, textColor: string) =>
+    onTreeChange((tree) =>
+      updateNodeInTree(tree, node.id, (current) => ({
+        ...current,
+        backgroundColor,
+        textColor,
       })),
     );
 
@@ -130,7 +151,13 @@ function TreeNode({ node, isEditing, onTreeChange }: NodeProps) {
             bg-card border border-border rounded-xl px-4 py-3 shadow-sm text-center
             transition-colors hover:border-primary/50
           "
-          style={{ minWidth: "130px", maxWidth: "210px" }}
+          style={{
+            minWidth: "130px",
+            maxWidth: "210px",
+            background: node.backgroundColor,
+            color: node.textColor,
+          }}
+          data-node-background={node.backgroundColor}
           data-testid={`flow-node-${node.id}`}
         >
           {isEditing ? (
@@ -142,6 +169,67 @@ function TreeNode({ node, isEditing, onTreeChange }: NodeProps) {
                 className="text-sm font-medium text-center h-8 border-border/50 bg-background"
                 data-testid={`input-node-label-${node.id}`}
               />
+              <div className="flex items-center justify-center gap-2 pt-1 text-[10px] text-muted-foreground">
+                <label
+                  className="flex items-center gap-1"
+                  title="Node background"
+                >
+                  Fill
+                  <input
+                    type="color"
+                    value={node.backgroundColor ?? "#ffffff"}
+                    onChange={(event) =>
+                      setColors(event.target.value, node.textColor ?? "#172033")
+                    }
+                    className="h-5 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
+                  />
+                </label>
+                <label
+                  className="flex items-center gap-1"
+                  title="Node text color"
+                >
+                  Text
+                  <input
+                    type="color"
+                    value={node.textColor ?? "#172033"}
+                    onChange={(event) =>
+                      setColors(
+                        node.backgroundColor ?? "#ffffff",
+                        event.target.value,
+                      )
+                    }
+                    className="h-5 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
+                  />
+                </label>
+              </div>
+              {allNodes.length > 1 && (
+                <select
+                  multiple
+                  aria-label="Extra incoming connections"
+                  title="Extra incoming connections (Cmd/Ctrl-click)"
+                  value={node.additionalParentIds ?? []}
+                  onChange={(event) =>
+                    onTreeChange((tree) =>
+                      updateNodeInTree(tree, node.id, (current) => ({
+                        ...current,
+                        additionalParentIds: Array.from(
+                          event.target.selectedOptions,
+                          (option) => option.value,
+                        ),
+                      })),
+                    )
+                  }
+                  className="min-h-8 rounded border bg-background px-1 text-[10px] text-muted-foreground"
+                >
+                  {allNodes
+                    .filter((candidate) => candidate.id !== node.id)
+                    .map((candidate) => (
+                      <option key={candidate.id} value={candidate.id}>
+                        ↳ {candidate.label || "Untitled node"}
+                      </option>
+                    ))}
+                </select>
+              )}
               <Input
                 value={node.sublabel ?? ""}
                 onChange={(e) => setSublabel(e.target.value)}
@@ -213,7 +301,10 @@ function TreeNode({ node, isEditing, onTreeChange }: NodeProps) {
           <div className="w-px bg-border" style={{ height: "20px" }} />
 
           {/* Horizontal bar + child columns */}
-          <div className="relative flex flex-row w-full" style={{ gap: "12px" }}>
+          <div
+            className="relative flex flex-row w-full"
+            style={{ gap: "12px" }}
+          >
             {/* Horizontal connector spanning center-of-first to center-of-last */}
             {n > 1 && (
               <div
@@ -228,14 +319,12 @@ function TreeNode({ node, isEditing, onTreeChange }: NodeProps) {
             )}
 
             {children.map((child) => (
-              <div
-                key={child.id}
-                className="flex flex-col items-center flex-1"
-              >
+              <div key={child.id} className="flex flex-col items-center flex-1">
                 {/* Vertical drop from horizontal bar → child */}
                 <div className="w-px bg-border" style={{ height: "20px" }} />
                 <TreeNode
                   node={child}
+                  allNodes={allNodes}
                   isEditing={isEditing}
                   onTreeChange={onTreeChange}
                 />
@@ -260,6 +349,7 @@ export interface FlowTreeProps {
 }
 
 export function FlowTree({ nodes, isEditing, onChange }: FlowTreeProps) {
+  const allNodes = flattenNodes(nodes);
   const handleTreeChange = (fn: (t: FlowNode[]) => FlowNode[]) => {
     if (onChange) onChange(fn(nodes));
   };
@@ -293,7 +383,11 @@ export function FlowTree({ nodes, isEditing, onChange }: FlowTreeProps) {
     <div className="overflow-x-auto">
       <div
         className="flex flex-col items-center py-6"
-        style={{ minWidth: "max-content", paddingLeft: "48px", paddingRight: "48px" }}
+        style={{
+          minWidth: "max-content",
+          paddingLeft: "48px",
+          paddingRight: "48px",
+        }}
       >
         {nodes.map((rootNode, i) => (
           <div key={rootNode.id} className="flex flex-col items-center w-full">
@@ -306,6 +400,7 @@ export function FlowTree({ nodes, isEditing, onChange }: FlowTreeProps) {
             )}
             <TreeNode
               node={rootNode}
+              allNodes={allNodes}
               isEditing={isEditing}
               onTreeChange={handleTreeChange}
             />

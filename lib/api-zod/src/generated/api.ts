@@ -7,6 +7,22 @@
  */
 import * as zod from 'zod';
 
+const CanvasElementSchema = zod.object({
+  id: zod.string(),
+  type: zod.enum(['text', 'note', 'image', 'rectangle', 'ellipse', 'line', 'drawing']),
+  x: zod.number(),
+  y: zod.number(),
+  width: zod.number(),
+  height: zod.number(),
+  content: zod.string().optional(),
+  dataUrl: zod.string().optional(),
+  backgroundColor: zod.string().optional(),
+  textColor: zod.string().optional(),
+  strokeColor: zod.string().optional(),
+  strokeWidth: zod.number().optional(),
+  points: zod.array(zod.object({ x: zod.number(), y: zod.number() })).optional(),
+});
+
 
 /**
  * Returns server health status
@@ -26,6 +42,22 @@ export const ListCardsQueryParams = zod.object({
   "notebookId": zod.coerce.number().optional().describe('Filter by notebook')
 })
 
+export const listCardsResponseFlowItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const listCardsResponseFlowItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const listCardsResponseSectionTreesHighYieldItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const listCardsResponseSectionTreesHighYieldItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const listCardsResponseSectionTreesRiskFactorsItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const listCardsResponseSectionTreesRiskFactorsItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const listCardsResponseSectionTreesAssociationsItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const listCardsResponseSectionTreesAssociationsItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const listCardsResponseSectionTreesDiagnosisItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const listCardsResponseSectionTreesDiagnosisItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const listCardsResponseSectionTreesTreatmentItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const listCardsResponseSectionTreesTreatmentItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const listCardsResponseSectionTreesComplicationsItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const listCardsResponseSectionTreesComplicationsItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+
+
 export const ListCardsResponseItem = zod.object({
   "id": zod.number(),
   "topic": zod.string().describe('The topic name for this card'),
@@ -41,7 +73,9 @@ export const ListCardsResponseItem = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(listCardsResponseFlowItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(listCardsResponseFlowItemTextColorRegExp).optional().describe('User-selected node text color')
 })).describe('Root nodes of the pathophysiology branching tree'),
   "sidebar": zod.object({
   "high_yield": zod.array(zod.string()).describe('High-yield notes and key facts'),
@@ -63,7 +97,9 @@ export const ListCardsResponseItem = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(listCardsResponseSectionTreesHighYieldItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(listCardsResponseSectionTreesHighYieldItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "risk_factors": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -77,7 +113,9 @@ export const ListCardsResponseItem = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(listCardsResponseSectionTreesRiskFactorsItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(listCardsResponseSectionTreesRiskFactorsItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "associations": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -91,7 +129,9 @@ export const ListCardsResponseItem = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(listCardsResponseSectionTreesAssociationsItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(listCardsResponseSectionTreesAssociationsItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "diagnosis": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -105,7 +145,9 @@ export const ListCardsResponseItem = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(listCardsResponseSectionTreesDiagnosisItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(listCardsResponseSectionTreesDiagnosisItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "treatment": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -119,7 +161,9 @@ export const ListCardsResponseItem = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(listCardsResponseSectionTreesTreatmentItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(listCardsResponseSectionTreesTreatmentItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "complications": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -133,7 +177,9 @@ export const ListCardsResponseItem = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(listCardsResponseSectionTreesComplicationsItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(listCardsResponseSectionTreesComplicationsItemTextColorRegExp).optional().describe('User-selected node text color')
 }))
 }),
   "sourceBlocks": zod.array(zod.object({
@@ -160,6 +206,20 @@ export const ListCardsResponse = zod.array(ListCardsResponseItem)
  * @summary Create a new card
  */
 
+export const createCardBodyFlowItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardBodyFlowItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardBodySectionTreesHighYieldItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardBodySectionTreesHighYieldItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardBodySectionTreesRiskFactorsItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardBodySectionTreesRiskFactorsItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardBodySectionTreesAssociationsItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardBodySectionTreesAssociationsItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardBodySectionTreesDiagnosisItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardBodySectionTreesDiagnosisItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardBodySectionTreesTreatmentItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardBodySectionTreesTreatmentItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardBodySectionTreesComplicationsItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardBodySectionTreesComplicationsItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
 
 
 export const CreateCardBody = zod.object({
@@ -176,7 +236,9 @@ export const CreateCardBody = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(createCardBodyFlowItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(createCardBodyFlowItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "sidebar": zod.object({
   "high_yield": zod.array(zod.string()).describe('High-yield notes and key facts'),
@@ -198,7 +260,9 @@ export const CreateCardBody = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(createCardBodySectionTreesHighYieldItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(createCardBodySectionTreesHighYieldItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "risk_factors": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -212,7 +276,9 @@ export const CreateCardBody = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(createCardBodySectionTreesRiskFactorsItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(createCardBodySectionTreesRiskFactorsItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "associations": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -226,7 +292,9 @@ export const CreateCardBody = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(createCardBodySectionTreesAssociationsItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(createCardBodySectionTreesAssociationsItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "diagnosis": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -240,7 +308,9 @@ export const CreateCardBody = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(createCardBodySectionTreesDiagnosisItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(createCardBodySectionTreesDiagnosisItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "treatment": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -254,7 +324,9 @@ export const CreateCardBody = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(createCardBodySectionTreesTreatmentItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(createCardBodySectionTreesTreatmentItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "complications": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -268,7 +340,9 @@ export const CreateCardBody = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(createCardBodySectionTreesComplicationsItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(createCardBodySectionTreesComplicationsItemTextColorRegExp).optional().describe('User-selected node text color')
 }))
 }),
   "sourceBlocks": zod.array(zod.object({
@@ -281,11 +355,28 @@ export const CreateCardBody = zod.object({
   "dataUrl": zod.string().describe('Browser-readable image data URL'),
   "caption": zod.string().optional(),
   "section": zod.enum(['main', 'high_yield', 'risk_factors', 'associations', 'diagnosis', 'treatment', 'complications'])
-})),
+  })),
+  "canvasElements": zod.array(CanvasElementSchema).optional(),
   "rawText": zod.string(),
   "tags": zod.array(zod.string()),
   "notebookId": zod.number().nullish()
 })
+
+export const createCardResponseFlowItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardResponseFlowItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardResponseSectionTreesHighYieldItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardResponseSectionTreesHighYieldItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardResponseSectionTreesRiskFactorsItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardResponseSectionTreesRiskFactorsItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardResponseSectionTreesAssociationsItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardResponseSectionTreesAssociationsItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardResponseSectionTreesDiagnosisItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardResponseSectionTreesDiagnosisItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardResponseSectionTreesTreatmentItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardResponseSectionTreesTreatmentItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardResponseSectionTreesComplicationsItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const createCardResponseSectionTreesComplicationsItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+
 
 export const CreateCardResponse = zod.object({
   "id": zod.number(),
@@ -302,7 +393,9 @@ export const CreateCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(createCardResponseFlowItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(createCardResponseFlowItemTextColorRegExp).optional().describe('User-selected node text color')
 })).describe('Root nodes of the pathophysiology branching tree'),
   "sidebar": zod.object({
   "high_yield": zod.array(zod.string()).describe('High-yield notes and key facts'),
@@ -324,7 +417,9 @@ export const CreateCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(createCardResponseSectionTreesHighYieldItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(createCardResponseSectionTreesHighYieldItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "risk_factors": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -338,7 +433,9 @@ export const CreateCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(createCardResponseSectionTreesRiskFactorsItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(createCardResponseSectionTreesRiskFactorsItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "associations": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -352,7 +449,9 @@ export const CreateCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(createCardResponseSectionTreesAssociationsItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(createCardResponseSectionTreesAssociationsItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "diagnosis": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -366,7 +465,9 @@ export const CreateCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(createCardResponseSectionTreesDiagnosisItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(createCardResponseSectionTreesDiagnosisItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "treatment": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -380,7 +481,9 @@ export const CreateCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(createCardResponseSectionTreesTreatmentItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(createCardResponseSectionTreesTreatmentItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "complications": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -394,7 +497,9 @@ export const CreateCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(createCardResponseSectionTreesComplicationsItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(createCardResponseSectionTreesComplicationsItemTextColorRegExp).optional().describe('User-selected node text color')
 }))
 }),
   "sourceBlocks": zod.array(zod.object({
@@ -427,6 +532,20 @@ export const GenerateCardBody = zod.object({
   "topic": zod.string().nullish().describe('Optional topic hint')
 })
 
+export const generateCardResponseFlowItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const generateCardResponseFlowItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const generateCardResponseSectionTreesHighYieldItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const generateCardResponseSectionTreesHighYieldItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const generateCardResponseSectionTreesRiskFactorsItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const generateCardResponseSectionTreesRiskFactorsItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const generateCardResponseSectionTreesAssociationsItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const generateCardResponseSectionTreesAssociationsItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const generateCardResponseSectionTreesDiagnosisItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const generateCardResponseSectionTreesDiagnosisItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const generateCardResponseSectionTreesTreatmentItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const generateCardResponseSectionTreesTreatmentItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const generateCardResponseSectionTreesComplicationsItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const generateCardResponseSectionTreesComplicationsItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
 export const generateCardResponseQualityScoreMin = 0;
 export const generateCardResponseQualityScoreMax = 10;
 
@@ -459,7 +578,9 @@ export const GenerateCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(generateCardResponseFlowItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(generateCardResponseFlowItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "sidebar": zod.object({
   "high_yield": zod.array(zod.string()).describe('High-yield notes and key facts'),
@@ -481,7 +602,9 @@ export const GenerateCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(generateCardResponseSectionTreesHighYieldItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(generateCardResponseSectionTreesHighYieldItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "risk_factors": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -495,7 +618,9 @@ export const GenerateCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(generateCardResponseSectionTreesRiskFactorsItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(generateCardResponseSectionTreesRiskFactorsItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "associations": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -509,7 +634,9 @@ export const GenerateCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(generateCardResponseSectionTreesAssociationsItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(generateCardResponseSectionTreesAssociationsItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "diagnosis": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -523,7 +650,9 @@ export const GenerateCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(generateCardResponseSectionTreesDiagnosisItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(generateCardResponseSectionTreesDiagnosisItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "treatment": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -537,7 +666,9 @@ export const GenerateCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(generateCardResponseSectionTreesTreatmentItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(generateCardResponseSectionTreesTreatmentItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "complications": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -551,7 +682,9 @@ export const GenerateCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(generateCardResponseSectionTreesComplicationsItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(generateCardResponseSectionTreesComplicationsItemTextColorRegExp).optional().describe('User-selected node text color')
 }))
 }),
   "sourceBlocks": zod.array(zod.object({
@@ -591,6 +724,22 @@ export const GetCardParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const getCardResponseFlowItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const getCardResponseFlowItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const getCardResponseSectionTreesHighYieldItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const getCardResponseSectionTreesHighYieldItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const getCardResponseSectionTreesRiskFactorsItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const getCardResponseSectionTreesRiskFactorsItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const getCardResponseSectionTreesAssociationsItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const getCardResponseSectionTreesAssociationsItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const getCardResponseSectionTreesDiagnosisItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const getCardResponseSectionTreesDiagnosisItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const getCardResponseSectionTreesTreatmentItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const getCardResponseSectionTreesTreatmentItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const getCardResponseSectionTreesComplicationsItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const getCardResponseSectionTreesComplicationsItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+
+
 export const GetCardResponse = zod.object({
   "id": zod.number(),
   "topic": zod.string().describe('The topic name for this card'),
@@ -606,7 +755,9 @@ export const GetCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(getCardResponseFlowItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(getCardResponseFlowItemTextColorRegExp).optional().describe('User-selected node text color')
 })).describe('Root nodes of the pathophysiology branching tree'),
   "sidebar": zod.object({
   "high_yield": zod.array(zod.string()).describe('High-yield notes and key facts'),
@@ -628,7 +779,9 @@ export const GetCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(getCardResponseSectionTreesHighYieldItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(getCardResponseSectionTreesHighYieldItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "risk_factors": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -642,7 +795,9 @@ export const GetCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(getCardResponseSectionTreesRiskFactorsItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(getCardResponseSectionTreesRiskFactorsItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "associations": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -656,7 +811,9 @@ export const GetCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(getCardResponseSectionTreesAssociationsItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(getCardResponseSectionTreesAssociationsItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "diagnosis": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -670,7 +827,9 @@ export const GetCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(getCardResponseSectionTreesDiagnosisItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(getCardResponseSectionTreesDiagnosisItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "treatment": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -684,7 +843,9 @@ export const GetCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(getCardResponseSectionTreesTreatmentItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(getCardResponseSectionTreesTreatmentItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "complications": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -698,7 +859,9 @@ export const GetCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(getCardResponseSectionTreesComplicationsItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(getCardResponseSectionTreesComplicationsItemTextColorRegExp).optional().describe('User-selected node text color')
 }))
 }),
   "sourceBlocks": zod.array(zod.object({
@@ -728,6 +891,20 @@ export const UpdateCardParams = zod.object({
 })
 
 
+export const updateCardBodyFlowItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardBodyFlowItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardBodySectionTreesHighYieldItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardBodySectionTreesHighYieldItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardBodySectionTreesRiskFactorsItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardBodySectionTreesRiskFactorsItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardBodySectionTreesAssociationsItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardBodySectionTreesAssociationsItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardBodySectionTreesDiagnosisItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardBodySectionTreesDiagnosisItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardBodySectionTreesTreatmentItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardBodySectionTreesTreatmentItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardBodySectionTreesComplicationsItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardBodySectionTreesComplicationsItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
 
 
 export const UpdateCardBody = zod.object({
@@ -744,7 +921,9 @@ export const UpdateCardBody = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(updateCardBodyFlowItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(updateCardBodyFlowItemTextColorRegExp).optional().describe('User-selected node text color')
 })).optional(),
   "sidebar": zod.object({
   "high_yield": zod.array(zod.string()).describe('High-yield notes and key facts'),
@@ -766,7 +945,9 @@ export const UpdateCardBody = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(updateCardBodySectionTreesHighYieldItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(updateCardBodySectionTreesHighYieldItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "risk_factors": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -780,7 +961,9 @@ export const UpdateCardBody = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(updateCardBodySectionTreesRiskFactorsItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(updateCardBodySectionTreesRiskFactorsItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "associations": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -794,7 +977,9 @@ export const UpdateCardBody = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(updateCardBodySectionTreesAssociationsItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(updateCardBodySectionTreesAssociationsItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "diagnosis": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -808,7 +993,9 @@ export const UpdateCardBody = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(updateCardBodySectionTreesDiagnosisItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(updateCardBodySectionTreesDiagnosisItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "treatment": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -822,7 +1009,9 @@ export const UpdateCardBody = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(updateCardBodySectionTreesTreatmentItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(updateCardBodySectionTreesTreatmentItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "complications": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -836,7 +1025,9 @@ export const UpdateCardBody = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(updateCardBodySectionTreesComplicationsItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(updateCardBodySectionTreesComplicationsItemTextColorRegExp).optional().describe('User-selected node text color')
 }))
 }).optional(),
   "sourceBlocks": zod.array(zod.object({
@@ -849,10 +1040,27 @@ export const UpdateCardBody = zod.object({
   "dataUrl": zod.string().describe('Browser-readable image data URL'),
   "caption": zod.string().optional(),
   "section": zod.enum(['main', 'high_yield', 'risk_factors', 'associations', 'diagnosis', 'treatment', 'complications'])
-})).optional(),
+  })).optional(),
+  "canvasElements": zod.array(CanvasElementSchema).optional(),
   "tags": zod.array(zod.string()).optional(),
   "notebookId": zod.number().nullish()
 })
+
+export const updateCardResponseFlowItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardResponseFlowItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardResponseSectionTreesHighYieldItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardResponseSectionTreesHighYieldItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardResponseSectionTreesRiskFactorsItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardResponseSectionTreesRiskFactorsItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardResponseSectionTreesAssociationsItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardResponseSectionTreesAssociationsItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardResponseSectionTreesDiagnosisItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardResponseSectionTreesDiagnosisItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardResponseSectionTreesTreatmentItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardResponseSectionTreesTreatmentItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardResponseSectionTreesComplicationsItemBackgroundColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+export const updateCardResponseSectionTreesComplicationsItemTextColorRegExp = new RegExp('^#[0-9a-fA-F]{6}$');
+
 
 export const UpdateCardResponse = zod.object({
   "id": zod.number(),
@@ -869,7 +1077,9 @@ export const UpdateCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(updateCardResponseFlowItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(updateCardResponseFlowItemTextColorRegExp).optional().describe('User-selected node text color')
 })).describe('Root nodes of the pathophysiology branching tree'),
   "sidebar": zod.object({
   "high_yield": zod.array(zod.string()).describe('High-yield notes and key facts'),
@@ -891,7 +1101,9 @@ export const UpdateCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(updateCardResponseSectionTreesHighYieldItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(updateCardResponseSectionTreesHighYieldItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "risk_factors": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -905,7 +1117,9 @@ export const UpdateCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(updateCardResponseSectionTreesRiskFactorsItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(updateCardResponseSectionTreesRiskFactorsItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "associations": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -919,7 +1133,9 @@ export const UpdateCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(updateCardResponseSectionTreesAssociationsItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(updateCardResponseSectionTreesAssociationsItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "diagnosis": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -933,7 +1149,9 @@ export const UpdateCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(updateCardResponseSectionTreesDiagnosisItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(updateCardResponseSectionTreesDiagnosisItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "treatment": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -947,7 +1165,9 @@ export const UpdateCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(updateCardResponseSectionTreesTreatmentItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(updateCardResponseSectionTreesTreatmentItemTextColorRegExp).optional().describe('User-selected node text color')
 })),
   "complications": zod.array(zod.object({
   "id": zod.string().describe('Unique identifier for this node within the tree'),
@@ -961,7 +1181,9 @@ export const UpdateCardResponse = zod.object({
   "origin": zod.enum(['source', 'enhanced', 'ai_added']).optional().describe('Whether the wording is original, AI-enhanced, or newly added by AI'),
   "semanticRole": zod.enum(['core', 'manifestation', 'diagnosis', 'treatment', 'complication', 'explanation', 'fact']).optional().describe('Meaning-based color role for visual memorization'),
   "highlightTerms": zod.array(zod.string()).optional().describe('Exact named concepts to highlight in dark green'),
-  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node')
+  "tone": zod.enum(['ink', 'blue', 'green', 'pink', 'violet', 'amber']).optional().describe('Visual-memory color assigned to this node'),
+  "backgroundColor": zod.string().regex(updateCardResponseSectionTreesComplicationsItemBackgroundColorRegExp).optional().describe('User-selected node background color'),
+  "textColor": zod.string().regex(updateCardResponseSectionTreesComplicationsItemTextColorRegExp).optional().describe('User-selected node text color')
 }))
 }),
   "sourceBlocks": zod.array(zod.object({
@@ -1137,5 +1359,4 @@ export const DeleteNotebookParams = zod.object({
 })
 
 export const DeleteNotebookResponse = zod.void()
-
 
