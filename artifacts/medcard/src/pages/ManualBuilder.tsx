@@ -30,6 +30,7 @@ import {
   Link2,
   Loader2,
   Minus,
+  Move,
   MousePointer2,
   Palette,
   PenLine,
@@ -311,6 +312,11 @@ export function ManualBuilder() {
   >("select");
   const [freeformColor, setFreeformColor] = useState("#d53b36");
   const [selectedCanvasId, setSelectedCanvasId] = useState<string | null>(null);
+  const [moveSelectedNode, setMoveSelectedNode] = useState(false);
+  const [selectedBlock, setSelectedBlock] = useState<{
+    sectionId: string;
+    blockId: string;
+  } | null>(null);
   const [activeSection, setActiveSection] = useState<string>("main");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [connectionSourceId, setConnectionSourceId] = useState<string | null>(
@@ -480,20 +486,12 @@ export function ManualBuilder() {
     );
 
   const deleteSideSection = (id: string) => {
-    const section = sideSections.find((item) => item.id === id);
-    if (
-      section &&
-      (section.nodes.length ||
-        section.attachments?.length ||
-        section.blocks?.length) &&
-      !confirm(`Delete “${section.title}” and everything inside it?`)
-    )
-      return;
     setSideSections((current) =>
       current.filter((section) => section.id !== id),
     );
     if (activeSection === id) setActiveSection("main");
     setSelectedId(null);
+    setSelectedBlock(null);
   };
 
   const sectionForNode = (id: string): string | null => {
@@ -508,6 +506,7 @@ export function ManualBuilder() {
     const section = sectionForNode(id);
     if (section) setActiveSection(section);
     setSelectedCanvasId(null);
+    setSelectedBlock(null);
     setSelectedId(id);
   };
 
@@ -656,6 +655,7 @@ export function ManualBuilder() {
     );
     setActiveSection(sectionId);
     setSelectedId(null);
+    setSelectedBlock({ sectionId, blockId: block.id });
   };
 
   const updateSectionBlock = (
@@ -676,7 +676,7 @@ export function ManualBuilder() {
       ),
     );
 
-  const deleteSectionBlock = (sectionId: string, blockId: string) =>
+  const deleteSectionBlock = (sectionId: string, blockId: string) => {
     setSideSections((current) =>
       current.map((section) =>
         section.id === sectionId
@@ -689,6 +689,12 @@ export function ManualBuilder() {
           : section,
       ),
     );
+    setSelectedBlock((current) =>
+      current?.sectionId === sectionId && current.blockId === blockId
+        ? null
+        : current,
+    );
+  };
 
   const duplicateSectionBlock = (sectionId: string, blockId: string) =>
     setSideSections((current) =>
@@ -786,14 +792,47 @@ export function ManualBuilder() {
         restoreHistory(1);
         return;
       }
+      if (event.key === "Delete" || event.key === "Backspace") {
+        const target = event.target as HTMLElement | null;
+        if (
+          target?.matches("input, textarea, select, [contenteditable='true']")
+        )
+          return;
+        if (selectedBlock) {
+          event.preventDefault();
+          deleteSectionBlock(selectedBlock.sectionId, selectedBlock.blockId);
+          setSelectedBlock(null);
+          return;
+        }
+        if (selectedCanvasId) {
+          event.preventDefault();
+          setCanvasElements((current) =>
+            current.filter((element) => element.id !== selectedCanvasId),
+          );
+          setSelectedCanvasId(null);
+          return;
+        }
+        if (selectedId) {
+          event.preventDefault();
+          deleteNodeAnywhere(selectedId);
+          return;
+        }
+        if (activeSection !== "main") {
+          event.preventDefault();
+          deleteSideSection(activeSection);
+          return;
+        }
+      }
       if (event.key !== "Escape") return;
       setConnectionSourceId(null);
       setSelectedCanvasId(null);
       setSelectedId(null);
+      setSelectedBlock(null);
+      setMoveSelectedNode(false);
     };
     window.addEventListener("keydown", handleKeyboard);
     return () => window.removeEventListener("keydown", handleKeyboard);
-  }, []);
+  }, [activeSection, selectedBlock, selectedCanvasId, selectedId]);
 
   const addCanvasElement = (
     type: CanvasElement["type"],
@@ -816,6 +855,8 @@ export function ManualBuilder() {
     };
     setCanvasElements((current) => [...current, element]);
     setSelectedCanvasId(element.id);
+    setSelectedId(null);
+    setSelectedBlock(null);
     setFreeformTool("select");
   };
 
@@ -1587,6 +1628,142 @@ export function ManualBuilder() {
                 : "Draw directly on the page"}
             </small>
           </div>
+          {selectedNode && (
+            <div
+              className="manual-context-ribbon"
+              role="toolbar"
+              aria-label={`Edit ${selectedNode.label}`}
+            >
+              <div className="context-ribbon-identity">
+                <SlidersHorizontal />
+                <span>Node</span>
+                <strong>{selectedNode.label || "Untitled"}</strong>
+              </div>
+              <div className="context-ribbon-group">
+                <span>Style</span>
+                <div className="context-ribbon-palette">
+                  {PALETTE.map(([backgroundColor, textColor]) => (
+                    <button
+                      type="button"
+                      key={backgroundColor}
+                      title={`Use ${backgroundColor}`}
+                      aria-label={`Use ${backgroundColor} node style`}
+                      style={{ background: backgroundColor, color: textColor }}
+                      onClick={() =>
+                        updateNodeAnywhere(selectedNode.id, {
+                          backgroundColor,
+                          textColor,
+                        })
+                      }
+                    >
+                      Aa
+                    </button>
+                  ))}
+                </div>
+                <label title="Node fill color">
+                  Fill
+                  <input
+                    type="color"
+                    value={selectedNode.backgroundColor ?? "#ffffff"}
+                    aria-label="Node fill color"
+                    onChange={(event) =>
+                      updateNodeAnywhere(selectedNode.id, {
+                        backgroundColor: event.target.value,
+                      })
+                    }
+                  />
+                </label>
+                <label title="Node text color">
+                  Text
+                  <input
+                    type="color"
+                    value={selectedNode.textColor ?? "#172033"}
+                    aria-label="Node text color"
+                    onChange={(event) =>
+                      updateNodeAnywhere(selectedNode.id, {
+                        textColor: event.target.value,
+                      })
+                    }
+                  />
+                </label>
+              </div>
+              {activeSection !== "main" && (
+                <label className="context-ribbon-layout">
+                  Layout
+                  <select
+                    value={selectedNode.presentation ?? "bullets"}
+                    aria-label="Node layout"
+                    onChange={(event) =>
+                      updateNodeAnywhere(selectedNode.id, {
+                        presentation: event.target.value as NonNullable<
+                          FlowNode["presentation"]
+                        >,
+                      })
+                    }
+                  >
+                    <option value="bullets">Bullets</option>
+                    <option value="callout">Callout</option>
+                    <option value="table">Table</option>
+                    <option value="diagram">Diagram</option>
+                  </select>
+                </label>
+              )}
+              <div className="context-ribbon-actions">
+                <button
+                  type="button"
+                  className={moveSelectedNode ? "is-active" : ""}
+                  aria-pressed={moveSelectedNode}
+                  title="Move this node on the card"
+                  onClick={() => setMoveSelectedNode((current) => !current)}
+                >
+                  <Move />{" "}
+                  <span>{moveSelectedNode ? "Drag node" : "Move"}</span>
+                </button>
+                <button
+                  type="button"
+                  className={
+                    connectionSourceId === selectedNode.id ? "is-active" : ""
+                  }
+                  title="Connect this node to another node"
+                  onClick={() => handleConnectionClick(selectedNode.id)}
+                >
+                  <Link2 /> <span>Connect</span>
+                </button>
+                <button
+                  type="button"
+                  title="Duplicate node"
+                  onClick={() => duplicate(selectedNode)}
+                >
+                  <Copy /> <span>Duplicate</span>
+                </button>
+                {selectedNode.position && (
+                  <button
+                    type="button"
+                    title="Return to automatic position"
+                    onClick={() =>
+                      updateNodeAnywhere(selectedNode.id, {
+                        position: undefined,
+                      })
+                    }
+                  >
+                    <Undo2 /> <span>Reset</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="is-danger"
+                  title="Delete node (Delete key)"
+                  onClick={() => deleteNodeAnywhere(selectedNode.id)}
+                >
+                  <Trash2 /> <span>Delete</span>
+                </button>
+              </div>
+              <small>
+                Enter: sibling · Tab: child · Shift+Enter: new line · Delete:
+                remove
+              </small>
+            </div>
+          )}
           <MemoryCardCanvas
             topic={topic}
             flow={flow}
@@ -1597,7 +1774,13 @@ export function ManualBuilder() {
             freeformTool={freeformTool}
             freeformColor={freeformColor}
             selectedCanvasId={selectedCanvasId}
-            onSelectCanvasElement={setSelectedCanvasId}
+            onSelectCanvasElement={(id) => {
+              setSelectedCanvasId(id);
+              if (id) {
+                setSelectedId(null);
+                setSelectedBlock(null);
+              }
+            }}
             directNodeEditing={{
               selectedId,
               connectionSourceId,
@@ -1610,17 +1793,27 @@ export function ManualBuilder() {
               onAttach: attachToNode,
               onDuplicate: duplicate,
               isSideNode: (id) => sectionForNode(id) !== "main",
+              moveMode: moveSelectedNode,
+              onMoveEnd: () => setMoveSelectedNode(false),
             }}
             onAttachToSection={attachToSection}
             onRemoveSectionAttachment={removeSectionAttachment}
             selectedSectionId={
               activeSection === "main" || selectedId ? null : activeSection
             }
+            selectedSectionBlockId={selectedBlock?.blockId ?? null}
             onRenameSideSection={renameSideSection}
             onDeleteSideSection={deleteSideSection}
             onAddSideSectionAfter={addSideSectionAfter}
             onSelectSideSection={(id) => {
               setActiveSection(id);
+              setSelectedId(null);
+              setSelectedCanvasId(null);
+              setSelectedBlock(null);
+            }}
+            onSelectSectionBlock={(sectionId, blockId) => {
+              setActiveSection(sectionId);
+              setSelectedBlock({ sectionId, blockId });
               setSelectedId(null);
               setSelectedCanvasId(null);
             }}

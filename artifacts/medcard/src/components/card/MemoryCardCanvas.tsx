@@ -26,20 +26,17 @@ import {
   Link2,
   ListChecks,
   MessageSquareText,
-  Move,
-  Palette,
   Plus,
   Pill,
   SlidersHorizontal,
   Table2,
   Trash2,
   Type,
-  Undo2,
+  X,
 } from "lucide-react";
 import {
   createContext,
   useContext,
-  useEffect,
   useId,
   useLayoutEffect,
   useRef,
@@ -58,6 +55,8 @@ export interface DirectNodeEditing {
   onAttach: (id: string, attachment: NodeAttachment) => void;
   onDuplicate?: (node: FlowNode) => void;
   isSideNode?: (id: string) => boolean;
+  moveMode?: boolean;
+  onMoveEnd?: () => void;
 }
 
 const DirectNodeContext = createContext<DirectNodeEditing | null>(null);
@@ -79,10 +78,12 @@ interface MemoryCardCanvasProps {
   onAttachToSection?: (id: string, attachment: NodeAttachment) => void;
   onRemoveSectionAttachment?: (sectionId: string, attachmentId: string) => void;
   selectedSectionId?: string | null;
+  selectedSectionBlockId?: string | null;
   onRenameSideSection?: (id: string, title: string) => void;
   onDeleteSideSection?: (id: string) => void;
   onAddSideSectionAfter?: (id: string) => void;
   onSelectSideSection?: (id: string) => void;
+  onSelectSectionBlock?: (sectionId: string, blockId: string) => void;
   onAddFirstSideSection?: () => void;
   onAddRootNode?: () => void;
   onAddNodeToSection?: (sectionId: string) => void;
@@ -103,17 +104,6 @@ interface MemoryCardCanvasProps {
     direction: -1 | 1,
   ) => void;
 }
-
-const DIRECT_NODE_PALETTE = [
-  ["#ffffff", "#172033"],
-  ["#dff4ff", "#12344d"],
-  ["#dcfce7", "#14532d"],
-  ["#fef3c7", "#713f12"],
-  ["#fce7f3", "#831843"],
-  ["#ede9fe", "#4c1d95"],
-  ["#fee2e2", "#7f1d1d"],
-  ["#16324f", "#ffffff"],
-] as const;
 
 const QUICK_SECTION_NAMES = [
   "High yield",
@@ -389,22 +379,9 @@ function MemoryNodeCell({
 }
 
 function DirectNodeActions({ node }: { node: FlowNode }) {
-  const [showFormat, setShowFormat] = useState(false);
   const editor = useContext(DirectNodeContext);
-  useEffect(() => {
-    if (!showFormat) return;
-    const hideWhileTyping = (event: FocusEvent) => {
-      if (
-        event.target instanceof HTMLElement &&
-        event.target.matches(".memory-direct-label, .memory-direct-detail")
-      )
-        setShowFormat(false);
-    };
-    document.addEventListener("focusin", hideWhileTyping);
-    return () => document.removeEventListener("focusin", hideWhileTyping);
-  }, [showFormat]);
   if (!editor || editor.selectedId !== node.id) return null;
-  const beginMove = (event: React.PointerEvent<HTMLButtonElement>) => {
+  const beginMove = (event: React.PointerEvent<HTMLElement>) => {
     event.preventDefault();
     event.stopPropagation();
     const handle = event.currentTarget;
@@ -428,6 +405,7 @@ function DirectNodeActions({ node }: { node: FlowNode }) {
           y: Math.round(origin.y + endEvent.clientY - startY),
         },
       });
+      editor.onMoveEnd?.();
     };
     handle.addEventListener("pointermove", move);
     handle.addEventListener("pointerup", end);
@@ -458,146 +436,25 @@ function DirectNodeActions({ node }: { node: FlowNode }) {
       >
         <Plus />
       </button>
-      {showFormat && (
+      <button
+        type="button"
+        className="memory-object-delete-corner is-node"
+        aria-label="Delete node"
+        title="Delete node (Delete key)"
+        onClick={(event) => {
+          event.stopPropagation();
+          editor.onDelete(node.id);
+        }}
+      >
+        <X />
+      </button>
+      {editor.moveMode && (
         <span
-          className="memory-node-popover"
-          role="toolbar"
-          aria-label={`Style ${node.label}`}
-          onClick={(event) => event.stopPropagation()}
-        >
-          <span className="memory-node-popover-title">Edit node</span>
-          <span
-            className="memory-node-popover-palette"
-            aria-label="Node color presets"
-          >
-            {DIRECT_NODE_PALETTE.map(([backgroundColor, textColor]) => (
-              <button
-                type="button"
-                key={backgroundColor}
-                title={`Use ${backgroundColor}`}
-                style={{ background: backgroundColor, color: textColor }}
-                onClick={() =>
-                  editor.onChange(node.id, { backgroundColor, textColor })
-                }
-              >
-                Aa
-              </button>
-            ))}
-          </span>
-          <label>
-            Fill
-            <input
-              type="color"
-              value={node.backgroundColor ?? "#ffffff"}
-              aria-label="Node fill color"
-              onChange={(event) =>
-                editor.onChange(node.id, {
-                  backgroundColor: event.target.value,
-                })
-              }
-            />
-          </label>
-          <label>
-            Text
-            <input
-              type="color"
-              value={node.textColor ?? "#172033"}
-              aria-label="Node text color"
-              onChange={(event) =>
-                editor.onChange(node.id, { textColor: event.target.value })
-              }
-            />
-          </label>
-          {editor.isSideNode?.(node.id) && (
-            <select
-              value={node.presentation ?? "bullets"}
-              aria-label="Node layout"
-              onChange={(event) =>
-                editor.onChange(node.id, {
-                  presentation: event.target.value as NonNullable<
-                    FlowNode["presentation"]
-                  >,
-                })
-              }
-            >
-              <option value="bullets">Bullets</option>
-              <option value="callout">Callout</option>
-              <option value="table">Table</option>
-              <option value="diagram">Diagram</option>
-            </select>
-          )}
-          {editor.onDuplicate && (
-            <button
-              type="button"
-              title="Duplicate node"
-              aria-label="Duplicate node"
-              onClick={() => editor.onDuplicate?.(node)}
-            >
-              <Copy />
-            </button>
-          )}
-          {node.position && (
-            <button
-              type="button"
-              title="Return to automatic layout"
-              aria-label="Reset node position"
-              onClick={() => editor.onChange(node.id, { position: undefined })}
-            >
-              <Undo2 />
-            </button>
-          )}
-        </span>
-      )}
-      <span className="memory-direct-actions">
-        <button
-          type="button"
-          className={showFormat ? "is-active" : ""}
-          title="Show node style tools"
-          aria-label={
-            showFormat ? "Hide node style tools" : "Show node style tools"
-          }
-          aria-expanded={showFormat}
-          onClick={(event) => {
-            event.stopPropagation();
-            setShowFormat((current) => !current);
-          }}
-        >
-          <Palette />
-        </button>
-        <button
-          type="button"
-          title="Move node"
-          aria-label="Move node"
+          className="memory-node-move-surface"
+          aria-label="Drag selected node"
           onPointerDown={beginMove}
-        >
-          <Move />
-        </button>
-        <button
-          type="button"
-          className={editor.connectionSourceId === node.id ? "is-active" : ""}
-          title={
-            editor.connectionSourceId
-              ? "Connect to this node"
-              : "Start connection"
-          }
-          onClick={(event) => {
-            event.stopPropagation();
-            editor.onConnectionClick(node.id);
-          }}
-        >
-          <Link2 />
-        </button>
-        <button
-          type="button"
-          title="Delete node"
-          onClick={(event) => {
-            event.stopPropagation();
-            editor.onDelete(node.id);
-          }}
-        >
-          <Trash2 />
-        </button>
-      </span>
+        />
+      )}
     </>
   );
 }
@@ -1401,6 +1258,8 @@ function SectionContentBlocks({
   onDelete,
   onDuplicate,
   onMove,
+  selectedBlockId,
+  onSelect,
 }: {
   sectionId: string;
   blocks?: SectionContentBlock[];
@@ -1412,6 +1271,8 @@ function SectionContentBlocks({
   onDelete?: (sectionId: string, blockId: string) => void;
   onDuplicate?: (sectionId: string, blockId: string) => void;
   onMove?: (sectionId: string, blockId: string, direction: -1 | 1) => void;
+  selectedBlockId?: string | null;
+  onSelect?: (sectionId: string, blockId: string) => void;
 }) {
   if (!blocks.length) return null;
   const editable = Boolean(onUpdate);
@@ -1427,11 +1288,15 @@ function SectionContentBlocks({
         const items = block.items?.length ? block.items : [""];
         return (
           <article
-            className={`memory-section-block type-${block.type}`}
+            className={`memory-section-block type-${block.type} ${selectedBlockId === block.id ? "is-selected" : ""}`}
             key={block.id}
             style={{
               background: block.backgroundColor,
               color: block.textColor,
+            }}
+            onClick={(event) => {
+              event.stopPropagation();
+              onSelect?.(sectionId, block.id);
             }}
             onDragOver={(event) => {
               if (editable && block.type === "image") event.preventDefault();
@@ -1450,6 +1315,20 @@ function SectionContentBlocks({
               reader.readAsDataURL(file);
             }}
           >
+            {editable && (
+              <button
+                type="button"
+                className="memory-object-delete-corner is-block"
+                title="Delete this block (Delete key)"
+                aria-label="Delete block"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDelete?.(sectionId, block.id);
+                }}
+              >
+                <X />
+              </button>
+            )}
             {editable && (
               <details className="memory-block-actions">
                 <summary title="Show block tools" aria-label="Show block tools">
@@ -1499,14 +1378,6 @@ function SectionContentBlocks({
                     onClick={() => onDuplicate?.(sectionId, block.id)}
                   >
                     <Copy />
-                  </button>
-                  <button
-                    type="button"
-                    title="Delete block"
-                    aria-label="Delete block"
-                    onClick={() => onDelete?.(sectionId, block.id)}
-                  >
-                    <Trash2 />
                   </button>
                 </div>
               </details>
@@ -1769,10 +1640,12 @@ export function MemoryCardCanvas({
   onAttachToSection,
   onRemoveSectionAttachment,
   selectedSectionId,
+  selectedSectionBlockId,
   onRenameSideSection,
   onDeleteSideSection,
   onAddSideSectionAfter,
   onSelectSideSection,
+  onSelectSectionBlock,
   onAddFirstSideSection,
   onAddRootNode,
   onAddNodeToSection,
@@ -1984,6 +1857,20 @@ export function MemoryCardCanvas({
                     }}
                   >
                     {custom && selectedSectionId === id && (
+                      <button
+                        type="button"
+                        className="memory-object-delete-corner is-section"
+                        aria-label={`Delete ${title} section`}
+                        title="Delete section (Delete key)"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onDeleteSideSection?.(id);
+                        }}
+                      >
+                        <X />
+                      </button>
+                    )}
+                    {custom && selectedSectionId === id && (
                       <details
                         className="memory-section-popover"
                         aria-label={`Edit ${title} section`}
@@ -1997,16 +1884,6 @@ export function MemoryCardCanvas({
                           className="memory-section-popover-panel"
                           role="toolbar"
                         >
-                          <label>
-                            Section name
-                            <input
-                              value={title}
-                              aria-label="Section name"
-                              onChange={(event) =>
-                                onRenameSideSection?.(id, event.target.value)
-                              }
-                            />
-                          </label>
                           <select
                             value=""
                             aria-label="Use a common section name"
@@ -2116,20 +1993,33 @@ export function MemoryCardCanvas({
                               <ImagePlus />
                             </button>
                           </span>
-                          <button
-                            type="button"
-                            title="Delete section"
-                            aria-label={`Delete ${title} section`}
-                            onClick={() => onDeleteSideSection?.(id)}
-                          >
-                            <Trash2 />
-                          </button>
                         </div>
                       </details>
                     )}
                     <header>
                       <Icon />
-                      <h2>{title}</h2>
+                      {custom ? (
+                        <input
+                          className="memory-section-title-input"
+                          autoFocus={selectedSectionId === id}
+                          value={title}
+                          placeholder="Section title"
+                          aria-label="Section title"
+                          onFocus={() => onSelectSideSection?.(id)}
+                          onClick={(event) => event.stopPropagation()}
+                          onChange={(event) =>
+                            onRenameSideSection?.(id, event.target.value)
+                          }
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              event.currentTarget.blur();
+                            }
+                          }}
+                        />
+                      ) : (
+                        <h2>{title}</h2>
+                      )}
                     </header>
                     <div className="memory-side-groups">
                       {nodes.map((root) => (
@@ -2148,6 +2038,10 @@ export function MemoryCardCanvas({
                       onDelete={onDeleteSectionBlock}
                       onDuplicate={onDuplicateSectionBlock}
                       onMove={onMoveSectionBlock}
+                      selectedBlockId={
+                        selectedSectionId === id ? selectedSectionBlockId : null
+                      }
+                      onSelect={onSelectSectionBlock}
                     />
                     <SectionImages images={sectionImages} />
                     <SectionAttachments
