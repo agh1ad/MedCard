@@ -5,7 +5,6 @@ import NotFound from "@/pages/not-found";
 import { Route, Switch, Router as WouterRouter } from "wouter";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Library } from "@/pages/Home";
-import { Generate } from "@/pages/Generate";
 import { CardDetail } from "@/pages/CardDetail";
 import { ManualBuilder } from "@/pages/ManualBuilder";
 
@@ -18,7 +17,6 @@ function Router() {
         <Route path="/" component={Library} />
         <Route path="/folders/:id" component={Library} />
         <Route path="/notebooks/:id" component={Library} />
-        <Route path="/generate" component={Generate} />
         <Route path="/manual" component={ManualBuilder} />
         <Route path="/cards/:id" component={CardDetail} />
         <Route component={NotFound} />

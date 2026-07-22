@@ -20,7 +20,6 @@ import {
   MoreHorizontal,
   NotebookPen,
   Plus,
-  PencilRuler,
   Search,
   Trash2,
 } from "lucide-react";
@@ -160,13 +159,8 @@ export function Library() {
             </>
           )}
           <Link href="/manual">
-            <Button variant="outline">
-              <PencilRuler className="mr-2 h-4 w-4" /> Manual
-            </Button>
-          </Link>
-          <Link href="/generate">
             <Button>
-              <Plus className="mr-2 h-4 w-4" /> AI card
+              <Plus className="mr-2 h-4 w-4" /> New MedCard
             </Button>
           </Link>
         </div>
@@ -282,7 +276,7 @@ export function Library() {
               : "Add a card or create a collection to start organizing your study library."}
           </p>
           {!isSearching && (
-            <Link href="/generate">
+            <Link href="/manual">
               <Button className="mt-5">Create a MedCard</Button>
             </Link>
           )}

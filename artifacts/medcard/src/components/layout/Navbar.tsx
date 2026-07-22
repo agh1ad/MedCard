@@ -12,22 +12,44 @@ export function Navbar() {
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground group-hover:scale-105 transition-transform">
             <Stethoscope className="w-5 h-5" />
           </div>
-          <span className="font-bold text-lg tracking-tight text-primary">MedCard</span>
+          <span className="font-bold text-lg tracking-tight text-primary">
+            MedCard
+          </span>
         </Link>
-        
+
         <div className="flex items-center gap-6">
-          <NavItem href="/" icon={<Library className="w-4 h-4" />} label="Library" active={location === "/"} />
-          <NavItem href="/generate" icon={<PlusSquare className="w-4 h-4" />} label="Generate" active={location === "/generate"} />
+          <NavItem
+            href="/"
+            icon={<Library className="w-4 h-4" />}
+            label="Library"
+            active={location === "/"}
+          />
+          <NavItem
+            href="/manual"
+            icon={<PlusSquare className="w-4 h-4" />}
+            label="New MedCard"
+            active={location === "/manual"}
+          />
         </div>
       </div>
     </nav>
   );
 }
 
-function NavItem({ href, icon, label, active }: { href: string; icon: ReactNode; label: string; active: boolean }) {
+function NavItem({
+  href,
+  icon,
+  label,
+  active,
+}: {
+  href: string;
+  icon: ReactNode;
+  label: string;
+  active: boolean;
+}) {
   return (
-    <Link 
-      href={href} 
+    <Link
+      href={href}
       className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${
         active ? "text-primary" : "text-muted-foreground"
       }`}

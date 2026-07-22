@@ -8,7 +8,6 @@ import {
   PencilRuler,
   PanelLeftClose,
   PanelLeftOpen,
-  Sparkles,
   Stethoscope,
   X,
 } from "lucide-react";
@@ -26,18 +25,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
     location === "/" ||
     location.startsWith("/folders/") ||
     location.startsWith("/notebooks/");
-  const isGenerate = location === "/generate";
   const isManual = location === "/manual";
   const isCard = location.startsWith("/cards/");
   const pageTitle = isLibrary
     ? "Documents"
-    : isGenerate
-      ? "New MedCard"
-      : isManual
-        ? "Manual builder"
-        : isCard
-          ? "Study card"
-          : "MedCard";
+    : isManual
+      ? "Manual builder"
+      : isCard
+        ? "Study card"
+        : "MedCard";
 
   return (
     <div
@@ -82,7 +78,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </button>
         </div>
 
-        <Link href="/generate" className="medcard-new-button">
+        <Link href="/manual" className="medcard-new-button">
           <FilePlus2 aria-hidden="true" />
           <span>New MedCard</span>
         </Link>
@@ -97,15 +93,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
           >
             <Files aria-hidden="true" />
             <span>Documents</span>
-          </Link>
-          <Link
-            href="/generate"
-            className={`medcard-nav-item ${isGenerate ? "is-active" : ""}`}
-            aria-current={isGenerate ? "page" : undefined}
-            title="Create a card"
-          >
-            <Sparkles aria-hidden="true" />
-            <span>AI card builder</span>
           </Link>
           <Link
             href="/manual"
@@ -164,8 +151,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
             {isCard && <span className="medcard-breadcrumb-separator">/</span>}
             <h1>{pageTitle}</h1>
           </div>
-          {!isGenerate && !isManual && (
-            <Link href="/generate" className="medcard-topbar-new">
+          {!isManual && (
+            <Link href="/manual" className="medcard-topbar-new">
               <FilePlus2 aria-hidden="true" />
               <span>New</span>
             </Link>
