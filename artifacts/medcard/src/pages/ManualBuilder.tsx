@@ -32,6 +32,7 @@ import {
   PenLine,
   Plus,
   Save,
+  SlidersHorizontal,
   Circle,
   Square,
   Sparkles,
@@ -62,6 +63,9 @@ const SECTIONS = [
 ] as const;
 
 type SectionKey = (typeof SECTIONS)[number][0];
+const SIDE_SECTIONS = SECTIONS.slice(1) as ReadonlyArray<
+  readonly [keyof SectionTrees, string]
+>;
 type CardDraft = {
   topic: string;
   tags: string[];
@@ -252,8 +256,12 @@ export function ManualBuilder() {
   const [selectedCanvasId, setSelectedCanvasId] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<SectionKey>("main");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [connectionSourceId, setConnectionSourceId] = useState<string | null>(
+    null,
+  );
   const [outline, setOutline] = useState("");
   const [showBulk, setShowBulk] = useState(true);
+  const [showStructurePanel, setShowStructurePanel] = useState(false);
   const createMutation = useCreateCard();
 
   const activeNodes =
@@ -279,6 +287,112 @@ export function ManualBuilder() {
   const setActiveNodes = (nodes: FlowNode[]) => {
     if (activeSection === "main") setFlow(nodes);
     else setSectionTrees((current) => ({ ...current, [activeSection]: nodes }));
+  };
+
+  const sectionForNode = (id: string): SectionKey | null => {
+    if (findNode(flow, id)) return "main";
+    for (const [key] of SIDE_SECTIONS) {
+      if (findNode(sectionTrees[key], id)) return key;
+    }
+    return null;
+  };
+
+  const selectNodeAnywhere = (id: string) => {
+    const section = sectionForNode(id);
+    if (section) setActiveSection(section);
+    setSelectedCanvasId(null);
+    setSelectedId(id);
+  };
+
+  const updateNodeAnywhere = (id: string, patch: Partial<FlowNode>) => {
+    setFlow((current) =>
+      mapNode(current, id, (node) => ({ ...node, ...patch })),
+    );
+    setSectionTrees((current) => {
+      const next = { ...current };
+      for (const [key] of SIDE_SECTIONS) {
+        next[key] = mapNode(current[key], id, (node) => ({
+          ...node,
+          ...patch,
+        }));
+      }
+      return next;
+    });
+  };
+
+  const addChildAnywhere = (parentId: string) => {
+    const child = makeNode();
+    updateNodeAnywhere(parentId, {
+      children: [
+        ...(findNode(flow, parentId)?.children ??
+          SIDE_SECTIONS.map(
+            ([key]) => findNode(sectionTrees[key], parentId)?.children,
+          ).find(Boolean) ??
+          []),
+        child,
+      ],
+    });
+    selectNodeAnywhere(child.id);
+  };
+
+  const addSiblingAnywhere = (nodeId: string) => {
+    const sibling = makeNode();
+    setFlow((current) => insertAfter(current, nodeId, sibling));
+    setSectionTrees((current) => {
+      const next = { ...current };
+      for (const [key] of SIDE_SECTIONS) {
+        next[key] = insertAfter(current[key], nodeId, sibling);
+      }
+      return next;
+    });
+    setSelectedId(sibling.id);
+  };
+
+  const deleteNodeAnywhere = (id: string) => {
+    setFlow((current) => removeNode(current, id));
+    setSectionTrees((current) => {
+      const next = { ...current };
+      for (const [key] of SIDE_SECTIONS)
+        next[key] = removeNode(current[key], id);
+      return next;
+    });
+    setSelectedId(null);
+    if (connectionSourceId === id) setConnectionSourceId(null);
+  };
+
+  const handleConnectionClick = (id: string) => {
+    if (!connectionSourceId) {
+      setConnectionSourceId(id);
+      selectNodeAnywhere(id);
+      return;
+    }
+    if (connectionSourceId === id) {
+      setConnectionSourceId(null);
+      return;
+    }
+    if (sectionForNode(connectionSourceId) !== sectionForNode(id)) {
+      toast({
+        title: "Choose a node in the same section",
+        description:
+          "Connections stay readable inside one flow or side section.",
+      });
+      return;
+    }
+    const target =
+      findNode(flow, id) ??
+      SIDE_SECTIONS.map(([key]) => findNode(sectionTrees[key], id)).find(
+        Boolean,
+      );
+    updateNodeAnywhere(id, {
+      additionalParentIds: [
+        ...new Set([
+          ...(target?.additionalParentIds ?? []),
+          connectionSourceId,
+        ]),
+      ],
+    });
+    setConnectionSourceId(null);
+    selectNodeAnywhere(id);
   };
 
   useEffect(() => {
@@ -423,7 +537,7 @@ export function ManualBuilder() {
     }
     const sourceText = [
       nodesToText(flow),
-      ...SECTIONS.slice(1).map(([key, label]) =>
+      ...SIDE_SECTIONS.map(([key, label]) =>
         sectionTrees[key as keyof SectionTrees].length
           ? `\n${label}\n${nodesToText(sectionTrees[key as keyof SectionTrees])}`
           : "",
@@ -491,6 +605,13 @@ export function ManualBuilder() {
           <span className="manual-saved">
             <Check /> Draft autosaved
           </span>
+          <Button
+            variant="outline"
+            onClick={() => setShowStructurePanel((value) => !value)}
+          >
+            <SlidersHorizontal className="mr-2 h-4 w-4" />
+            {showStructurePanel ? "Hide outline tools" : "Outline tools"}
+          </Button>
           <Button onClick={save} disabled={createMutation.isPending}>
             {createMutation.isPending ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -526,239 +647,245 @@ export function ManualBuilder() {
         </div>
       </section>
 
-      <div className="manual-workbench">
-        <section className="manual-editor">
-          <div
-            className="manual-section-tabs"
-            role="tablist"
-            aria-label="Card sections"
-          >
-            {SECTIONS.map(([key, label]) => {
-              const count = flattenNodes(
-                key === "main" ? flow : sectionTrees[key],
-              ).length;
-              return (
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={activeSection === key}
-                  className={activeSection === key ? "is-active" : ""}
-                  onClick={() => {
-                    setActiveSection(key);
-                    setSelectedId(null);
-                  }}
-                  key={key}
-                >
-                  {label}
-                  {count > 0 && <span>{count}</span>}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="manual-fast-tools">
-            <button
-              type="button"
-              onClick={() => setShowBulk((value) => !value)}
+      <div
+        className={`manual-workbench ${showStructurePanel ? "has-editor" : "is-preview-only"}`}
+      >
+        {showStructurePanel && (
+          <section className="manual-editor">
+            <div
+              className="manual-section-tabs"
+              role="tablist"
+              aria-label="Card sections"
             >
-              <Braces /> Bulk outline <span>Fastest</span>
-              {showBulk ? <ChevronDown /> : <ChevronRight />}
-            </button>
-            {showBulk && (
-              <div className="manual-bulk-body">
-                <Textarea
-                  value={outline}
-                  onChange={(event) => setOutline(event.target.value)}
-                  placeholder={
-                    "Inflammation -> capillary leak -> edema\n  Hypoxemia :: low oxygen\n  Reduced compliance\nTreatment\n  Oxygen\n  Diuretics"
-                  }
-                />
-                <div>
-                  <small>
-                    Indent with spaces or Tab. Use → for chains and :: for
-                    smaller detail text.
-                  </small>
-                  <Button size="sm" onClick={importOutline}>
-                    <GitBranch className="mr-2 h-4 w-4" /> Build this section
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="manual-tree-heading">
-            <div>
-              <h2>{SECTIONS.find(([key]) => key === activeSection)?.[1]}</h2>
-              <p>Enter = sibling · Tab = child</p>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => addRoot()}>
-              <Plus className="mr-1 h-4 w-4" /> Root node
-            </Button>
-          </div>
-
-          <div className="manual-node-list">
-            {activeNodes.length ? (
-              activeNodes.map((node) => (
-                <NodeRow
-                  key={node.id}
-                  node={node}
-                  depth={0}
-                  selectedId={selectedId}
-                  onSelect={setSelectedId}
-                  onChange={(id, update) =>
-                    setActiveNodes(mapNode(activeNodes, id, update))
-                  }
-                  onAddChild={addChild}
-                  onAddSibling={addSibling}
-                  onDuplicate={duplicate}
-                  onDelete={(id) => setActiveNodes(removeNode(activeNodes, id))}
-                />
-              ))
-            ) : (
-              <button
-                type="button"
-                className="manual-empty-nodes"
-                onClick={() => addRoot()}
-              >
-                <CirclePlus />
-                <strong>Add the first node</strong>
-                <span>or paste an outline above</span>
-              </button>
-            )}
-          </div>
-
-          {selectedNode && (
-            <aside className="manual-inspector">
-              <div className="manual-inspector-title">
-                <div>
-                  <Palette />
-                  <span>
-                    <strong>Selected node</strong>
-                    <small>Full formatting & connections</small>
-                  </span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setSelectedId(null)}
-                >
-                  <X />
-                </Button>
-              </div>
-              <label>
-                Detail / side text
-                <Textarea
-                  value={selectedNode.sublabel ?? ""}
-                  onChange={(event) =>
-                    updateSelected((node) => ({
-                      ...node,
-                      sublabel: event.target.value || null,
-                    }))
-                  }
-                  placeholder="Optional explanation shown below the node"
-                />
-              </label>
-              <div className="manual-color-row">
-                <label>
-                  Background
-                  <input
-                    type="color"
-                    value={selectedNode.backgroundColor ?? "#ffffff"}
-                    onChange={(event) =>
-                      updateSelected((node) => ({
-                        ...node,
-                        backgroundColor: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label>
-                  Text
-                  <input
-                    type="color"
-                    value={selectedNode.textColor ?? "#172033"}
-                    onChange={(event) =>
-                      updateSelected((node) => ({
-                        ...node,
-                        textColor: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-              </div>
-              <div className="manual-palette" aria-label="Color presets">
-                {PALETTE.map(([background, textColor]) => (
+              {SECTIONS.map(([key, label]) => {
+                const count = flattenNodes(
+                  key === "main" ? flow : sectionTrees[key],
+                ).length;
+                return (
                   <button
                     type="button"
-                    key={background}
-                    title={`${background} / ${textColor}`}
-                    style={{ background, color: textColor }}
-                    onClick={() =>
-                      updateSelected((node) => ({
-                        ...node,
-                        backgroundColor: background,
-                        textColor,
-                      }))
-                    }
+                    role="tab"
+                    aria-selected={activeSection === key}
+                    className={activeSection === key ? "is-active" : ""}
+                    onClick={() => {
+                      setActiveSection(key);
+                      setSelectedId(null);
+                    }}
+                    key={key}
                   >
-                    Aa
+                    {label}
+                    {count > 0 && <span>{count}</span>}
                   </button>
-                ))}
+                );
+              })}
+            </div>
+
+            <div className="manual-fast-tools">
+              <button
+                type="button"
+                onClick={() => setShowBulk((value) => !value)}
+              >
+                <Braces /> Bulk outline <span>Fastest</span>
+                {showBulk ? <ChevronDown /> : <ChevronRight />}
+              </button>
+              {showBulk && (
+                <div className="manual-bulk-body">
+                  <Textarea
+                    value={outline}
+                    onChange={(event) => setOutline(event.target.value)}
+                    placeholder={
+                      "Inflammation -> capillary leak -> edema\n  Hypoxemia :: low oxygen\n  Reduced compliance\nTreatment\n  Oxygen\n  Diuretics"
+                    }
+                  />
+                  <div>
+                    <small>
+                      Indent with spaces or Tab. Use → for chains and :: for
+                      smaller detail text.
+                    </small>
+                    <Button size="sm" onClick={importOutline}>
+                      <GitBranch className="mr-2 h-4 w-4" /> Build this section
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="manual-tree-heading">
+              <div>
+                <h2>{SECTIONS.find(([key]) => key === activeSection)?.[1]}</h2>
+                <p>Enter = sibling · Tab = child</p>
               </div>
-              {activeSection !== "main" && (
+              <Button variant="outline" size="sm" onClick={() => addRoot()}>
+                <Plus className="mr-1 h-4 w-4" /> Root node
+              </Button>
+            </div>
+
+            <div className="manual-node-list">
+              {activeNodes.length ? (
+                activeNodes.map((node) => (
+                  <NodeRow
+                    key={node.id}
+                    node={node}
+                    depth={0}
+                    selectedId={selectedId}
+                    onSelect={setSelectedId}
+                    onChange={(id, update) =>
+                      setActiveNodes(mapNode(activeNodes, id, update))
+                    }
+                    onAddChild={addChild}
+                    onAddSibling={addSibling}
+                    onDuplicate={duplicate}
+                    onDelete={(id) =>
+                      setActiveNodes(removeNode(activeNodes, id))
+                    }
+                  />
+                ))
+              ) : (
+                <button
+                  type="button"
+                  className="manual-empty-nodes"
+                  onClick={() => addRoot()}
+                >
+                  <CirclePlus />
+                  <strong>Add the first node</strong>
+                  <span>or paste an outline above</span>
+                </button>
+              )}
+            </div>
+
+            {selectedNode && (
+              <aside className="manual-inspector">
+                <div className="manual-inspector-title">
+                  <div>
+                    <Palette />
+                    <span>
+                      <strong>Selected node</strong>
+                      <small>Full formatting & connections</small>
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSelectedId(null)}
+                  >
+                    <X />
+                  </Button>
+                </div>
                 <label>
-                  Side-note layout
-                  <select
-                    value={selectedNode.presentation ?? "bullets"}
+                  Detail / side text
+                  <Textarea
+                    value={selectedNode.sublabel ?? ""}
                     onChange={(event) =>
                       updateSelected((node) => ({
                         ...node,
-                        presentation: event.target.value as NonNullable<
-                          FlowNode["presentation"]
-                        >,
+                        sublabel: event.target.value || null,
+                      }))
+                    }
+                    placeholder="Optional explanation shown below the node"
+                  />
+                </label>
+                <div className="manual-color-row">
+                  <label>
+                    Background
+                    <input
+                      type="color"
+                      value={selectedNode.backgroundColor ?? "#ffffff"}
+                      onChange={(event) =>
+                        updateSelected((node) => ({
+                          ...node,
+                          backgroundColor: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    Text
+                    <input
+                      type="color"
+                      value={selectedNode.textColor ?? "#172033"}
+                      onChange={(event) =>
+                        updateSelected((node) => ({
+                          ...node,
+                          textColor: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                </div>
+                <div className="manual-palette" aria-label="Color presets">
+                  {PALETTE.map(([background, textColor]) => (
+                    <button
+                      type="button"
+                      key={background}
+                      title={`${background} / ${textColor}`}
+                      style={{ background, color: textColor }}
+                      onClick={() =>
+                        updateSelected((node) => ({
+                          ...node,
+                          backgroundColor: background,
+                          textColor,
+                        }))
+                      }
+                    >
+                      Aa
+                    </button>
+                  ))}
+                </div>
+                {activeSection !== "main" && (
+                  <label>
+                    Side-note layout
+                    <select
+                      value={selectedNode.presentation ?? "bullets"}
+                      onChange={(event) =>
+                        updateSelected((node) => ({
+                          ...node,
+                          presentation: event.target.value as NonNullable<
+                            FlowNode["presentation"]
+                          >,
+                        }))
+                      }
+                    >
+                      <option value="bullets">Bullets</option>
+                      <option value="callout">Callout box</option>
+                      <option value="table">Two-column table</option>
+                      <option value="diagram">Mini diagram</option>
+                    </select>
+                  </label>
+                )}
+                <label>
+                  <span className="manual-label-icon">
+                    <Link2 /> Extra incoming connections
+                  </span>
+                  <select
+                    multiple
+                    value={selectedNode.additionalParentIds ?? []}
+                    onChange={(event) =>
+                      updateSelected((node) => ({
+                        ...node,
+                        additionalParentIds: Array.from(
+                          event.target.selectedOptions,
+                          (option) => option.value,
+                        ),
                       }))
                     }
                   >
-                    <option value="bullets">Bullets</option>
-                    <option value="callout">Callout box</option>
-                    <option value="table">Two-column table</option>
-                    <option value="diagram">Mini diagram</option>
+                    {allActiveNodes
+                      .filter((node) => !invalidParentIds.has(node.id))
+                      .map((node) => (
+                        <option key={node.id} value={node.id}>
+                          {node.label}
+                        </option>
+                      ))}
                   </select>
+                  <small>
+                    Hold Cmd/Ctrl to select several. The normal parent
+                    connection stays intact.
+                  </small>
                 </label>
-              )}
-              <label>
-                <span className="manual-label-icon">
-                  <Link2 /> Extra incoming connections
-                </span>
-                <select
-                  multiple
-                  value={selectedNode.additionalParentIds ?? []}
-                  onChange={(event) =>
-                    updateSelected((node) => ({
-                      ...node,
-                      additionalParentIds: Array.from(
-                        event.target.selectedOptions,
-                        (option) => option.value,
-                      ),
-                    }))
-                  }
-                >
-                  {allActiveNodes
-                    .filter((node) => !invalidParentIds.has(node.id))
-                    .map((node) => (
-                      <option key={node.id} value={node.id}>
-                        {node.label}
-                      </option>
-                    ))}
-                </select>
-                <small>
-                  Hold Cmd/Ctrl to select several. The normal parent connection
-                  stays intact.
-                </small>
-              </label>
-            </aside>
-          )}
-        </section>
+              </aside>
+            )}
+          </section>
+        )}
 
         <aside className="manual-preview">
           <div className="manual-preview-heading">
@@ -776,6 +903,132 @@ export function ManualBuilder() {
             <span>
               <Keyboard /> Keyboard-first
             </span>
+          </div>
+          <div
+            className="direct-node-toolbar"
+            aria-label="Interactive node tools"
+          >
+            <div className="direct-section-tabs">
+              {SECTIONS.map(([key, label]) => (
+                <button
+                  type="button"
+                  key={key}
+                  className={activeSection === key ? "is-active" : ""}
+                  onClick={() => {
+                    setActiveSection(key);
+                    setSelectedId(null);
+                    setConnectionSourceId(null);
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="direct-node-actions-bar">
+              <Button size="sm" onClick={() => addRoot()}>
+                <Plus className="mr-1 h-4 w-4" /> Add node
+              </Button>
+              {connectionSourceId && (
+                <button
+                  type="button"
+                  onClick={() => setConnectionSourceId(null)}
+                >
+                  <Link2 /> Choose the target node <X />
+                </button>
+              )}
+              <small>
+                Click a node to type, add a child, connect, or delete.
+              </small>
+            </div>
+            {selectedNode && (
+              <div className="direct-node-format-bar">
+                <span className="direct-format-label">Selected node</span>
+                <div
+                  className="direct-format-palette"
+                  aria-label="Quick node colors"
+                >
+                  {PALETTE.map(([background, textColor]) => (
+                    <button
+                      type="button"
+                      key={background}
+                      title={`${background} / ${textColor}`}
+                      style={{ background, color: textColor }}
+                      onClick={() =>
+                        updateNodeAnywhere(selectedNode.id, {
+                          backgroundColor: background,
+                          textColor,
+                        })
+                      }
+                    >
+                      Aa
+                    </button>
+                  ))}
+                </div>
+                <label title="Custom node background">
+                  Fill
+                  <input
+                    type="color"
+                    value={selectedNode.backgroundColor ?? "#ffffff"}
+                    onChange={(event) =>
+                      updateNodeAnywhere(selectedNode.id, {
+                        backgroundColor: event.target.value,
+                      })
+                    }
+                  />
+                </label>
+                <label title="Custom node text color">
+                  Text
+                  <input
+                    type="color"
+                    value={selectedNode.textColor ?? "#172033"}
+                    onChange={(event) =>
+                      updateNodeAnywhere(selectedNode.id, {
+                        textColor: event.target.value,
+                      })
+                    }
+                  />
+                </label>
+                {activeSection !== "main" && (
+                  <select
+                    aria-label="Side node layout"
+                    value={selectedNode.presentation ?? "bullets"}
+                    onChange={(event) =>
+                      updateNodeAnywhere(selectedNode.id, {
+                        presentation: event.target.value as NonNullable<
+                          FlowNode["presentation"]
+                        >,
+                      })
+                    }
+                  >
+                    <option value="bullets">Bullets</option>
+                    <option value="callout">Callout</option>
+                    <option value="table">Table</option>
+                    <option value="diagram">Diagram</option>
+                  </select>
+                )}
+                <button
+                  type="button"
+                  title="Duplicate node"
+                  onClick={() => duplicate(selectedNode)}
+                >
+                  <Copy />
+                </button>
+                {(selectedNode.additionalParentIds?.length ?? 0) > 0 && (
+                  <button
+                    type="button"
+                    title="Clear extra connections"
+                    onClick={() =>
+                      updateNodeAnywhere(selectedNode.id, {
+                        additionalParentIds: [],
+                      })
+                    }
+                  >
+                    <Link2 />
+                    <X />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           <div className="freeform-toolbar" aria-label="Freeform page tools">
             <button
@@ -965,6 +1218,16 @@ export function ManualBuilder() {
             freeformColor={freeformColor}
             selectedCanvasId={selectedCanvasId}
             onSelectCanvasElement={setSelectedCanvasId}
+            directNodeEditing={{
+              selectedId,
+              connectionSourceId,
+              onSelect: selectNodeAnywhere,
+              onChange: updateNodeAnywhere,
+              onAddChild: addChildAnywhere,
+              onAddSibling: addSiblingAnywhere,
+              onDelete: deleteNodeAnywhere,
+              onConnectionClick: handleConnectionClick,
+            }}
           />
         </aside>
       </div>

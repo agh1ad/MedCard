@@ -15,9 +15,31 @@ import {
   BookOpenCheck,
   HeartPulse,
   Link2,
+  Plus,
   Pill,
+  Trash2,
 } from "lucide-react";
-import { useId, useLayoutEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+
+export interface DirectNodeEditing {
+  selectedId: string | null;
+  connectionSourceId: string | null;
+  onSelect: (id: string) => void;
+  onChange: (id: string, patch: Partial<FlowNode>) => void;
+  onAddChild: (id: string) => void;
+  onAddSibling: (id: string) => void;
+  onDelete: (id: string) => void;
+  onConnectionClick: (id: string) => void;
+}
+
+const DirectNodeContext = createContext<DirectNodeEditing | null>(null);
 
 interface MemoryCardCanvasProps {
   topic: string;
@@ -31,6 +53,7 @@ interface MemoryCardCanvasProps {
   freeformColor?: string;
   selectedCanvasId?: string | null;
   onSelectCanvasElement?: (id: string | null) => void;
+  directNodeEditing?: DirectNodeEditing;
 }
 
 const SECTION_CONFIG: Array<{
@@ -187,10 +210,13 @@ function MemoryNodeCell({
   roleOverride?: SemanticRole;
 }) {
   const semanticRole = roleOverride ?? node.semanticRole ?? "fact";
+  const editor = useContext(DirectNodeContext);
+  const isSelected = editor?.selectedId === node.id;
+  const isConnectionSource = editor?.connectionSourceId === node.id;
 
   return (
     <div
-      className={`memory-node role-${semanticRole} origin-${node.origin ?? "source"}`}
+      className={`memory-node role-${semanticRole} origin-${node.origin ?? "source"} ${editor ? "is-direct-editable" : ""} ${isSelected ? "is-direct-selected" : ""} ${isConnectionSource ? "is-connection-source" : ""}`}
       style={
         node.backgroundColor || node.textColor
           ? {
@@ -200,17 +226,127 @@ function MemoryNodeCell({
             }
           : undefined
       }
+      onClick={(event) => {
+        if (!editor) return;
+        event.stopPropagation();
+        if (
+          editor.connectionSourceId &&
+          editor.connectionSourceId !== node.id
+        ) {
+          editor.onConnectionClick(node.id);
+        } else {
+          editor.onSelect(node.id);
+        }
+      }}
       title={node.origin === "ai_added" ? "Added by AI for context" : undefined}
     >
-      <span>
-        <HighlightedText text={node.label} terms={node.highlightTerms} />
-      </span>
-      {node.sublabel && (
-        <small style={node.textColor ? { color: node.textColor } : undefined}>
-          <HighlightedText text={node.sublabel} terms={node.highlightTerms} />
-        </small>
+      {editor ? (
+        <>
+          <input
+            className="memory-direct-label"
+            value={node.label}
+            aria-label="Node text"
+            onFocus={() => editor.onSelect(node.id)}
+            onChange={(event) =>
+              editor.onChange(node.id, { label: event.target.value })
+            }
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                editor.onAddSibling(node.id);
+              } else if (event.key === "Tab") {
+                event.preventDefault();
+                editor.onAddChild(node.id);
+              }
+            }}
+          />
+          {(isSelected || node.sublabel) && (
+            <input
+              className="memory-direct-detail"
+              value={node.sublabel ?? ""}
+              placeholder="Add side text…"
+              aria-label="Node side text"
+              onChange={(event) =>
+                editor.onChange(node.id, {
+                  sublabel: event.target.value || null,
+                })
+              }
+            />
+          )}
+          <DirectNodeActions node={node} />
+        </>
+      ) : (
+        <>
+          <span>
+            <HighlightedText text={node.label} terms={node.highlightTerms} />
+          </span>
+          {node.sublabel && (
+            <small
+              style={node.textColor ? { color: node.textColor } : undefined}
+            >
+              <HighlightedText
+                text={node.sublabel}
+                terms={node.highlightTerms}
+              />
+            </small>
+          )}
+        </>
       )}
     </div>
+  );
+}
+
+function DirectNodeActions({ node }: { node: FlowNode }) {
+  const editor = useContext(DirectNodeContext);
+  if (!editor || editor.selectedId !== node.id) return null;
+  return (
+    <span className="memory-direct-actions">
+      <button
+        type="button"
+        title="Add child below"
+        onClick={(event) => {
+          event.stopPropagation();
+          editor.onAddChild(node.id);
+        }}
+      >
+        <Plus />
+      </button>
+      <button
+        type="button"
+        title="Add sibling beside"
+        onClick={(event) => {
+          event.stopPropagation();
+          editor.onAddSibling(node.id);
+        }}
+      >
+        <span aria-hidden="true">+↔</span>
+      </button>
+      <button
+        type="button"
+        className={editor.connectionSourceId === node.id ? "is-active" : ""}
+        title={
+          editor.connectionSourceId
+            ? "Connect to this node"
+            : "Start connection"
+        }
+        onClick={(event) => {
+          event.stopPropagation();
+          editor.onConnectionClick(node.id);
+        }}
+      >
+        <Link2 />
+      </button>
+      <button
+        type="button"
+        title="Delete node"
+        onClick={(event) => {
+          event.stopPropagation();
+          editor.onDelete(node.id);
+        }}
+      >
+        <Trash2 />
+      </button>
+    </span>
   );
 }
 
@@ -449,11 +585,13 @@ function MemoryBulletList({
   roleOverride?: SemanticRole;
   nodeLabels: Map<string, string>;
 }) {
+  const editor = useContext(DirectNodeContext);
   if (!nodes.length) return null;
 
   return (
     <ul className="memory-bullets">
       {nodes.map((node) => {
+        const isSelected = editor?.selectedId === node.id;
         const semanticRole = roleOverride ?? node.semanticRole ?? "fact";
         const detailParts = (node.sublabel ?? "")
           .split(/\s*•\s*/)
@@ -465,7 +603,7 @@ function MemoryBulletList({
           .filter((label): label is string => Boolean(label));
         return (
           <li
-            className={`role-${semanticRole} origin-${node.origin ?? "source"}`}
+            className={`role-${semanticRole} origin-${node.origin ?? "source"} ${editor ? "is-direct-editable" : ""} ${isSelected ? "is-direct-selected" : ""} ${editor?.connectionSourceId === node.id ? "is-connection-source" : ""}`}
             style={
               node.backgroundColor || node.textColor
                 ? {
@@ -477,30 +615,79 @@ function MemoryBulletList({
                 : undefined
             }
             key={node.id}
+            onClick={(event) => {
+              if (!editor) return;
+              event.stopPropagation();
+              if (
+                editor.connectionSourceId &&
+                editor.connectionSourceId !== node.id
+              ) {
+                editor.onConnectionClick(node.id);
+              } else {
+                editor.onSelect(node.id);
+              }
+            }}
             title={
               node.origin === "ai_added" ? "Added by AI for context" : undefined
             }
           >
             <div>
               <strong>
-                <HighlightedText
-                  text={node.label}
-                  terms={node.highlightTerms}
-                />
-              </strong>
-              {detailParts.length === 1 && (
-                <span
-                  className="memory-bullet-detail"
-                  style={node.textColor ? { color: node.textColor } : undefined}
-                >
+                {editor ? (
+                  <input
+                    className="memory-direct-label"
+                    value={node.label}
+                    aria-label="Node text"
+                    onChange={(event) =>
+                      editor.onChange(node.id, { label: event.target.value })
+                    }
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        editor.onAddSibling(node.id);
+                      } else if (event.key === "Tab") {
+                        event.preventDefault();
+                        editor.onAddChild(node.id);
+                      }
+                    }}
+                  />
+                ) : (
                   <HighlightedText
-                    text={detailParts[0]}
+                    text={node.label}
                     terms={node.highlightTerms}
                   />
-                </span>
+                )}
+              </strong>
+              {editor && (isSelected || node.sublabel) ? (
+                <input
+                  className="memory-direct-detail"
+                  value={node.sublabel ?? ""}
+                  placeholder="Add side text…"
+                  aria-label="Node side text"
+                  onChange={(event) =>
+                    editor.onChange(node.id, {
+                      sublabel: event.target.value || null,
+                    })
+                  }
+                />
+              ) : (
+                detailParts.length === 1 && (
+                  <span
+                    className="memory-bullet-detail"
+                    style={
+                      node.textColor ? { color: node.textColor } : undefined
+                    }
+                  >
+                    <HighlightedText
+                      text={detailParts[0]}
+                      terms={node.highlightTerms}
+                    />
+                  </span>
+                )
               )}
+              <DirectNodeActions node={node} />
             </div>
-            {hasDetailList && (
+            {!editor && hasDetailList && (
               <ul
                 className="memory-bullet-detail-list"
                 style={node.textColor ? { color: node.textColor } : undefined}
@@ -550,12 +737,36 @@ function MemorySideTable({
   root: FlowNode;
   nodeLabels: Map<string, string>;
 }) {
+  const editor = useContext(DirectNodeContext);
   const rows = root.children?.length ? root.children : [root];
   return (
     <div className="memory-side-table-wrap">
       {root.children?.length ? (
-        <h3>
-          <HighlightedText text={root.label} terms={root.highlightTerms} />
+        <h3
+          className={editor?.selectedId === root.id ? "is-direct-selected" : ""}
+          onClick={() => {
+            if (!editor) return;
+            if (
+              editor.connectionSourceId &&
+              editor.connectionSourceId !== root.id
+            )
+              editor.onConnectionClick(root.id);
+            else editor.onSelect(root.id);
+          }}
+        >
+          {editor ? (
+            <input
+              className="memory-direct-label"
+              value={root.label}
+              onFocus={() => editor.onSelect(root.id)}
+              onChange={(event) =>
+                editor.onChange(root.id, { label: event.target.value })
+              }
+            />
+          ) : (
+            <HighlightedText text={root.label} terms={root.highlightTerms} />
+          )}
+          <DirectNodeActions node={root} />
         </h3>
       ) : null}
       <table className="memory-side-table">
@@ -567,17 +778,53 @@ function MemorySideTable({
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.id}>
+            <tr
+              key={row.id}
+              className={
+                editor?.selectedId === row.id ? "is-direct-selected" : ""
+              }
+              onClick={() => {
+                if (!editor) return;
+                if (
+                  editor.connectionSourceId &&
+                  editor.connectionSourceId !== row.id
+                )
+                  editor.onConnectionClick(row.id);
+                else editor.onSelect(row.id);
+              }}
+            >
               <td>
                 <strong>
-                  <HighlightedText
-                    text={row.label}
-                    terms={row.highlightTerms}
-                  />
+                  {editor ? (
+                    <input
+                      className="memory-direct-label"
+                      value={row.label}
+                      onChange={(event) =>
+                        editor.onChange(row.id, { label: event.target.value })
+                      }
+                    />
+                  ) : (
+                    <HighlightedText
+                      text={row.label}
+                      terms={row.highlightTerms}
+                    />
+                  )}
                 </strong>
+                <DirectNodeActions node={row} />
               </td>
               <td>
-                {row.sublabel ? (
+                {editor ? (
+                  <input
+                    className="memory-direct-detail"
+                    value={row.sublabel ?? ""}
+                    placeholder="Add key point…"
+                    onChange={(event) =>
+                      editor.onChange(row.id, {
+                        sublabel: event.target.value || null,
+                      })
+                    }
+                  />
+                ) : row.sublabel ? (
                   <HighlightedText
                     text={row.sublabel}
                     terms={row.highlightTerms}
@@ -603,23 +850,52 @@ function MemorySideCallout({
   root: FlowNode;
   nodeLabels: Map<string, string>;
 }) {
+  const editor = useContext(DirectNodeContext);
   return (
     <div
-      className="memory-side-callout"
+      className={`memory-side-callout ${editor ? "is-direct-editable" : ""} ${editor?.selectedId === root.id ? "is-direct-selected" : ""}`}
       style={
         root.backgroundColor || root.textColor
           ? { background: root.backgroundColor, color: root.textColor }
           : undefined
       }
+      onClick={() => {
+        if (!editor) return;
+        if (editor.connectionSourceId && editor.connectionSourceId !== root.id)
+          editor.onConnectionClick(root.id);
+        else editor.onSelect(root.id);
+      }}
     >
       <strong>
-        <HighlightedText text={root.label} terms={root.highlightTerms} />
+        {editor ? (
+          <input
+            className="memory-direct-label"
+            value={root.label}
+            onChange={(event) =>
+              editor.onChange(root.id, { label: event.target.value })
+            }
+          />
+        ) : (
+          <HighlightedText text={root.label} terms={root.highlightTerms} />
+        )}
       </strong>
-      {root.sublabel && (
-        <p style={root.textColor ? { color: root.textColor } : undefined}>
-          <HighlightedText text={root.sublabel} terms={root.highlightTerms} />
-        </p>
+      {editor ? (
+        <input
+          className="memory-direct-detail"
+          value={root.sublabel ?? ""}
+          placeholder="Add side text…"
+          onChange={(event) =>
+            editor.onChange(root.id, { sublabel: event.target.value || null })
+          }
+        />
+      ) : (
+        root.sublabel && (
+          <p style={root.textColor ? { color: root.textColor } : undefined}>
+            <HighlightedText text={root.sublabel} terms={root.highlightTerms} />
+          </p>
+        )
       )}
+      <DirectNodeActions node={root} />
       <MemoryBulletList nodes={root.children ?? []} nodeLabels={nodeLabels} />
     </div>
   );
@@ -682,6 +958,7 @@ export function MemoryCardCanvas({
   freeformColor,
   selectedCanvasId,
   onSelectCanvasElement,
+  directNodeEditing,
 }: MemoryCardCanvasProps) {
   const cardRef = useRef<HTMLElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
@@ -747,74 +1024,80 @@ export function MemoryCardCanvas({
   }, [topic, flow, sectionTrees, images]);
 
   return (
-    <div id="print-area" className={`memory-card-shell ${className}`}>
-      <article id="memory-card-print" className="memory-card" ref={cardRef}>
-        <div className="memory-card-title">
-          <span className="memory-card-kicker">MEDCARD / VISUAL NOTE</span>
-          <h1>{topic || "Untitled medical card"}</h1>
-          <div className="memory-title-stem" />
-        </div>
+    <DirectNodeContext.Provider value={directNodeEditing ?? null}>
+      <div id="print-area" className={`memory-card-shell ${className}`}>
+        <article
+          id="memory-card-print"
+          className={`memory-card ${directNodeEditing ? "is-direct-editing" : ""}`}
+          ref={cardRef}
+        >
+          <div className="memory-card-title">
+            <span className="memory-card-kicker">MEDCARD / VISUAL NOTE</span>
+            <h1>{topic || "Untitled medical card"}</h1>
+            <div className="memory-title-stem" />
+          </div>
 
-        <aside className="memory-sidebar" ref={sidebarRef}>
-          {visibleSections.map(({ key, title, icon: Icon, accent }) => {
-            const nodes = sectionTrees[key] ?? [];
-            const sectionImages = imagesFor(key);
-            const nodeCount = countNodes(nodes);
-            const nodeLabels = collectNodeLabels(nodes);
-            const usesWidePresentation = nodes.some(
-              (node) =>
-                node.presentation === "table" ||
-                node.presentation === "diagram",
-            );
-            return (
-              <section
-                className={`memory-section accent-${accent} ${nodeCount > 3 || usesWidePresentation ? "is-wide" : ""} ${nodeCount > 6 ? "is-dense" : ""}`}
-                key={key}
-              >
-                <header>
-                  <Icon />
-                  <h2>{title}</h2>
-                </header>
-                <div className="memory-side-groups">
-                  {nodes.map((root) => (
-                    <MemorySideGroup
-                      key={root.id}
-                      nodeLabels={nodeLabels}
-                      roleOverride={SECTION_ROLES[key]}
-                      root={root}
-                    />
-                  ))}
-                </div>
-                <SectionImages images={sectionImages} />
-              </section>
-            );
-          })}
-        </aside>
+          <aside className="memory-sidebar" ref={sidebarRef}>
+            {visibleSections.map(({ key, title, icon: Icon, accent }) => {
+              const nodes = sectionTrees[key] ?? [];
+              const sectionImages = imagesFor(key);
+              const nodeCount = countNodes(nodes);
+              const nodeLabels = collectNodeLabels(nodes);
+              const usesWidePresentation = nodes.some(
+                (node) =>
+                  node.presentation === "table" ||
+                  node.presentation === "diagram",
+              );
+              return (
+                <section
+                  className={`memory-section accent-${accent} ${nodeCount > 3 || usesWidePresentation ? "is-wide" : ""} ${nodeCount > 6 ? "is-dense" : ""}`}
+                  key={key}
+                >
+                  <header>
+                    <Icon />
+                    <h2>{title}</h2>
+                  </header>
+                  <div className="memory-side-groups">
+                    {nodes.map((root) => (
+                      <MemorySideGroup
+                        key={root.id}
+                        nodeLabels={nodeLabels}
+                        roleOverride={SECTION_ROLES[key]}
+                        root={root}
+                      />
+                    ))}
+                  </div>
+                  <SectionImages images={sectionImages} />
+                </section>
+              );
+            })}
+          </aside>
 
-        <main className="memory-main" ref={mainRef}>
-          {flow.length ? (
-            <MemoryFlowGraph nodes={flow} />
-          ) : (
-            <div className="memory-empty">
-              No central mechanism was identified.
-            </div>
-          )}
-          <SectionImages images={imagesFor("main")} />
-        </main>
+          <main className="memory-main" ref={mainRef}>
+            {flow.length ? (
+              <MemoryFlowGraph nodes={flow} />
+            ) : (
+              <div className="memory-empty">
+                No central mechanism was identified.
+              </div>
+            )}
+            <SectionImages images={imagesFor("main")} />
+          </main>
 
-        <footer className="memory-card-footer">
-          <span>SOURCE-TRACEABLE VISUAL CARD</span>
-          <span>{totalNodes} information blocks</span>
-        </footer>
-        <FreeformCanvasLayer
-          elements={canvasElements}
-          onChange={onCanvasElementsChange}
-          tool={freeformTool}
-          strokeColor={freeformColor}
-          selectedId={selectedCanvasId}
-          onSelect={onSelectCanvasElement}
-        />
-      </article>
-    </div>
+          <footer className="memory-card-footer">
+            <span>SOURCE-TRACEABLE VISUAL CARD</span>
+            <span>{totalNodes} information blocks</span>
+          </footer>
+          <FreeformCanvasLayer
+            elements={canvasElements}
+            onChange={onCanvasElementsChange}
+            tool={freeformTool}
+            strokeColor={freeformColor}
+            selectedId={selectedCanvasId}
+            onSelect={onSelectCanvasElement}
+          />
+        </article>
+      </div>
+    </DirectNodeContext.Provider>
   );
 }
