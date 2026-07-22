@@ -27,8 +27,10 @@ import {
   ListChecks,
   MessageSquareText,
   Move,
+  Palette,
   Plus,
   Pill,
+  SlidersHorizontal,
   Table2,
   Trash2,
   Type,
@@ -37,6 +39,7 @@ import {
 import {
   createContext,
   useContext,
+  useEffect,
   useId,
   useLayoutEffect,
   useRef,
@@ -328,16 +331,17 @@ function MemoryNodeCell({
     >
       {editor ? (
         <>
-          <input
+          <textarea
             className="memory-direct-label"
             value={node.label}
+            rows={Math.min(4, Math.max(1, Math.ceil(node.label.length / 26)))}
             aria-label="Node text"
             onFocus={() => editor.onSelect(node.id)}
             onChange={(event) =>
               editor.onChange(node.id, { label: event.target.value })
             }
             onKeyDown={(event) => {
-              if (event.key === "Enter") {
+              if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault();
                 editor.onAddSibling(node.id);
               } else if (event.key === "Tab") {
@@ -385,7 +389,20 @@ function MemoryNodeCell({
 }
 
 function DirectNodeActions({ node }: { node: FlowNode }) {
+  const [showFormat, setShowFormat] = useState(false);
   const editor = useContext(DirectNodeContext);
+  useEffect(() => {
+    if (!showFormat) return;
+    const hideWhileTyping = (event: FocusEvent) => {
+      if (
+        event.target instanceof HTMLElement &&
+        event.target.matches(".memory-direct-label, .memory-direct-detail")
+      )
+        setShowFormat(false);
+    };
+    document.addEventListener("focusin", hideWhileTyping);
+    return () => document.removeEventListener("focusin", hideWhileTyping);
+  }, [showFormat]);
   if (!editor || editor.selectedId !== node.id) return null;
   const beginMove = (event: React.PointerEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -441,93 +458,112 @@ function DirectNodeActions({ node }: { node: FlowNode }) {
       >
         <Plus />
       </button>
-      <span
-        className="memory-node-popover"
-        role="toolbar"
-        aria-label={`Edit ${node.label}`}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <span className="memory-node-popover-title">Edit node</span>
+      {showFormat && (
         <span
-          className="memory-node-popover-palette"
-          aria-label="Node color presets"
+          className="memory-node-popover"
+          role="toolbar"
+          aria-label={`Style ${node.label}`}
+          onClick={(event) => event.stopPropagation()}
         >
-          {DIRECT_NODE_PALETTE.map(([backgroundColor, textColor]) => (
-            <button
-              type="button"
-              key={backgroundColor}
-              title={`Use ${backgroundColor}`}
-              style={{ background: backgroundColor, color: textColor }}
-              onClick={() =>
-                editor.onChange(node.id, { backgroundColor, textColor })
+          <span className="memory-node-popover-title">Edit node</span>
+          <span
+            className="memory-node-popover-palette"
+            aria-label="Node color presets"
+          >
+            {DIRECT_NODE_PALETTE.map(([backgroundColor, textColor]) => (
+              <button
+                type="button"
+                key={backgroundColor}
+                title={`Use ${backgroundColor}`}
+                style={{ background: backgroundColor, color: textColor }}
+                onClick={() =>
+                  editor.onChange(node.id, { backgroundColor, textColor })
+                }
+              >
+                Aa
+              </button>
+            ))}
+          </span>
+          <label>
+            Fill
+            <input
+              type="color"
+              value={node.backgroundColor ?? "#ffffff"}
+              aria-label="Node fill color"
+              onChange={(event) =>
+                editor.onChange(node.id, {
+                  backgroundColor: event.target.value,
+                })
+              }
+            />
+          </label>
+          <label>
+            Text
+            <input
+              type="color"
+              value={node.textColor ?? "#172033"}
+              aria-label="Node text color"
+              onChange={(event) =>
+                editor.onChange(node.id, { textColor: event.target.value })
+              }
+            />
+          </label>
+          {editor.isSideNode?.(node.id) && (
+            <select
+              value={node.presentation ?? "bullets"}
+              aria-label="Node layout"
+              onChange={(event) =>
+                editor.onChange(node.id, {
+                  presentation: event.target.value as NonNullable<
+                    FlowNode["presentation"]
+                  >,
+                })
               }
             >
-              Aa
+              <option value="bullets">Bullets</option>
+              <option value="callout">Callout</option>
+              <option value="table">Table</option>
+              <option value="diagram">Diagram</option>
+            </select>
+          )}
+          {editor.onDuplicate && (
+            <button
+              type="button"
+              title="Duplicate node"
+              aria-label="Duplicate node"
+              onClick={() => editor.onDuplicate?.(node)}
+            >
+              <Copy />
             </button>
-          ))}
+          )}
+          {node.position && (
+            <button
+              type="button"
+              title="Return to automatic layout"
+              aria-label="Reset node position"
+              onClick={() => editor.onChange(node.id, { position: undefined })}
+            >
+              <Undo2 />
+            </button>
+          )}
         </span>
-        <label>
-          Fill
-          <input
-            type="color"
-            value={node.backgroundColor ?? "#ffffff"}
-            aria-label="Node fill color"
-            onChange={(event) =>
-              editor.onChange(node.id, { backgroundColor: event.target.value })
-            }
-          />
-        </label>
-        <label>
-          Text
-          <input
-            type="color"
-            value={node.textColor ?? "#172033"}
-            aria-label="Node text color"
-            onChange={(event) =>
-              editor.onChange(node.id, { textColor: event.target.value })
-            }
-          />
-        </label>
-        {editor.isSideNode?.(node.id) && (
-          <select
-            value={node.presentation ?? "bullets"}
-            aria-label="Node layout"
-            onChange={(event) =>
-              editor.onChange(node.id, {
-                presentation: event.target.value as NonNullable<
-                  FlowNode["presentation"]
-                >,
-              })
-            }
-          >
-            <option value="bullets">Bullets</option>
-            <option value="callout">Callout</option>
-            <option value="table">Table</option>
-            <option value="diagram">Diagram</option>
-          </select>
-        )}
-        {editor.onDuplicate && (
-          <button
-            type="button"
-            title="Duplicate node"
-            aria-label="Duplicate node"
-            onClick={() => editor.onDuplicate?.(node)}
-          >
-            <Copy />
-          </button>
-        )}
-        {node.position && (
-          <button
-            type="button"
-            title="Return to automatic layout"
-            aria-label="Reset node position"
-            onClick={() => editor.onChange(node.id, { position: undefined })}
-          >
-            <Undo2 />
-          </button>
-        )}
-      </span>
+      )}
       <span className="memory-direct-actions">
+        <button
+          type="button"
+          className={showFormat ? "is-active" : ""}
+          title="Show node style tools"
+          aria-label={
+            showFormat ? "Hide node style tools" : "Show node style tools"
+          }
+          aria-expanded={showFormat}
+          onClick={(event) => {
+            event.stopPropagation();
+            setShowFormat((current) => !current);
+          }}
+        >
+          <Palette />
+        </button>
         <button
           type="button"
           title="Move node"
@@ -942,15 +978,19 @@ function MemoryBulletList({
             <div>
               <strong>
                 {editor ? (
-                  <input
+                  <textarea
                     className="memory-direct-label"
                     value={node.label}
+                    rows={Math.min(
+                      4,
+                      Math.max(1, Math.ceil(node.label.length / 26)),
+                    )}
                     aria-label="Node text"
                     onChange={(event) =>
                       editor.onChange(node.id, { label: event.target.value })
                     }
                     onKeyDown={(event) => {
-                      if (event.key === "Enter") {
+                      if (event.key === "Enter" && !event.shiftKey) {
                         event.preventDefault();
                         editor.onAddSibling(node.id);
                       } else if (event.key === "Tab") {
@@ -1079,9 +1119,10 @@ function MemorySideTable({
           }}
         >
           {editor ? (
-            <input
+            <textarea
               className="memory-direct-label"
               value={root.label}
+              rows={Math.min(4, Math.max(1, Math.ceil(root.label.length / 26)))}
               onFocus={() => editor.onSelect(root.id)}
               onChange={(event) =>
                 editor.onChange(root.id, { label: event.target.value })
@@ -1136,9 +1177,13 @@ function MemorySideTable({
               <td>
                 <strong>
                   {editor ? (
-                    <input
+                    <textarea
                       className="memory-direct-label"
                       value={row.label}
+                      rows={Math.min(
+                        4,
+                        Math.max(1, Math.ceil(row.label.length / 26)),
+                      )}
                       onChange={(event) =>
                         editor.onChange(row.id, { label: event.target.value })
                       }
@@ -1223,9 +1268,10 @@ function MemorySideCallout({
     >
       <strong>
         {editor ? (
-          <input
+          <textarea
             className="memory-direct-label"
             value={root.label}
+            rows={Math.min(4, Math.max(1, Math.ceil(root.label.length / 26)))}
             onChange={(event) =>
               editor.onChange(root.id, { label: event.target.value })
             }
@@ -1405,60 +1451,65 @@ function SectionContentBlocks({
             }}
           >
             {editable && (
-              <div className="memory-block-actions">
-                <label title="Block color">
-                  <input
-                    type="color"
-                    value={block.backgroundColor ?? "#ffffff"}
-                    aria-label="Block color"
-                    onChange={(event) =>
-                      update({ backgroundColor: event.target.value })
-                    }
-                  />
-                </label>
-                <label title="Block text color">
-                  <input
-                    type="color"
-                    value={block.textColor ?? "#26384e"}
-                    aria-label="Block text color"
-                    onChange={(event) =>
-                      update({ textColor: event.target.value })
-                    }
-                  />
-                </label>
-                <button
-                  type="button"
-                  title="Move block up"
-                  aria-label="Move block up"
-                  onClick={() => onMove?.(sectionId, block.id, -1)}
-                >
-                  <ArrowUp />
-                </button>
-                <button
-                  type="button"
-                  title="Move block down"
-                  aria-label="Move block down"
-                  onClick={() => onMove?.(sectionId, block.id, 1)}
-                >
-                  <ArrowDown />
-                </button>
-                <button
-                  type="button"
-                  title="Duplicate block"
-                  aria-label="Duplicate block"
-                  onClick={() => onDuplicate?.(sectionId, block.id)}
-                >
-                  <Copy />
-                </button>
-                <button
-                  type="button"
-                  title="Delete block"
-                  aria-label="Delete block"
-                  onClick={() => onDelete?.(sectionId, block.id)}
-                >
-                  <Trash2 />
-                </button>
-              </div>
+              <details className="memory-block-actions">
+                <summary title="Show block tools" aria-label="Show block tools">
+                  <SlidersHorizontal />
+                </summary>
+                <div>
+                  <label title="Block color">
+                    <input
+                      type="color"
+                      value={block.backgroundColor ?? "#ffffff"}
+                      aria-label="Block color"
+                      onChange={(event) =>
+                        update({ backgroundColor: event.target.value })
+                      }
+                    />
+                  </label>
+                  <label title="Block text color">
+                    <input
+                      type="color"
+                      value={block.textColor ?? "#26384e"}
+                      aria-label="Block text color"
+                      onChange={(event) =>
+                        update({ textColor: event.target.value })
+                      }
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    title="Move block up"
+                    aria-label="Move block up"
+                    onClick={() => onMove?.(sectionId, block.id, -1)}
+                  >
+                    <ArrowUp />
+                  </button>
+                  <button
+                    type="button"
+                    title="Move block down"
+                    aria-label="Move block down"
+                    onClick={() => onMove?.(sectionId, block.id, 1)}
+                  >
+                    <ArrowDown />
+                  </button>
+                  <button
+                    type="button"
+                    title="Duplicate block"
+                    aria-label="Duplicate block"
+                    onClick={() => onDuplicate?.(sectionId, block.id)}
+                  >
+                    <Copy />
+                  </button>
+                  <button
+                    type="button"
+                    title="Delete block"
+                    aria-label="Delete block"
+                    onClick={() => onDelete?.(sectionId, block.id)}
+                  >
+                    <Trash2 />
+                  </button>
+                </div>
+              </details>
             )}
 
             {(block.type === "text" || block.type === "callout") &&
@@ -1752,6 +1803,14 @@ export function MemoryCardCanvas({
     ({ key }) =>
       (sectionTrees[key]?.length ?? 0) > 0 || imagesFor(key).length > 0,
   );
+  const isCompletelyBlank = Boolean(
+    directNodeEditing &&
+    !topic.trim() &&
+    !flow.length &&
+    !(sideSections ?? []).length &&
+    !canvasElements.length &&
+    !images.length,
+  );
   const renderedSections =
     sideSections !== undefined
       ? sideSections.map((section, index) => ({
@@ -1862,14 +1921,16 @@ export function MemoryCardCanvas({
       <div id="print-area" className={`memory-card-shell ${className}`}>
         <article
           id="memory-card-print"
-          className={`memory-card ${directNodeEditing ? "is-direct-editing is-adaptive" : ""}`}
+          className={`memory-card ${directNodeEditing ? "is-direct-editing is-adaptive" : ""} ${isCompletelyBlank ? "is-blank" : ""}`}
           ref={cardRef}
         >
-          <div className="memory-card-title">
-            <span className="memory-card-kicker">MEDCARD / VISUAL NOTE</span>
-            <h1>{topic || "Untitled medical card"}</h1>
-            <div className="memory-title-stem" />
-          </div>
+          {!isCompletelyBlank && (
+            <div className="memory-card-title">
+              <span className="memory-card-kicker">MEDCARD / VISUAL NOTE</span>
+              <h1>{topic || "Untitled medical card"}</h1>
+              <div className="memory-title-stem" />
+            </div>
+          )}
 
           <aside className="memory-sidebar" ref={sidebarRef}>
             {renderedSections.map(
@@ -1911,106 +1972,148 @@ export function MemoryCardCanvas({
                     }}
                   >
                     {custom && selectedSectionId === id && (
-                      <div
+                      <details
                         className="memory-section-popover"
-                        role="toolbar"
                         aria-label={`Edit ${title} section`}
                         onClick={(event) => event.stopPropagation()}
                       >
-                        <label>
-                          Section name
-                          <input
-                            value={title}
-                            autoFocus
-                            aria-label="Section name"
-                            onChange={(event) =>
-                              onRenameSideSection?.(id, event.target.value)
-                            }
-                          />
-                        </label>
-                        <select
-                          value=""
-                          aria-label="Use a common section name"
-                          onChange={(event) => {
-                            if (event.target.value)
-                              onRenameSideSection?.(id, event.target.value);
-                          }}
+                        <summary>
+                          <SlidersHorizontal />
+                          <span>Section tools</span>
+                        </summary>
+                        <div
+                          className="memory-section-popover-panel"
+                          role="toolbar"
                         >
-                          <option value="">Quick name…</option>
-                          {QUICK_SECTION_NAMES.map((name) => (
-                            <option key={name}>{name}</option>
-                          ))}
-                        </select>
-                        <span
-                          className="memory-section-block-tools"
-                          aria-label="Add content to section"
-                        >
+                          <label>
+                            Section name
+                            <input
+                              value={title}
+                              aria-label="Section name"
+                              onChange={(event) =>
+                                onRenameSideSection?.(id, event.target.value)
+                              }
+                            />
+                          </label>
+                          <select
+                            value=""
+                            aria-label="Use a common section name"
+                            onChange={(event) => {
+                              if (event.target.value)
+                                onRenameSideSection?.(id, event.target.value);
+                            }}
+                          >
+                            <option value="">Quick name…</option>
+                            {QUICK_SECTION_NAMES.map((name) => (
+                              <option key={name}>{name}</option>
+                            ))}
+                          </select>
+                          <span
+                            className="memory-section-block-tools"
+                            aria-label="Add content to section"
+                          >
+                            <button
+                              type="button"
+                              title="Add node group"
+                              aria-label="Add node to section"
+                              onClick={(event) => {
+                                onAddNodeToSection?.(id);
+                                event.currentTarget
+                                  .closest("details")
+                                  ?.removeAttribute("open");
+                              }}
+                            >
+                              <Plus />
+                            </button>
+                            <button
+                              type="button"
+                              title="Add text block"
+                              aria-label="Add text block"
+                              onClick={(event) => {
+                                onAddSectionBlock?.(id, "text");
+                                event.currentTarget
+                                  .closest("details")
+                                  ?.removeAttribute("open");
+                              }}
+                            >
+                              <Type />
+                            </button>
+                            <button
+                              type="button"
+                              title="Add callout"
+                              aria-label="Add callout"
+                              onClick={(event) => {
+                                onAddSectionBlock?.(id, "callout");
+                                event.currentTarget
+                                  .closest("details")
+                                  ?.removeAttribute("open");
+                              }}
+                            >
+                              <MessageSquareText />
+                            </button>
+                            <button
+                              type="button"
+                              title="Add table"
+                              aria-label="Add table"
+                              onClick={(event) => {
+                                onAddSectionBlock?.(id, "table");
+                                event.currentTarget
+                                  .closest("details")
+                                  ?.removeAttribute("open");
+                              }}
+                            >
+                              <Table2 />
+                            </button>
+                            <button
+                              type="button"
+                              title="Add flowchart"
+                              aria-label="Add flowchart"
+                              onClick={(event) => {
+                                onAddSectionBlock?.(id, "flowchart");
+                                event.currentTarget
+                                  .closest("details")
+                                  ?.removeAttribute("open");
+                              }}
+                            >
+                              <GitFork />
+                            </button>
+                            <button
+                              type="button"
+                              title="Add checklist"
+                              aria-label="Add checklist"
+                              onClick={(event) => {
+                                onAddSectionBlock?.(id, "checklist");
+                                event.currentTarget
+                                  .closest("details")
+                                  ?.removeAttribute("open");
+                              }}
+                            >
+                              <ListChecks />
+                            </button>
+                            <button
+                              type="button"
+                              title="Add image block"
+                              aria-label="Add image block"
+                              onClick={(event) => {
+                                onAddSectionBlock?.(id, "image");
+                                event.currentTarget
+                                  .closest("details")
+                                  ?.removeAttribute("open");
+                              }}
+                            >
+                              <ImagePlus />
+                            </button>
+                          </span>
                           <button
                             type="button"
-                            title="Add node group"
-                            aria-label="Add node to section"
-                            onClick={() => onAddNodeToSection?.(id)}
+                            title="Delete section"
+                            aria-label={`Delete ${title} section`}
+                            onClick={() => onDeleteSideSection?.(id)}
                           >
-                            <Plus />
+                            <Trash2 />
                           </button>
-                          <button
-                            type="button"
-                            title="Add text block"
-                            aria-label="Add text block"
-                            onClick={() => onAddSectionBlock?.(id, "text")}
-                          >
-                            <Type />
-                          </button>
-                          <button
-                            type="button"
-                            title="Add callout"
-                            aria-label="Add callout"
-                            onClick={() => onAddSectionBlock?.(id, "callout")}
-                          >
-                            <MessageSquareText />
-                          </button>
-                          <button
-                            type="button"
-                            title="Add table"
-                            aria-label="Add table"
-                            onClick={() => onAddSectionBlock?.(id, "table")}
-                          >
-                            <Table2 />
-                          </button>
-                          <button
-                            type="button"
-                            title="Add flowchart"
-                            aria-label="Add flowchart"
-                            onClick={() => onAddSectionBlock?.(id, "flowchart")}
-                          >
-                            <GitFork />
-                          </button>
-                          <button
-                            type="button"
-                            title="Add checklist"
-                            aria-label="Add checklist"
-                            onClick={() => onAddSectionBlock?.(id, "checklist")}
-                          >
-                            <ListChecks />
-                          </button>
-                          <button
-                            type="button"
-                            title="Add image block"
-                            aria-label="Add image block"
-                            onClick={() => onAddSectionBlock?.(id, "image")}
-                          >
-                            <ImagePlus />
-                          </button>
-                        </span>
-                        <button
-                          type="button"
-                          title="Delete section"
-                          aria-label={`Delete ${title} section`}
-                          onClick={() => onDeleteSideSection?.(id)}
-                        >
-                          <Trash2 />
-                        </button>
-                      </div>
+                        </div>
+                      </details>
                     )}
                     <header>
                       <Icon />
@@ -2086,10 +2189,12 @@ export function MemoryCardCanvas({
             <SectionImages images={imagesFor("main")} />
           </main>
 
-          <footer className="memory-card-footer">
-            <span>SOURCE-TRACEABLE VISUAL CARD</span>
-            <span>{totalNodes} information blocks</span>
-          </footer>
+          {!isCompletelyBlank && (
+            <footer className="memory-card-footer">
+              <span>SOURCE-TRACEABLE VISUAL CARD</span>
+              <span>{totalNodes} information blocks</span>
+            </footer>
+          )}
           <FreeformCanvasLayer
             elements={canvasElements}
             onChange={onCanvasElementsChange}
