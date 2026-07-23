@@ -1359,22 +1359,32 @@ function SectionContentBlocks({
               </details>
             )}
 
-            {(block.type === "text" || block.type === "callout") &&
+            {block.type === "text" &&
+              (editable ? (
+                <textarea
+                  value={block.text ?? ""}
+                  placeholder="Type or paste information…"
+                  aria-label="Text content"
+                  onChange={(event) => update({ text: event.target.value })}
+                />
+              ) : (
+                <p>{block.text}</p>
+              ))}
+
+            {block.type === "callout" &&
               (editable ? (
                 <>
                   <input
                     className="memory-block-title"
                     value={block.title ?? ""}
-                    placeholder={
-                      block.type === "callout" ? "Callout title" : "Text title"
-                    }
+                    placeholder="Callout title"
                     aria-label="Block title"
                     onChange={(event) => update({ title: event.target.value })}
                   />
                   <textarea
                     value={block.text ?? ""}
                     placeholder="Type or paste information…"
-                    aria-label={`${block.type} content`}
+                    aria-label="Callout content"
                     onChange={(event) => update({ text: event.target.value })}
                   />
                 </>

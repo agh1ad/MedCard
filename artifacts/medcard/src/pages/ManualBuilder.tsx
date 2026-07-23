@@ -678,7 +678,9 @@ export function ManualBuilder() {
           ? { title: "", items: [""] }
           : type === "image"
             ? {}
-            : { title: "", text: "" };
+            : type === "text"
+              ? { text: "" }
+              : { title: "", text: "" };
     const block: SectionContentBlock = {
       id: `block-${crypto.randomUUID()}`,
       type,
