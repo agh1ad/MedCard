@@ -801,6 +801,20 @@ export function ManualBuilder() {
     event.dataTransfer.effectAllowed = "copy";
   };
 
+  const finishSectionContentDrag = (
+    event: React.DragEvent<HTMLButtonElement>,
+    type: "flowchart" | "table" | "image",
+  ) => {
+    if (event.dataTransfer.dropEffect !== "none") return;
+    const target = document
+      .elementFromPoint(event.clientX, event.clientY)
+      ?.closest<HTMLElement>(".memory-section[data-section-id]");
+    const sectionId = target?.dataset.sectionId;
+    if (!sectionId) return;
+    if (type === "flowchart") addNodeToSection(sectionId);
+    else addSectionBlock(sectionId, type);
+  };
+
   useEffect(() => {
     const timer = window.setTimeout(() => {
       if (restoringHistoryRef.current) {
@@ -1867,6 +1881,9 @@ export function ManualBuilder() {
                     onDragStart={(event) =>
                       startSectionContentDrag(event, "flowchart")
                     }
+                    onDragEnd={(event) =>
+                      finishSectionContentDrag(event, "flowchart")
+                    }
                     onClick={() => addNodeToSection(activeSideSection.id)}
                   >
                     <GitBranch /> <span>Flowchart</span>
@@ -1877,6 +1894,9 @@ export function ManualBuilder() {
                     title="Add a table"
                     onDragStart={(event) =>
                       startSectionContentDrag(event, "table")
+                    }
+                    onDragEnd={(event) =>
+                      finishSectionContentDrag(event, "table")
                     }
                     onClick={() =>
                       addSectionBlock(activeSideSection.id, "table")
@@ -1890,6 +1910,9 @@ export function ManualBuilder() {
                     title="Add an image block"
                     onDragStart={(event) =>
                       startSectionContentDrag(event, "image")
+                    }
+                    onDragEnd={(event) =>
+                      finishSectionContentDrag(event, "image")
                     }
                     onClick={() =>
                       addSectionBlock(activeSideSection.id, "image")

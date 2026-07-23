@@ -1839,15 +1839,20 @@ export function MemoryCardCanvas({
                   <section
                     className={`memory-section accent-${accent} ${nodeCount > 3 || usesWidePresentation ? "is-wide" : ""} ${nodeCount > 6 ? "is-dense" : ""}`}
                     key={id}
+                    data-section-id={id}
                     tabIndex={directNodeEditing ? 0 : undefined}
                     aria-label={`${title} section`}
                     onClick={() => custom && onSelectSideSection?.(id)}
-                    onDragOver={(event) =>
-                      (onAttachToSection ||
+                    onDragOver={(event) => {
+                      if (
+                        onAttachToSection ||
                         onAddNodeToSection ||
-                        onAddSectionBlock) &&
-                      event.preventDefault()
-                    }
+                        onAddSectionBlock
+                      ) {
+                        event.preventDefault();
+                        event.dataTransfer.dropEffect = "copy";
+                      }
+                    }}
                     onDragEnter={(event) => {
                       if (
                         onAttachToSection ||
