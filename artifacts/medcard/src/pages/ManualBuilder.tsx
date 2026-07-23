@@ -28,9 +28,7 @@ import {
   ImagePlus,
   Keyboard,
   Link2,
-  ListChecks,
   Loader2,
-  MessageSquareText,
   Minus,
   Move,
   MousePointer2,
@@ -1831,13 +1829,6 @@ export function ManualBuilder() {
                 <div className="context-ribbon-actions">
                   <button
                     type="button"
-                    title="Add a node group"
-                    onClick={() => addNodeToSection(activeSideSection.id)}
-                  >
-                    <Plus /> <span>Node</span>
-                  </button>
-                  <button
-                    type="button"
                     title="Add text"
                     onClick={() =>
                       addSectionBlock(activeSideSection.id, "text")
@@ -1847,12 +1838,10 @@ export function ManualBuilder() {
                   </button>
                   <button
                     type="button"
-                    title="Add a callout"
-                    onClick={() =>
-                      addSectionBlock(activeSideSection.id, "callout")
-                    }
+                    title="Add an interactive flowchart like the center flow"
+                    onClick={() => addNodeToSection(activeSideSection.id)}
                   >
-                    <MessageSquareText /> <span>Callout</span>
+                    <GitBranch /> <span>Flowchart</span>
                   </button>
                   <button
                     type="button"
@@ -1862,24 +1851,6 @@ export function ManualBuilder() {
                     }
                   >
                     <Table2 /> <span>Table</span>
-                  </button>
-                  <button
-                    type="button"
-                    title="Add a flowchart"
-                    onClick={() =>
-                      addSectionBlock(activeSideSection.id, "flowchart")
-                    }
-                  >
-                    <GitBranch /> <span>Flow</span>
-                  </button>
-                  <button
-                    type="button"
-                    title="Add a checklist"
-                    onClick={() =>
-                      addSectionBlock(activeSideSection.id, "checklist")
-                    }
-                  >
-                    <ListChecks /> <span>Checklist</span>
                   </button>
                   <button
                     type="button"
