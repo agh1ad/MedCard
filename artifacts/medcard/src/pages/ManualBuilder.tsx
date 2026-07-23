@@ -368,6 +368,20 @@ export function ManualBuilder() {
   const selectedCanvasElement = canvasElements.find(
     (element) => element.id === selectedCanvasId,
   );
+  const selectedSectionBlock = selectedBlock
+    ? sideSections
+        .find((section) => section.id === selectedBlock.sectionId)
+        ?.blocks?.find((block) => block.id === selectedBlock.blockId)
+    : undefined;
+
+  const applyRichTextCommand = (command: string, value?: string) => {
+    if (!selectedBlock || selectedSectionBlock?.type !== "text") return;
+    window.dispatchEvent(
+      new CustomEvent("medcard-rich-text-command", {
+        detail: { blockId: selectedBlock.blockId, command, value },
+      }),
+    );
+  };
 
   const restoreHistory = (direction: -1 | 1) => {
     const nextIndex = historyIndexRef.current + direction;
@@ -1871,6 +1885,77 @@ export function ManualBuilder() {
                   ))}
                 </select>
               </label>
+              {selectedSectionBlock?.type === "text" && (
+                <div className="context-ribbon-group rich-text-ribbon-group">
+                  <span>Format selected text</span>
+                  <div className="rich-text-ribbon-actions">
+                    <button
+                      type="button"
+                      className="is-bold"
+                      title="Bold selected text"
+                      aria-label="Bold selected text"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => applyRichTextCommand("bold")}
+                    >
+                      B
+                    </button>
+                    <button
+                      type="button"
+                      className="is-italic"
+                      title="Italicize selected text"
+                      aria-label="Italicize selected text"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => applyRichTextCommand("italic")}
+                    >
+                      I
+                    </button>
+                    <button
+                      type="button"
+                      className="is-underline"
+                      title="Underline selected text"
+                      aria-label="Underline selected text"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => applyRichTextCommand("underline")}
+                    >
+                      U
+                    </button>
+                    <label title="Selected text color">
+                      Text
+                      <input
+                        type="color"
+                        defaultValue="#26384e"
+                        aria-label="Selected text color"
+                        onChange={(event) =>
+                          applyRichTextCommand("foreColor", event.target.value)
+                        }
+                      />
+                    </label>
+                    <label title="Selected text highlight">
+                      Highlight
+                      <input
+                        type="color"
+                        defaultValue="#fff19b"
+                        aria-label="Selected text highlight"
+                        onChange={(event) =>
+                          applyRichTextCommand(
+                            "hiliteColor",
+                            event.target.value,
+                          )
+                        }
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      title="Clear selected formatting"
+                      aria-label="Clear selected formatting"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => applyRichTextCommand("removeFormat")}
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className="context-ribbon-group section-insert-group">
                 <span>Drag into section or click</span>
                 <div className="context-ribbon-actions">

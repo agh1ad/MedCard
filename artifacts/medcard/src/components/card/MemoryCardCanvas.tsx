@@ -32,11 +32,57 @@ import {
 import {
   createContext,
   useContext,
+  useEffect,
   useId,
   useLayoutEffect,
   useRef,
   useState,
 } from "react";
+
+const RICH_TEXT_COMMAND_EVENT = "medcard-rich-text-command";
+
+function sanitizeRichText(html: string) {
+  if (typeof DOMParser === "undefined") return html;
+  const parsed = new DOMParser().parseFromString(html, "text/html");
+  const allowedTags = new Set([
+    "B",
+    "BR",
+    "DIV",
+    "EM",
+    "FONT",
+    "I",
+    "P",
+    "SPAN",
+    "STRONG",
+    "U",
+  ]);
+  parsed.body.querySelectorAll("*").forEach((element) => {
+    if (!allowedTags.has(element.tagName)) {
+      element.replaceWith(...Array.from(element.childNodes));
+      return;
+    }
+    const color = element.getAttribute("color");
+    const style = element.getAttribute("style") ?? "";
+    Array.from(element.attributes).forEach((attribute) =>
+      element.removeAttribute(attribute.name),
+    );
+    if (element.tagName === "FONT" && color?.match(/^#[0-9a-f]{6}$/i))
+      element.setAttribute("color", color);
+    if (element.tagName === "SPAN") {
+      const safeStyle = style
+        .split(";")
+        .map((rule) => rule.trim())
+        .filter((rule) =>
+          /^(color|background-color|font-weight|font-style|text-decoration):/i.test(
+            rule,
+          ),
+        )
+        .join("; ");
+      if (safeStyle) element.setAttribute("style", safeStyle);
+    }
+  });
+  return parsed.body.innerHTML;
+}
 
 export interface DirectNodeEditing {
   selectedId: string | null;
@@ -1232,6 +1278,106 @@ function SectionAttachments({
   );
 }
 
+function RichTextBlock({
+  blockId,
+  value,
+  editable,
+  onChange,
+}: {
+  blockId: string;
+  value: string;
+  editable: boolean;
+  onChange?: (html: string) => void;
+}) {
+  const editorRef = useRef<HTMLDivElement>(null);
+  const selectionRef = useRef<Range | null>(null);
+  const safeValue = sanitizeRichText(value);
+
+  const rememberSelection = () => {
+    const editor = editorRef.current;
+    const selection = window.getSelection();
+    if (
+      !editor ||
+      !selection?.rangeCount ||
+      !editor.contains(selection.anchorNode)
+    )
+      return;
+    selectionRef.current = selection.getRangeAt(0).cloneRange();
+  };
+
+  useLayoutEffect(() => {
+    const editor = editorRef.current;
+    if (
+      editor &&
+      document.activeElement !== editor &&
+      editor.innerHTML !== safeValue
+    )
+      editor.innerHTML = safeValue;
+  }, [safeValue]);
+
+  useEffect(() => {
+    if (!editable) return;
+    const handleCommand = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{
+          blockId: string;
+          command: string;
+          value?: string;
+        }>
+      ).detail;
+      if (detail.blockId !== blockId || !editorRef.current) return;
+      editorRef.current.focus();
+      const selection = window.getSelection();
+      if (selectionRef.current && selection) {
+        selection.removeAllRanges();
+        selection.addRange(selectionRef.current);
+      }
+      document.execCommand(detail.command, false, detail.value);
+      rememberSelection();
+      onChange?.(sanitizeRichText(editorRef.current.innerHTML));
+    };
+    window.addEventListener(RICH_TEXT_COMMAND_EVENT, handleCommand);
+    return () =>
+      window.removeEventListener(RICH_TEXT_COMMAND_EVENT, handleCommand);
+  }, [blockId, editable, onChange]);
+
+  if (!editable)
+    return (
+      <div
+        className="memory-rich-text-output"
+        dangerouslySetInnerHTML={{ __html: safeValue }}
+      />
+    );
+
+  return (
+    <div
+      ref={editorRef}
+      className="memory-rich-text-editor"
+      contentEditable
+      suppressContentEditableWarning
+      role="textbox"
+      aria-label="Text content"
+      data-placeholder="Type or paste information…"
+      onFocus={rememberSelection}
+      onBlur={rememberSelection}
+      onKeyUp={rememberSelection}
+      onMouseUp={rememberSelection}
+      onInput={(event) => {
+        rememberSelection();
+        onChange?.(sanitizeRichText(event.currentTarget.innerHTML));
+      }}
+      onPaste={(event) => {
+        event.preventDefault();
+        document.execCommand(
+          "insertText",
+          false,
+          event.clipboardData.getData("text/plain"),
+        );
+      }}
+    />
+  );
+}
+
 function SectionContentBlocks({
   sectionId,
   blocks = [],
@@ -1364,17 +1510,14 @@ function SectionContentBlocks({
               </details>
             )}
 
-            {block.type === "text" &&
-              (editable ? (
-                <textarea
-                  value={block.text ?? ""}
-                  placeholder="Type or paste information…"
-                  aria-label="Text content"
-                  onChange={(event) => update({ text: event.target.value })}
-                />
-              ) : (
-                <p>{block.text}</p>
-              ))}
+            {block.type === "text" && (
+              <RichTextBlock
+                blockId={block.id}
+                value={block.text ?? ""}
+                editable={editable}
+                onChange={(text) => update({ text })}
+              />
+            )}
 
             {block.type === "callout" &&
               (editable ? (

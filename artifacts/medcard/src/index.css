@@ -1068,6 +1068,51 @@
 .section-insert-group button[draggable="true"]:active {
   cursor: grabbing;
 }
+.rich-text-ribbon-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.18rem;
+}
+.rich-text-ribbon-actions button,
+.rich-text-ribbon-actions label {
+  display: grid;
+  min-width: 1.7rem;
+  height: 1.8rem;
+  place-items: center;
+  border: 1px solid #d4e0eb;
+  border-radius: 0.36rem;
+  padding: 0 0.35rem;
+  color: #40566f;
+  background: #fff;
+  font-size: 0.5rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.rich-text-ribbon-actions button:hover,
+.rich-text-ribbon-actions button:focus-visible,
+.rich-text-ribbon-actions label:hover,
+.rich-text-ribbon-actions label:focus-within {
+  color: #1768b7;
+  background: #e7f2fd;
+  outline: 2px solid rgba(40, 120, 227, 0.15);
+}
+.rich-text-ribbon-actions .is-bold {
+  font-weight: 950;
+}
+.rich-text-ribbon-actions .is-italic {
+  font-family: Georgia, serif;
+  font-style: italic;
+}
+.rich-text-ribbon-actions .is-underline {
+  text-decoration: underline;
+}
+.rich-text-ribbon-actions input[type="color"] {
+  width: 1.25rem;
+  height: 0.75rem;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
 .context-ribbon-actions button.is-danger:hover {
   color: #b5303e;
   background: #ffeaed;
@@ -2920,6 +2965,35 @@
   resize: vertical;
   padding: 5px;
   line-height: 1.4;
+}
+.memory-rich-text-editor,
+.memory-rich-text-output {
+  width: 100%;
+  min-height: 70px;
+  border-radius: 4px;
+  padding: 6px;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.72);
+  font: inherit;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+.memory-rich-text-editor {
+  border: 1px solid transparent;
+  cursor: text;
+  outline: 0;
+}
+.memory-rich-text-editor:focus {
+  border-color: #84b7e8;
+  box-shadow: 0 0 0 2px rgba(40, 120, 227, 0.12);
+}
+.memory-rich-text-editor:empty::before {
+  color: #8493a3;
+  content: attr(data-placeholder);
+  pointer-events: none;
+}
+.memory-rich-text-output {
+  min-height: 0;
 }
 .memory-section-block h3 {
   margin: 0 0 4px;
