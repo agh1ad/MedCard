@@ -553,7 +553,15 @@ export function ManualBuilder() {
   };
 
   const addSiblingAnywhere = (nodeId: string) => {
-    const sibling = makeNode();
+    const source =
+      findNode(flow, nodeId) ??
+      sideSections
+        .map((section) => findNode(section.nodes, nodeId))
+        .find(Boolean);
+    const sibling: FlowNode = {
+      ...makeNode(),
+      presentation: source?.presentation === "diagram" ? "diagram" : undefined,
+    };
     setFlow((current) => insertAfter(current, nodeId, sibling));
     setSideSections((current) =>
       current.map((section) => ({
@@ -645,7 +653,7 @@ export function ManualBuilder() {
     );
 
   const addNodeToSection = (sectionId: string) => {
-    const node = makeNode();
+    const node = { ...makeNode(), presentation: "diagram" as const };
     setSideSections((current) =>
       current.map((section) =>
         section.id === sectionId

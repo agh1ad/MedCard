@@ -2483,17 +2483,7 @@
   margin-top: 5px;
 }
 .memory-side-diagram {
-  --memory-node-width: max(105px, calc(var(--memory-font) * 10.5));
   padding: 2px 3px 4px;
-}
-.memory-side-diagram .memory-flow-layers {
-  gap: max(9px, calc(var(--memory-font) * 0.9));
-}
-.memory-side-diagram .memory-node {
-  padding: max(3px, calc(var(--memory-font) * 0.22))
-    max(5px, calc(var(--memory-font) * 0.38));
-  font-size: max(7px, calc(var(--memory-font) * 0.72));
-  box-shadow: 0 1px 3px rgba(25, 46, 43, 0.06);
 }
 
 .memory-main {

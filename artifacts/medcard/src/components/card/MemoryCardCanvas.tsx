@@ -1807,6 +1807,12 @@ export function MemoryCardCanvas({
               }) => {
                 const nodeCount = countNodes(nodes);
                 const nodeLabels = collectNodeLabels(nodes);
+                const diagramNodes = nodes.filter(
+                  (node) => node.presentation === "diagram",
+                );
+                const standardNodes = nodes.filter(
+                  (node) => node.presentation !== "diagram",
+                );
                 const usesWidePresentation = nodes.some(
                   (node) =>
                     node.presentation === "table" ||
@@ -1870,7 +1876,12 @@ export function MemoryCardCanvas({
                       )}
                     </header>
                     <div className="memory-side-groups">
-                      {nodes.map((root) => (
+                      {diagramNodes.length > 0 && (
+                        <div className="memory-side-diagram">
+                          <MemoryFlowGraph nodes={diagramNodes} />
+                        </div>
+                      )}
+                      {standardNodes.map((root) => (
                         <MemorySideGroup
                           key={root.id}
                           nodeLabels={nodeLabels}
