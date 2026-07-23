@@ -164,6 +164,14 @@ function makeNode(label = "New node"): FlowNode {
   };
 }
 
+function makeSectionTextBlock(): SectionContentBlock {
+  return {
+    id: `block-${crypto.randomUUID()}`,
+    type: "text",
+    text: "",
+  };
+}
+
 function mapNode(
   nodes: FlowNode[],
   id: string,
@@ -442,6 +450,7 @@ export function ManualBuilder() {
         id: `section-${crypto.randomUUID()}`,
         title,
         nodes: [],
+        blocks: [makeSectionTextBlock()],
       })),
     );
     setCanvasElements([]);
@@ -467,21 +476,26 @@ export function ManualBuilder() {
   };
 
   const addSideSection = (title?: string) => {
+    const textBlock = makeSectionTextBlock();
     const section: SideSection = {
       id: `section-${crypto.randomUUID()}`,
       title: title || `New section ${sideSections.length + 1}`,
       nodes: [],
+      blocks: [textBlock],
     };
     setSideSections((current) => [...current, section]);
     setActiveSection(section.id);
     setSelectedId(null);
+    setSelectedBlock({ sectionId: section.id, blockId: textBlock.id });
   };
 
   const addSideSectionAfter = (afterId: string) => {
+    const textBlock = makeSectionTextBlock();
     const section: SideSection = {
       id: `section-${crypto.randomUUID()}`,
       title: `New section ${sideSections.length + 1}`,
       nodes: [],
+      blocks: [textBlock],
     };
     setSideSections((current) => {
       const index = current.findIndex((item) => item.id === afterId);
@@ -491,6 +505,7 @@ export function ManualBuilder() {
     });
     setActiveSection(section.id);
     setSelectedId(null);
+    setSelectedBlock({ sectionId: section.id, blockId: textBlock.id });
   };
 
   const renameSideSection = (id: string, title: string) =>
@@ -775,6 +790,14 @@ export function ManualBuilder() {
     type: NodeAttachment["type"],
   ) => {
     event.dataTransfer.setData("application/x-medcard-attachment", type);
+    event.dataTransfer.effectAllowed = "copy";
+  };
+
+  const startSectionContentDrag = (
+    event: React.DragEvent<HTMLButtonElement>,
+    type: "flowchart" | "table" | "image",
+  ) => {
+    event.dataTransfer.setData("application/x-medcard-section-content", type);
     event.dataTransfer.effectAllowed = "copy";
   };
 
@@ -1835,27 +1858,26 @@ export function ManualBuilder() {
                 </select>
               </label>
               <div className="context-ribbon-group section-insert-group">
-                <span>Add content</span>
+                <span>Drag into section or click</span>
                 <div className="context-ribbon-actions">
                   <button
                     type="button"
-                    title="Add text"
-                    onClick={() =>
-                      addSectionBlock(activeSideSection.id, "text")
-                    }
-                  >
-                    <Type /> <span>Text</span>
-                  </button>
-                  <button
-                    type="button"
+                    draggable
                     title="Add an interactive flowchart like the center flow"
+                    onDragStart={(event) =>
+                      startSectionContentDrag(event, "flowchart")
+                    }
                     onClick={() => addNodeToSection(activeSideSection.id)}
                   >
                     <GitBranch /> <span>Flowchart</span>
                   </button>
                   <button
                     type="button"
+                    draggable
                     title="Add a table"
+                    onDragStart={(event) =>
+                      startSectionContentDrag(event, "table")
+                    }
                     onClick={() =>
                       addSectionBlock(activeSideSection.id, "table")
                     }
@@ -1864,7 +1886,11 @@ export function ManualBuilder() {
                   </button>
                   <button
                     type="button"
+                    draggable
                     title="Add an image block"
+                    onDragStart={(event) =>
+                      startSectionContentDrag(event, "image")
+                    }
                     onClick={() =>
                       addSectionBlock(activeSideSection.id, "image")
                     }
@@ -1955,6 +1981,8 @@ export function ManualBuilder() {
               setFlow((current) => [...current, node]);
               setSelectedId(node.id);
             }}
+            onAddNodeToSection={addNodeToSection}
+            onAddSectionBlock={addSectionBlock}
             onUpdateSectionBlock={updateSectionBlock}
             onDeleteSectionBlock={deleteSectionBlock}
             onDuplicateSectionBlock={duplicateSectionBlock}

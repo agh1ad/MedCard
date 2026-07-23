@@ -81,6 +81,11 @@ interface MemoryCardCanvasProps {
   onSelectSectionBlock?: (sectionId: string, blockId: string) => void;
   onAddFirstSideSection?: () => void;
   onAddRootNode?: () => void;
+  onAddNodeToSection?: (sectionId: string) => void;
+  onAddSectionBlock?: (
+    sectionId: string,
+    type: SectionContentBlock["type"],
+  ) => void;
   onUpdateSectionBlock?: (
     sectionId: string,
     blockId: string,
@@ -1634,6 +1639,8 @@ export function MemoryCardCanvas({
   onSelectSectionBlock,
   onAddFirstSideSection,
   onAddRootNode,
+  onAddNodeToSection,
+  onAddSectionBlock,
   onUpdateSectionBlock,
   onDeleteSectionBlock,
   onDuplicateSectionBlock,
@@ -1836,9 +1843,42 @@ export function MemoryCardCanvas({
                     aria-label={`${title} section`}
                     onClick={() => custom && onSelectSideSection?.(id)}
                     onDragOver={(event) =>
-                      onAttachToSection && event.preventDefault()
+                      (onAttachToSection ||
+                        onAddNodeToSection ||
+                        onAddSectionBlock) &&
+                      event.preventDefault()
                     }
+                    onDragEnter={(event) => {
+                      if (
+                        onAttachToSection ||
+                        onAddNodeToSection ||
+                        onAddSectionBlock
+                      )
+                        event.currentTarget.classList.add("is-drop-target");
+                    }}
+                    onDragLeave={(event) => {
+                      if (
+                        !event.currentTarget.contains(
+                          event.relatedTarget as Node,
+                        )
+                      )
+                        event.currentTarget.classList.remove("is-drop-target");
+                    }}
                     onDrop={(event) => {
+                      event.currentTarget.classList.remove("is-drop-target");
+                      const contentType = event.dataTransfer.getData(
+                        "application/x-medcard-section-content",
+                      );
+                      if (contentType === "flowchart") {
+                        event.preventDefault();
+                        onAddNodeToSection?.(id);
+                        return;
+                      }
+                      if (contentType === "table" || contentType === "image") {
+                        event.preventDefault();
+                        onAddSectionBlock?.(id, contentType);
+                        return;
+                      }
                       if (!onAttachToSection) return;
                       event.preventDefault();
                       attachFromDrop(event.dataTransfer, (attachment) =>

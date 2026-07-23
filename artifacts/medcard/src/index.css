@@ -1062,6 +1062,12 @@
   color: #1768b7;
   background: #e6f1fc;
 }
+.section-insert-group button[draggable="true"] {
+  cursor: grab;
+}
+.section-insert-group button[draggable="true"]:active {
+  cursor: grabbing;
+}
 .context-ribbon-actions button.is-danger:hover {
   color: #b5303e;
   background: #ffeaed;
@@ -2278,6 +2284,12 @@
 }
 .memory-section.is-wide {
   grid-column: 1 / -1;
+}
+.memory-section.is-drop-target {
+  border-color: #2878e3;
+  box-shadow:
+    0 0 0 3px rgba(40, 120, 227, 0.16),
+    0 8px 22px rgba(24, 76, 128, 0.12);
 }
 
 .memory-section header {
